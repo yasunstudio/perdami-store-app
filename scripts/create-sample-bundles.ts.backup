@@ -1,0 +1,198 @@
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+async function createSampleBundles() {
+  console.log('🌱 Creating sample product bundles...')
+
+  try {
+    // First, let's get existing categories and products
+    const categories = await prisma.category.findMany()
+    const products = await prisma.product.findMany({
+      where: { isActive: true },
+      take: 20
+    })
+
+    if (categories.length === 0) {
+      console.log('❌ No categories found. Please run the main seed script first.')
+      return
+    }
+
+    if (products.length < 6) {
+      console.log('❌ Not enough products found. Please run the main seed script first.')
+      return
+    }
+
+    console.log(`📦 Found ${categories.length} categories and ${products.length} products`)
+
+    // Sample bundles data
+    const bundlesToCreate = [
+      {
+        name: 'Paket Lengkap Oleh-oleh Bandung',
+        description: 'Paket lengkap berisi berbagai makanan khas Bandung pilihan terbaik. Cocok untuk dibawa pulang sebagai oleh-oleh.',
+        image: '/images/products/placeholder.jpg',
+        price: 175000,
+        originalPrice: 220000,
+        discount: 20,
+        isActive: true,
+        isFeatured: true,
+        categoryId: categories[0].id,
+        items: [
+          { productIndex: 0, quantity: 2 },
+          { productIndex: 1, quantity: 1 },
+          { productIndex: 2, quantity: 3 },
+          { productIndex: 3, quantity: 1 }
+        ]
+      },
+      {
+        name: 'Paket Makanan Ringan Favorit',
+        description: 'Kumpulan makanan ringan terpopuler dari Bandung. Sempurna untuk cemilan sehari-hari atau acara keluarga.',
+        image: '/images/products/placeholder.jpg',
+        price: 95000,
+        originalPrice: 125000,
+        discount: 24,
+        isActive: true,
+        isFeatured: true,
+        categoryId: categories[0].id,
+        items: [
+          { productIndex: 4, quantity: 2 },
+          { productIndex: 5, quantity: 2 },
+          { productIndex: 6, quantity: 1 }
+        ]
+      },
+      {
+        name: 'Paket Spesial Kue Tradisional',
+        description: 'Koleksi kue tradisional Bandung yang autentik. Dibuat dengan resep turun temurun dan bahan berkualitas tinggi.',
+        image: '/images/products/placeholder.jpg',
+        price: 145000,
+        originalPrice: 180000,
+        discount: 19,
+        isActive: true,
+        isFeatured: true,
+        categoryId: categories.length > 1 ? categories[1].id : categories[0].id,
+        items: [
+          { productIndex: 7, quantity: 1 },
+          { productIndex: 8, quantity: 2 },
+          { productIndex: 9, quantity: 1 },
+          { productIndex: 10, quantity: 1 }
+        ]
+      },
+      {
+        name: 'Paket Hemat Keluarga',
+        description: 'Paket ekonomis untuk keluarga besar. Berisi berbagai produk pilihan dengan porsi yang cukup untuk semua.',
+        image: '/images/products/placeholder.jpg',
+        price: 250000,
+        originalPrice: 310000,
+        discount: 19,
+        isActive: true,
+        isFeatured: false,
+        categoryId: categories[0].id,
+        items: [
+          { productIndex: 11, quantity: 3 },
+          { productIndex: 12, quantity: 2 },
+          { productIndex: 13, quantity: 4 },
+          { productIndex: 14, quantity: 2 },
+          { productIndex: 15, quantity: 1 }
+        ]
+      },
+      {
+        name: 'Paket Premium Gift Box',
+        description: 'Paket hadiah mewah dengan kemasan eksklusif. Ideal untuk hadiah ulang tahun, anniversary, atau acara spesial.',
+        image: '/images/products/placeholder.jpg',
+        price: 320000,
+        originalPrice: 400000,
+        discount: 20,
+        isActive: true,
+        isFeatured: true,
+        categoryId: categories.length > 2 ? categories[2].id : categories[0].id,
+        items: [
+          { productIndex: 16, quantity: 1 },
+          { productIndex: 17, quantity: 2 },
+          { productIndex: 18, quantity: 1 },
+          { productIndex: 19, quantity: 1 }
+        ]
+      },
+      {
+        name: 'Paket Starter Oleh-oleh',
+        description: 'Paket pemula untuk yang ingin mencoba berbagai oleh-oleh Bandung. Harga terjangkau dengan kualitas terjamin.',
+        image: '/images/products/placeholder.jpg',
+        price: 65000,
+        originalPrice: 85000,
+        discount: 24,
+        isActive: true,
+        isFeatured: false,
+        categoryId: categories[0].id,
+        items: [
+          { productIndex: 0, quantity: 1 },
+          { productIndex: 2, quantity: 2 },
+          { productIndex: 4, quantity: 1 }
+        ]
+      }
+    ]
+
+    let createdCount = 0
+
+    for (const bundleData of bundlesToCreate) {
+      try {
+        // Create the bundle
+        const bundle = await prisma.productBundle.create({
+          data: {
+            name: bundleData.name,
+            description: bundleData.description,
+            image: bundleData.image,
+            price: bundleData.price,
+            originalPrice: bundleData.originalPrice,
+            isActive: bundleData.isActive,
+            isFeatured: bundleData.isFeatured,
+            categoryId: bundleData.categoryId,
+          }
+        })
+
+        // Create bundle items
+        for (const item of bundleData.items) {
+          const product = products[item.productIndex]
+          if (product) {
+            await prisma.bundleItem.create({
+              data: {
+                bundleId: bundle.id,
+                productId: product.id,
+                quantity: item.quantity
+              }
+            })
+          }
+        }
+
+        createdCount++
+        console.log(`✅ Created bundle: ${bundle.name}`)
+      } catch (error) {
+        console.error(`❌ Error creating bundle "${bundleData.name}":`, error)
+      }
+    }
+
+    console.log(`🎉 Successfully created ${createdCount} product bundles!`)
+
+    // Display summary
+    const totalBundles = await prisma.productBundle.count()
+    const featuredBundles = await prisma.productBundle.count({
+      where: { isFeatured: true }
+    })
+
+    console.log('\n📊 Database Summary:')
+    console.log(`   Total Bundles: ${totalBundles}`)
+    console.log(`   Featured Bundles: ${featuredBundles}`)
+    console.log(`   Active Bundles: ${createdCount}`)
+
+  } catch (error) {
+    console.error('❌ Error creating sample bundles:', error)
+    throw error
+  } finally {
+    await prisma.$disconnect()
+  }
+}
+
+// Run the function
+createSampleBundles()
+  .catch((error) => {
+    console.error('❌ Script failed:', error)
+    process.exit(1)
+  })

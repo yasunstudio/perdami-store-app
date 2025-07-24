@@ -1,0 +1,435 @@
+// Payment Status Service - Updated to use separate Payment model
+import { PrismaClient } from '@prisma/client'
+import { OrderStatus, PaymentStatus, PaymentMethod } from '@prisma/client'
+import { auditLog } from '../audit'
+import { notificationService } from '../notification'
+
+const prisma = new PrismaClient()
+
+// Payment failure data interface
+interface PaymentFailureData {
+  orderId: string
+  adminNotes?: string
+  userId: string
+  reason: string
+  refundRequired?: boolean
+}
+
+// Refund process data interface
+interface RefundProcessData {
+  orderId: string
+  adminNotes?: string
+  userId: string
+  reason: string
+  amount?: number
+  refundAmount?: number
+  refundMethod?: PaymentMethod
+  refundReference?: string
+}
+
+// Payment status update result
+interface PaymentStatusUpdateResult {
+  success: boolean
+  error?: string
+  message?: string
+  order?: any
+  payment?: any
+  previousStatus?: PaymentStatus
+}
+
+export class PaymentStatusService {
+  /**
+   * Mark payment as failed and handle order cancellation
+   */
+  async markPaymentAsFailed(data: PaymentFailureData): Promise<PaymentStatusUpdateResult> {
+    try {
+      // Get order with payment
+      const order = await prisma.order.findUnique({
+        where: { id: data.orderId },
+        include: {
+          user: true,
+          payment: true,
+          orderItems: {
+            include: {
+              product: true
+            }
+          }
+        }
+      })
+
+      if (!order) {
+        return {
+          success: false,
+          error: 'Order tidak ditemukan'
+        }
+      }
+
+      if (!order.payment) {
+        return {
+          success: false,
+          error: 'Payment tidak ditemukan untuk order ini'
+        }
+      }
+
+      // Validate current status
+      if (order.payment.status === 'FAILED' || order.payment.status === 'REFUNDED') {
+        return {
+          success: false,
+          error: 'Payment sudah dalam status FAILED atau REFUNDED'
+        }
+      }
+
+      const previousStatus = order.payment.status
+
+      // Process the failure
+      const result = await prisma.$transaction(async (tx) => {
+        // Update payment status
+        const updatedPayment = await tx.payment.update({
+          where: { id: order.payment!.id },
+          data: {
+            status: 'FAILED',
+            notes: data.adminNotes ? 
+              `${order.payment!.notes || ''}\n\nADMIN NOTES: ${data.adminNotes}` : 
+              order.payment!.notes,
+            updatedAt: new Date()
+          }
+        })
+
+        // Update order status
+        const updatedOrder = await tx.order.update({
+          where: { id: data.orderId },
+          data: {
+            orderStatus: 'CANCELLED',
+            notes: data.adminNotes ? 
+              `${order.notes || ''}\n\nADMIN NOTES: ${data.adminNotes}` : 
+              order.notes,
+            updatedAt: new Date()
+          },
+          include: {
+            user: true,
+            payment: true,
+            orderItems: {
+              include: {
+                product: true
+              }
+            }
+          }
+        })
+
+        // Restore product stock
+        for (const item of order.orderItems) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: {
+                increment: item.quantity
+              }
+            }
+          })
+        }
+
+        return { updatedOrder, updatedPayment }
+      })
+
+      // Log audit trail
+      await auditLog.updatePaymentStatus(
+        data.userId,
+        data.orderId,
+        previousStatus,
+        'FAILED'
+      )
+
+      // Send notification
+      await notificationService.sendPaymentFailedNotification({
+        userId: order.user.id,
+        order: result.updatedOrder,
+        reason: data.reason
+      })
+
+      return {
+        success: true,
+        message: 'Payment berhasil ditandai sebagai FAILED',
+        order: result.updatedOrder,
+        payment: result.updatedPayment,
+        previousStatus
+      }
+
+    } catch (error) {
+      console.error('Error marking payment as failed:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Terjadi kesalahan sistem'
+      }
+    }
+  }
+
+  /**
+   * Process refund for a paid order
+   */
+  async processRefund(data: RefundProcessData): Promise<PaymentStatusUpdateResult> {
+    try {
+      // Get order with payment
+      const order = await prisma.order.findUnique({
+        where: { id: data.orderId },
+        include: {
+          user: true,
+          payment: true,
+          orderItems: {
+            include: {
+              product: true
+            }
+          }
+        }
+      })
+
+      if (!order) {
+        return {
+          success: false,
+          error: 'Order tidak ditemukan'
+        }
+      }
+
+      if (!order.payment) {
+        return {
+          success: false,
+          error: 'Payment tidak ditemukan untuk order ini'
+        }
+      }
+
+      // Validate current status
+      if (order.payment.status !== 'PAID') {
+        return {
+          success: false,
+          error: 'Hanya pembayaran yang sudah PAID yang bisa direfund'
+        }
+      }
+
+      const previousStatus = order.payment.status
+      const refundAmount = data.refundAmount || data.amount || order.payment.amount
+
+      // Process the refund
+      const result = await prisma.$transaction(async (tx) => {
+        // Update payment status
+        const updatedPayment = await tx.payment.update({
+          where: { id: order.payment!.id },
+          data: {
+            status: 'REFUNDED',
+            notes: data.adminNotes ? 
+              `${order.payment!.notes || ''}\n\nREFUND NOTES: ${data.adminNotes}` : 
+              order.payment!.notes,
+            updatedAt: new Date()
+          }
+        })
+
+        // Update order status
+        const updatedOrder = await tx.order.update({
+          where: { id: data.orderId },
+          data: {
+            orderStatus: 'CANCELLED',
+            notes: data.adminNotes ? 
+              `${order.notes || ''}\n\nREFUND NOTES: ${data.adminNotes}` : 
+              order.notes,
+            updatedAt: new Date()
+          },
+          include: {
+            user: true,
+            payment: true,
+            orderItems: {
+              include: {
+                product: true
+              }
+            }
+          }
+        })
+
+        // Restore product stock
+        for (const item of order.orderItems) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: {
+                increment: item.quantity
+              }
+            }
+          })
+        }
+
+        return { updatedOrder, updatedPayment }
+      })
+
+      // Log audit trail
+      await auditLog.updatePaymentStatus(
+        data.userId,
+        data.orderId,
+        previousStatus,
+        'REFUNDED'
+      )
+
+      // Send notification
+      await notificationService.sendRefundNotification({
+        userId: order.user.id,
+        order: result.updatedOrder,
+        refundAmount,
+        reason: data.reason
+      })
+
+      return {
+        success: true,
+        message: 'Refund berhasil diproses',
+        order: result.updatedOrder,
+        payment: result.updatedPayment,
+        previousStatus
+      }
+
+    } catch (error) {
+      console.error('Error processing refund:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Terjadi kesalahan sistem'
+      }
+    }
+  }
+
+  /**
+   * Get payment status history for an order
+   */
+  async getPaymentStatusHistory(orderId: string) {
+    try {
+      const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: {
+          payment: true,
+          user: true
+        }
+      })
+
+      if (!order) {
+        throw new Error('Order tidak ditemukan')
+      }
+
+      // Get audit logs for payment status changes
+      const auditLogs = await prisma.userActivityLog.findMany({
+        where: {
+          resource: 'payment',
+          resourceId: orderId,
+          action: {
+            contains: 'payment_status'
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      })
+
+      return {
+        order,
+        payment: order.payment,
+        statusHistory: auditLogs.map(log => ({
+          timestamp: log.createdAt,
+          action: log.action,
+          details: log.details,
+          userId: log.userId
+        }))
+      }
+
+    } catch (error) {
+      console.error('Error getting payment status history:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Check if payment can be modified
+   */
+  async canModifyPayment(orderId: string): Promise<boolean> {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        payment: true
+      }
+    })
+
+    if (!order?.payment) return false
+
+    return order.payment.status === 'PENDING' || order.payment.status === 'PAID'
+  }
+
+  /**
+   * Check if payment is completed
+   */
+  async isPaymentCompleted(orderId: string): Promise<boolean> {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        payment: true
+      }
+    })
+
+    if (!order?.payment) return false
+
+    return order.payment.status === 'PAID'
+  }
+
+  /**
+   * Get payment summary statistics
+   */
+  async getPaymentSummary(filters?: {
+    startDate?: Date
+    endDate?: Date
+    status?: PaymentStatus
+    method?: PaymentMethod
+  }) {
+    const whereClause: any = {}
+    
+    if (filters?.startDate || filters?.endDate) {
+      whereClause.createdAt = {}
+      if (filters.startDate) {
+        whereClause.createdAt.gte = filters.startDate
+      }
+      if (filters.endDate) {
+        whereClause.createdAt.lte = filters.endDate
+      }
+    }
+
+    if (filters?.status) {
+      whereClause.status = filters.status
+    }
+
+    if (filters?.method) {
+      whereClause.method = filters.method
+    }
+
+    const [total, paid, pending, failed, refunded] = await Promise.all([
+      prisma.payment.count({ where: whereClause }),
+      prisma.payment.count({ where: { ...whereClause, status: 'PAID' } }),
+      prisma.payment.count({ where: { ...whereClause, status: 'PENDING' } }),
+      prisma.payment.count({ where: { ...whereClause, status: 'FAILED' } }),
+      prisma.payment.count({ where: { ...whereClause, status: 'REFUNDED' } })
+    ])
+
+    const totalAmount = await prisma.payment.aggregate({
+      where: { ...whereClause, status: 'PAID' },
+      _sum: {
+        amount: true
+      }
+    })
+
+    return {
+      total,
+      paid,
+      pending,
+      failed,
+      refunded,
+      totalAmount: totalAmount._sum.amount || 0,
+      currentStatus: {
+        total,
+        paid,
+        pending,
+        failed,
+        refunded
+      }
+    }
+  }
+}
+
+export const paymentStatusService = new PaymentStatusService()

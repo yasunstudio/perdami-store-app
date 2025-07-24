@@ -1,0 +1,113 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
+import { formatPrice } from '@/lib/utils'
+import { toast } from 'sonner'
+import { Package2, Store, CreditCard, Copy } from 'lucide-react'
+import type { Cart } from '@/types'
+
+interface OrderSummaryProps {
+  cart: Cart
+}
+
+export function OrderSummary({ cart }: OrderSummaryProps) {
+  const { stores, total, itemCount } = cart
+  const finalTotal = total
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+    toast.success('Berhasil disalin ke clipboard!')
+  }
+
+  return (
+    <Card className="sticky top-6">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Package2 className="h-5 w-5" />
+          Ringkasan Pesanan
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Store Summary */}
+        <div className="space-y-3">
+          {stores.map((store) => (
+            <div key={store.storeId} className="border rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Store className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium text-sm">{store.storeName}</span>
+              </div>
+              <div className="space-y-1">
+                {store.items.map((item, index) => (
+                  <div key={`${store.storeId}-${item.productId || item.name}-${index}`} className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {item.name} × {item.quantity}
+                    </span>
+                    <span>{formatPrice(item.price * item.quantity)}</span>
+                  </div>
+                ))}
+              </div>
+              <Separator className="my-2" />
+              <div className="flex justify-between text-sm font-medium">
+                <span>Subtotal {store.storeName}</span>
+                <span>{formatPrice(store.items.reduce((sum, item) => sum + (item.price * item.quantity), 0))}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <Separator />
+
+        {/* Totals */}
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span>Total Item ({itemCount} produk)</span>
+            <span>{formatPrice(total)}</span>
+          </div>
+          <Separator />
+          <div className="flex justify-between items-center font-bold text-lg">
+            <span>Total Pembayaran</span>
+            <div className="flex items-center gap-2">
+              <span className="text-primary">{formatPrice(finalTotal)}</span>
+              <Button 
+                type="button"
+                size="sm" 
+                variant="ghost" 
+                onClick={() => copyToClipboard(finalTotal.toString())}
+                className="h-6 w-6 p-0"
+              >
+                <Copy className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Pickup Info */}
+        <Badge variant="secondary" className="w-full justify-center py-3 text-center">
+          📦 Pickup di venue PIT PERDAMI 2025
+        </Badge>
+
+        {/* Payment Info */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <CreditCard className="h-4 w-4 text-blue-600" />
+            <span className="font-medium text-sm text-blue-900">Informasi Pembayaran</span>
+          </div>
+          <p className="text-xs text-blue-800">
+            Setelah pesanan dikonfirmasi, Anda akan menerima detail pembayaran melalui email dan WhatsApp.
+          </p>
+        </div>
+
+        {/* Important Notes */}
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <h4 className="font-medium text-sm text-amber-900 mb-1">Penting!</h4>
+          <ul className="text-xs text-amber-800 space-y-1">
+            <li>• Pesanan hanya bisa diambil di venue</li>
+            <li>• Batas waktu pickup: Hari ke-3 event</li>
+            <li>• Bawa bukti pembayaran saat pickup</li>
+          </ul>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}

@@ -1,36 +1,158 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Perdami Store App
 
-## Getting Started
+A comprehensive e-commerce platform built with Next.js 15, featuring admin management, customer shopping, and product bundles.
 
-First, run the development server:
+## 🚀 Features
+
+### Admin Dashboard
+- **Bundle Management**: Create and manage product bundles with drag & drop functionality
+- **Order Management**: Track orders, update status, and handle customer communications
+- **User Management**: Manage customers and admin accounts
+- **Store Management**: Multi-store support with individual store management
+- **Analytics**: Dashboard with sales analytics and reports
+- **Dark Mode**: Full dark mode support across all interfaces
+
+### Customer Features
+- **Product Browsing**: Browse products and bundles by store
+- **Shopping Cart**: Add to cart with real-time updates
+- **Checkout Process**: Streamlined checkout with payment integration
+- **Order Tracking**: Track order status and history
+- **Profile Management**: Manage personal information and preferences
+- **Notifications**: Real-time notifications for order updates
+
+### Product Management
+- **Bundle Creation**: Advanced bundle management with drag & drop item ordering
+- **Image Uploads**: Support for product and bundle images
+- **Inventory Tracking**: Stock management and availability tracking
+- **Category Management**: Organize products by categories
+
+## 🛠 Tech Stack
+
+- **Frontend**: Next.js 15, React 18, TypeScript
+- **Styling**: Tailwind CSS, shadcn/ui components
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: NextAuth.js with credential and social providers
+- **File Upload**: Image upload and management
+- **Email**: Email notifications and verification
+- **Drag & Drop**: @dnd-kit for advanced interactions
+
+## 📦 Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone <your-repo-url>
+   cd perdami-store-app
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Environment Setup**
+   ```bash
+   cp .env.example .env.local
+   ```
+   
+   Update the following environment variables:
+   ```env
+   DATABASE_URL="postgresql://username:password@localhost:5432/perdami_store"
+   NEXTAUTH_SECRET="your-secret-key"
+   NEXTAUTH_URL="http://localhost:3000"
+   ```
+
+4. **Database Setup**
+   ```bash
+   # Generate Prisma client
+   npx prisma generate
+   
+   # Run migrations
+   npx prisma migrate dev
+   
+   # Seed database
+   npx prisma db seed
+   ```
+
+5. **Start development server**
+   ```bash
+   npm run dev
+   ```
+
+## 🐳 Docker Setup
+
+You can run the application using Docker:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Development
+docker-compose -f docker-compose.dev.yml up
+
+# Production
+docker-compose up
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 📋 Default Accounts
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+After seeding the database, you can use these accounts:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Admin**: admin@perdami.com / admin123
+- **Customer**: customer@perdami.com / customer123
 
-## Learn More
+## 🎯 Key Features Implemented
 
-To learn more about Next.js, take a look at the following resources:
+### Bundle Management System
+- Drag & drop item reordering
+- Real-time validation
+- Responsive design for all devices
+- Dark mode support
+- Professional UI/UX
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Admin Interface
+- Consistent action menus
+- Toggle functionality for bundle states
+- Enhanced data presentation
+- Sticky navigation with proper scroll handling
+- Professional error handling
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Customer Experience
+- Streamlined checkout process
+- Real-time cart updates
+- Order tracking and history
+- Responsive design
+- Accessibility compliant
 
-## Deploy on Vercel
+## 🚀 Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The application is ready for deployment on platforms like:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Vercel**: Optimized for Next.js applications
+- **Railway**: Database and application hosting
+- **Docker**: Containerized deployment
+- **Traditional VPS**: Using Docker Compose
+
+## 📝 Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+- `npx prisma studio` - Open Prisma Studio
+- `npx prisma migrate dev` - Run database migrations
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🙏 Acknowledgments
+
+- Built with Next.js and React
+- UI components from shadcn/ui
+- Icons from Lucide React
+- Database ORM by Prisma
