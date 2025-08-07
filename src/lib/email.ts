@@ -6,6 +6,7 @@ import type { User } from '@prisma/client'
 let nodemailer: any = null
 if (typeof window === 'undefined') {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     nodemailer = require('nodemailer')
   } catch (error) {
     console.warn('nodemailer not available:', error)

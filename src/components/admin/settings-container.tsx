@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -680,9 +681,9 @@ export function SettingsContainer() {
                       <div className="p-4 border border-dashed rounded-lg text-center">
                         <p className="text-sm text-muted-foreground">
                           Belum ada bank yang tersedia. 
-                          <a href="/admin/banks" className="text-primary hover:underline ml-1">
+                          <Link href="/admin/banks" className="text-primary hover:underline ml-1">
                             Tambahkan bank terlebih dahulu
-                          </a>
+                          </Link>
                         </p>
                       </div>
                     )}

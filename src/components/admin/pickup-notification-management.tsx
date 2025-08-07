@@ -284,7 +284,7 @@ export function PickupNotificationManagement() {
           </div>
           <div className="text-sm text-muted-foreground">
             <AlertCircle className="h-4 w-4 inline mr-1" />
-            Test notification akan dikirim sebagai "pickup reminder today"
+            Test notification akan dikirim sebagai &quot;pickup reminder today&quot;
           </div>
         </CardContent>
       </Card>

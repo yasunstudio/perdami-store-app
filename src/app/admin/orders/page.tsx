@@ -580,7 +580,7 @@ export default function OrdersAdminPage() {
                 <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                 <div className="text-sm">
                   <p className="font-medium text-red-800 dark:text-red-200 mb-1">
-                    Anda akan menghapus pesanan "{orderToDelete?.orderNumber}"
+                    Anda akan menghapus pesanan &quot;{orderToDelete?.orderNumber}&quot;
                   </p>
                   <p className="text-red-700 dark:text-red-300">
                     {orderToDelete?.orderStatus !== 'CANCELLED' 

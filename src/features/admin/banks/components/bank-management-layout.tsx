@@ -371,7 +371,7 @@ export function BankManagementLayout() {
           <DialogHeader>
             <DialogTitle>Konfirmasi Hapus</DialogTitle>
             <DialogDescription>
-              Apakah Anda yakin ingin menghapus bank "{bankToDelete?.name}"? 
+              Apakah Anda yakin ingin menghapus bank &quot;{bankToDelete?.name}&quot;? 
               Tindakan ini tidak dapat dibatalkan.
             </DialogDescription>
           </DialogHeader>
