@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { auditLog } from '@/lib/audit'
+import { withDatabaseRetry, createErrorResponse } from '@/lib/database-utils'
 
 
 // Request validation schemas
@@ -65,42 +66,41 @@ export async function GET(request: NextRequest) {
     const orderBy: Record<string, any> = {}
     orderBy[sortBy] = sortOrder
 
-    // Execute queries
-    const [banks, totalCount] = await Promise.all([
-      prisma.bank.findMany({
-        where,
-        include: {
-          _count: {
-            select: {
-              orders: true
+    // Execute queries with retry logic
+    const result = await withDatabaseRetry(async () => {
+      const [banks, totalCount] = await Promise.all([
+        prisma.bank.findMany({
+          where,
+          include: {
+            _count: {
+              select: {
+                orders: true
+              }
             }
-          }
-        },
-        orderBy,
-        skip,
-        take: limitNum
-      }),
-      prisma.bank.count({ where })
-    ])
+          },
+          orderBy,
+          skip,
+          take: limitNum
+        }),
+        prisma.bank.count({ where })
+      ])
+      return { banks, totalCount }
+    })
 
-    const totalPages = Math.ceil(totalCount / limitNum)
+    const totalPages = Math.ceil(result.totalCount / limitNum)
 
     return NextResponse.json({
-      banks,
+      banks: result.banks,
       pagination: {
         currentPage: pageNum,
         totalPages,
-        totalCount,
+        totalCount: result.totalCount,
         hasNextPage: pageNum < totalPages,
         hasPreviousPage: pageNum > 1
       }
     })
   } catch (error) {
-    console.error('Error fetching banks:', error)
-    return NextResponse.json(
-      { error: 'Terjadi kesalahan saat mengambil data bank' },
-      { status: 500 }
-    )
+    return createErrorResponse(error, 'GET /api/admin/banks')
   }
 }
 
@@ -120,26 +120,30 @@ export async function POST(request: NextRequest) {
     const validatedData = createBankSchema.parse(body)
 
     // Check if bank code already exists
-    const existingBank = await prisma.bank.findUnique({
-      where: { code: validatedData.code }
+    const existingBankCheck = await withDatabaseRetry(async () => {
+      return await prisma.bank.findUnique({
+        where: { code: validatedData.code }
+      })
     })
 
-    if (existingBank) {
+    if (existingBankCheck) {
       return NextResponse.json(
         { error: 'Bank dengan kode ini sudah ada' },
         { status: 400 }
       )
     }
 
-    const bank = await prisma.bank.create({
-      data: validatedData,
-      include: {
-        _count: {
-          select: {
-            orders: true
+    const bank = await withDatabaseRetry(async () => {
+      return await prisma.bank.create({
+        data: validatedData,
+        include: {
+          _count: {
+            select: {
+              orders: true
+            }
           }
         }
-      }
+      })
     })
 
     // Log activity
@@ -161,9 +165,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    return NextResponse.json(
-      { error: 'Terjadi kesalahan saat membuat bank' },
-      { status: 500 }
-    )
+    return createErrorResponse(error, 'POST /api/admin/banks')
   }
 }

@@ -1,0 +1,9 @@
+# Add to Vercel Environment Variables
+
+# Disable Vercel protection
+VERCEL_DEPLOYMENT_PROTECTION_BYPASS=true
+VERCEL_PASSWORD_PROTECTION_BYPASS=true
+
+# NextAuth URLs for production
+NEXTAUTH_URL=https://perdami-store-gj58a91ea-yasunstudios-projects.vercel.app
+NEXTAUTH_SECRET=oeu/Rli6I32mqhp69YE0BxwZRrD/lZ4inZkLp2TmSf4=
