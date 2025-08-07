@@ -1,21 +1,24 @@
 import { prisma } from '@/lib/prisma'
 import { SingleBankService } from '@/lib/single-bank'
 import { NextResponse } from 'next/server'
+import { withDatabaseRetry, createErrorResponse } from '@/lib/database-utils'
 
 // GET /api/banks - Get available banks based on single bank mode setting
 export async function GET() {
   try {
-    const banks = await SingleBankService.getAvailableBanks()
+    const result = await withDatabaseRetry(async () => {
+      return await SingleBankService.getAvailableBanks()
+    });
+
+    const singleBankMode = await withDatabaseRetry(async () => {
+      return await SingleBankService.isSingleBankModeEnabled()
+    });
 
     return NextResponse.json({ 
-      banks,
-      singleBankMode: await SingleBankService.isSingleBankModeEnabled()
+      banks: result,
+      singleBankMode
     })
   } catch (error) {
-    console.error('Error fetching banks:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch banks' },
-      { status: 500 }
-    )
+    return createErrorResponse(error, 'GET /api/banks')
   }
 }
