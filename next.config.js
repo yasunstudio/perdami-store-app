@@ -15,9 +15,8 @@ const nextConfig = {
   images: {
     domains: ['res.cloudinary.com'],
   },
-  experimental: {
-    serverComponentsExternalPackages: ['@prisma/client'],
-  },
+  // Updated: Fixed serverComponentsExternalPackages config for Next.js 15
+  serverExternalPackages: ['@prisma/client'],
 }
 
 module.exports = nextConfig
