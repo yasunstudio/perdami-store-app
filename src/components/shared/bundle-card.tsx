@@ -65,6 +65,7 @@ export function BundleCard({ bundle }: BundleCardProps) {
       
       addBundle({
         bundleId: bundle.id,
+        productId: bundle.id, // For backward compatibility
         name: bundle.name,
         price: bundle.price,
         image: bundle.image || undefined,

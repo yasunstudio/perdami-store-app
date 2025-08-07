@@ -1,6 +1,7 @@
 // API for user notifications
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 import { notificationService } from '@/lib/notification'
 import { auditLog } from '@/lib/audit'
 
@@ -16,11 +17,31 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
 
-    // const result = await notificationService.getUserNotifications(session.user.id, page, limit)
+    // Fetch user notifications from database
+    const [notifications, total] = await Promise.all([
+      prisma.inAppNotification.findMany({
+        where: { userId: session.user.id },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit
+      }),
+      prisma.inAppNotification.count({
+        where: { userId: session.user.id }
+      })
+    ])
+
+    const unreadCount = await prisma.inAppNotification.count({
+      where: { 
+        userId: session.user.id,
+        isRead: false 
+      }
+    })
+
     const result = {
-      notifications: [],
-      total: 0,
-      hasMore: false
+      notifications,
+      total,
+      unreadCount,
+      hasMore: total > page * limit
     }
 
     return NextResponse.json({
@@ -48,12 +69,30 @@ export async function PATCH(request: NextRequest) {
     const { notificationId, markAllRead } = body
 
     if (markAllRead) {
-      // await notificationService.markAllAsRead(session.user.id)
-      console.log('Mark all as read not implemented yet')
+      // Mark all notifications as read for the user
+      await prisma.inAppNotification.updateMany({
+        where: { 
+          userId: session.user.id,
+          isRead: false
+        },
+        data: { 
+          isRead: true,
+          readAt: new Date()
+        }
+      })
       await auditLog.notificationRead(session.user.id, 'all', { action: 'mark_all_read' })
     } else if (notificationId) {
-      // await notificationService.markAsRead(notificationId, session.user.id)
-      console.log('Mark as read not implemented yet')
+      // Mark specific notification as read
+      await prisma.inAppNotification.updateMany({
+        where: { 
+          id: notificationId,
+          userId: session.user.id // Ensure user can only mark their own notifications
+        },
+        data: { 
+          isRead: true,
+          readAt: new Date()
+        }
+      })
       await auditLog.notificationRead(session.user.id, notificationId, { action: 'mark_single_read' })
     } else {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 })

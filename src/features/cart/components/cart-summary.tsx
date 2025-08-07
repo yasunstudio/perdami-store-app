@@ -1,10 +1,14 @@
+'use client'
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { formatPrice } from '@/lib/utils'
+import { SERVICE_FEE, calculateServiceFeePerStore } from '@/lib/service-fee'
 import Link from 'next/link'
 import type { Cart } from '@/types'
+import { useAppSettings } from "@/hooks/use-app-settings"
 
 interface CartSummaryProps {
   cart: Cart
@@ -12,8 +16,12 @@ interface CartSummaryProps {
 }
 
 export function CartSummary({ cart, className }: CartSummaryProps) {
-  const { stores, total, itemCount } = cart
-  const finalTotal = total
+  const { stores, subtotal, serviceFee, total, itemCount } = cart
+  const { settings, isLoading } = useAppSettings()
+  
+  // Calculate store count with items for display
+  const storeCount = stores.filter(store => store.items.length > 0).length
+  const serviceFeePerStore = SERVICE_FEE.VENUE_PICKUP_PER_STORE
 
   return (
     <Card className={`w-full shadow-lg ${className}`}>
@@ -47,12 +55,29 @@ export function CartSummary({ cart, className }: CartSummaryProps) {
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
             <span>Subtotal Produk</span>
-            <span className="font-medium">{formatPrice(total)}</span>
+            <span className="font-medium">{formatPrice(subtotal)}</span>
           </div>
+          
+          {/* Service Fee Row */}
+          <div className="flex justify-between text-sm">
+            <div className="flex items-center space-x-1">
+              <span>Ongkos Kirim ({storeCount} toko)</span>
+              <span className="text-xs text-muted-foreground">📦</span>
+            </div>
+            <span className="font-medium">{serviceFee > 0 ? formatPrice(serviceFee) : 'Gratis'}</span>
+          </div>
+          
+          {/* Service fee breakdown per store - shown when multiple stores */}
+          {storeCount > 1 && (
+            <div className="pl-4 text-xs text-muted-foreground">
+              {formatPrice(serviceFeePerStore)} × {storeCount} toko
+            </div>
+          )}
+          
           <Separator />
           <div className="flex justify-between font-bold text-xl">
             <span>Total</span>
-            <span className="text-primary">{formatPrice(finalTotal)}</span>
+            <span className="text-primary">{formatPrice(total)}</span>
           </div>
         </div>
 
@@ -62,7 +87,9 @@ export function CartSummary({ cart, className }: CartSummaryProps) {
             <span className="text-lg">📦</span>
             <div>
               <p className="text-sm font-medium">Pickup di Venue</p>
-              <p className="text-xs text-muted-foreground">PIT PERDAMI 2025 • Hari ke-3</p>
+              <p className="text-xs text-muted-foreground">
+                {isLoading ? 'Loading...' : settings?.eventName || 'PIT PERDAMI 2025'} • Hari ke-3
+              </p>
             </div>
           </div>
         </div>

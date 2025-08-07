@@ -151,5 +151,10 @@ export const NOTIFICATION_TEMPLATES = {
     subject: 'Peringatan Keamanan Akun',
     template: 'security-alert',
     variables: ['customerName', 'activityType', 'timestamp', 'ipAddress']
+  },
+  ADMIN_MESSAGE: {
+    subject: 'Pesan dari Admin',
+    template: 'admin-message',
+    variables: ['customerName', 'subject', 'message']
   }
 } as const

@@ -14,6 +14,7 @@ export interface StoreWithCounts extends Store {
 export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'READY' | 'COMPLETED' | 'CANCELLED'
 export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED'
 export type PaymentMethod = 'BANK_TRANSFER'
+export type PickupStatus = 'NOT_PICKED_UP' | 'PICKED_UP'
 
 export interface OrderItem {
   id: string
@@ -52,6 +53,9 @@ export interface Order {
   paymentMethod: PaymentMethod | null // For backward compatibility in API responses
   paymentProof: string | null // For backward compatibility in API responses
   pickupMethod: string
+  pickupDate: Date | null
+  pickupStatus: PickupStatus
+  paymentProofUrl: string | null
   notes: string | null
   createdAt: Date
   updatedAt: Date
@@ -145,7 +149,9 @@ export interface CartStore {
 
 export interface Cart {
   stores: CartStore[]
-  total: number
+  subtotal: number     // Total produk tanpa service fee
+  serviceFee: number   // Fixed Rp 25.000
+  total: number        // subtotal + serviceFee
   itemCount: number
 }
 

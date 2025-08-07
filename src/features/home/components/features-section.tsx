@@ -1,37 +1,42 @@
+'use client'
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Package, Clock, Shield, Star } from "lucide-react"
-
-const features = [
-  {
-    icon: Package,
-    title: "Pre-Order Mudah",
-    description: "Pesan oleh-oleh favorit Anda jauh-jauh hari sebelum acara dimulai"
-  },
-  {
-    icon: Clock,
-    title: "Pickup di Venue",
-    description: "Ambil pesanan langsung di venue PIT PERDAMI 2025 hari ke-3"
-  },
-  {
-    icon: Shield,
-    title: "Terjamin Kualitas",
-    description: "Produk berkualitas dari toko-toko terpercaya di Bandung"
-  },
-  {
-    icon: Star,
-    title: "Harga Terbaik",
-    description: "Dapatkan harga khusus untuk peserta PIT PERDAMI 2025"
-  }
-]
+import { useAppSettings } from "@/hooks/use-app-settings"
 
 export function FeaturesSection() {
+  const { settings, isLoading } = useAppSettings()
+  
+  const features = [
+    {
+      icon: Package,
+      title: "Pre-Order Mudah",
+      description: "Pesan oleh-oleh favorit Anda jauh-jauh hari sebelum acara dimulai"
+    },
+    {
+      icon: Clock,
+      title: "Pickup di Venue",
+      description: `Ambil pesanan langsung di ${isLoading ? 'venue event' : settings?.pickupLocation || 'venue PIT PERDAMI 2025'} hari ke-3`
+    },
+    {
+      icon: Shield,
+      title: "Terjamin Kualitas",
+      description: "Produk berkualitas dari toko-toko terpercaya di Bandung"
+    },
+    {
+      icon: Star,
+      title: "Harga Terbaik",
+      description: `Dapatkan harga khusus untuk peserta ${isLoading ? 'event' : settings?.eventName || 'PIT PERDAMI 2025'}`
+    }
+  ]
+
   return (
     <section className="py-8 px-4">
       <div className="container mx-auto max-w-6xl">
         <div className="text-center mb-16">
           <Badge variant="outline" className="mb-4">
-            Kenapa Perdami Store?
+            Kenapa {isLoading ? 'Perdami Store' : settings?.appName || 'Perdami Store'}?
           </Badge>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Belanja Oleh-oleh Jadi Lebih Mudah

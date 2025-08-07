@@ -32,13 +32,9 @@ export async function GET(request: NextRequest) {
           // Filter for admin-specific notification types
           type: { 
             in: [
-              'NEW_ORDER', 
-              'PAYMENT_RECEIVED', 
-              'PAYMENT_VERIFICATION_NEEDED',
-              'ORDER_DELAYED',
-              'STOCK_LOW',
-              'SYSTEM_ERROR',
-              'NEW_USER_REGISTERED'
+              'ORDER_UPDATE', 
+              'PAYMENT_REMINDER', 
+              'GENERAL'
             ] 
           }
         },
@@ -51,16 +47,12 @@ export async function GET(request: NextRequest) {
           userId: { in: adminUserIds },
           type: { 
             in: [
-              'NEW_ORDER', 
-              'PAYMENT_RECEIVED', 
-              'PAYMENT_VERIFICATION_NEEDED',
-              'ORDER_DELAYED',
-              'STOCK_LOW',
-              'SYSTEM_ERROR',
-              'NEW_USER_REGISTERED'
+              'ORDER_UPDATE', 
+              'PAYMENT_REMINDER', 
+              'GENERAL'
             ] 
           }
-        } 
+        }
       }),
       prisma.inAppNotification.count({ 
         where: { 
@@ -68,20 +60,14 @@ export async function GET(request: NextRequest) {
           isRead: false,
           type: { 
             in: [
-              'NEW_ORDER', 
-              'PAYMENT_RECEIVED', 
-              'PAYMENT_VERIFICATION_NEEDED',
-              'ORDER_DELAYED',
-              'STOCK_LOW',
-              'SYSTEM_ERROR',
-              'NEW_USER_REGISTERED'
+              'ORDER_UPDATE', 
+              'PAYMENT_REMINDER', 
+              'GENERAL'
             ] 
           }
-        } 
+        }
       })
-    ])
-
-    // Transform notifications for admin UI
+    ])    // Transform notifications for admin UI
     const formattedNotifications = notifications.map(notification => {
       const data = notification.data as any || {}
       

@@ -5,8 +5,18 @@ import { prisma } from '@/lib/prisma'
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
-    if (!session?.user || session.user.email !== 'admin@perdami.com') {
+    
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check if user is admin or staff
+    const currentUser = await prisma.user.findUnique({
+      where: { id: session.user.id }
+    })
+
+    if (!currentUser || !['ADMIN', 'STAFF'].includes(currentUser.role)) {
+      return NextResponse.json({ error: 'Forbidden - Admin or Staff access required' }, { status: 403 })
     }
 
     const body = await request.json()

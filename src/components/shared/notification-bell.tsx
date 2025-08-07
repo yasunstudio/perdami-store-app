@@ -130,6 +130,14 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
         return '📦'
       case 'PAYMENT_CONFIRMED':
         return '💳'
+      case 'PICKUP_REMINDER_H1':
+        return '⏰'
+      case 'PICKUP_REMINDER_TODAY':
+        return '🚚'
+      case 'PICKUP_READY':
+        return '✅'
+      case 'PICKUP_COMPLETED':
+        return '🎉'
       case 'SECURITY_ALERT':
         return '🔒'
       case 'PROMOTION':
@@ -151,6 +159,14 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
         return 'text-green-700 dark:text-green-500'
       case 'PAYMENT_CONFIRMED':
         return 'text-emerald-600 dark:text-emerald-400'
+      case 'PICKUP_REMINDER_H1':
+        return 'text-yellow-600 dark:text-yellow-400'
+      case 'PICKUP_REMINDER_TODAY':
+        return 'text-orange-600 dark:text-orange-400'
+      case 'PICKUP_READY':
+        return 'text-green-600 dark:text-green-400'
+      case 'PICKUP_COMPLETED':
+        return 'text-purple-600 dark:text-purple-400'
       case 'SECURITY_ALERT':
         return 'text-red-600 dark:text-red-400'
       case 'PROMOTION':

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { pickupScheduler } from '@/lib/pickup-scheduler'
 
 export async function GET(
   request: NextRequest,
@@ -128,16 +129,29 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { orderStatus, paymentStatus, notes } = body
+    const { orderStatus, paymentStatus, notes, pickupStatus } = body
+
+    // Get current order to check status changes
+    const currentOrder = await prisma.order.findUnique({
+      where: { id }
+    })
+
+    if (!currentOrder) {
+      return NextResponse.json({ error: 'Order tidak ditemukan' }, { status: 404 })
+    }
 
     // Update the order
+    const updateData: any = {
+      updatedAt: new Date()
+    }
+
+    if (orderStatus !== undefined) updateData.orderStatus = orderStatus
+    if (notes !== undefined) updateData.notes = notes
+    if (pickupStatus !== undefined) updateData.pickupStatus = pickupStatus
+
     const updatedOrder = await prisma.order.update({
       where: { id },
-      data: {
-        orderStatus,
-        notes,
-        updatedAt: new Date()
-      },
+      data: updateData,
       include: {
         user: {
           select: {
@@ -198,6 +212,24 @@ export async function PATCH(
           updatedAt: new Date()
         }
       })
+    }
+
+    // Trigger pickup notifications based on status changes
+    try {
+      // When order status changes to READY, send pickup ready notification
+      if (orderStatus === 'READY' && currentOrder.orderStatus !== 'READY') {
+        await pickupScheduler.sendPickupReadyNotification(id)
+        console.log(`✅ Pickup ready notification sent for order: ${id}`)
+      }
+
+      // When pickup status changes to PICKED_UP, send pickup completed notification
+      if (pickupStatus === 'PICKED_UP' && currentOrder.pickupStatus !== 'PICKED_UP') {
+        await pickupScheduler.sendPickupCompletedNotification(id)
+        console.log(`✅ Pickup completed notification sent for order: ${id}`)
+      }
+    } catch (notificationError) {
+      console.error('Error sending pickup notifications:', notificationError)
+      // Don't fail the order update if notifications fail
     }
 
     // Transform the response to match expected format

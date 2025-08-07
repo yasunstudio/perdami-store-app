@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Package, Mail, Phone, MapPin, Facebook, Instagram, MessageCircle, Twitter, Youtube } from 'lucide-react'
 import { useContactInfo } from '@/hooks/use-contact-info'
+import { useAppSettings } from '@/hooks/use-app-settings'
 
 interface Store {
   id: string
@@ -12,46 +13,23 @@ interface Store {
   image: string
 }
 
-interface AppSettings {
-  appName: string
-  appDescription: string
-  appLogo?: string
-  whatsappNumber: string
-  businessAddress: string
-  pickupLocation: string
-  pickupCity: string
-  eventName: string
-  eventYear: string
-  copyrightText: string
-  copyrightSubtext: string
-  isMaintenanceMode: boolean
-}
-
 export function FooterContainer() {
   const [stores, setStores] = useState<Store[]>([])
-  const [settings, setSettings] = useState<AppSettings | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const { contactSummary, isLoading: isContactLoading } = useContactInfo()
+  const { contactSummary, isLoading: isContactLoading, error: contactError } = useContactInfo()
+  const { settings, isLoading: isSettingsLoading } = useAppSettings()
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch stores and settings in parallel
-        const [storesResponse, settingsResponse] = await Promise.all([
-          fetch('/api/stores'),
-          fetch('/api/settings')
-        ])
+        // Fetch stores only
+        const storesResponse = await fetch('/api/stores')
         
         if (storesResponse.ok) {
           const storesData = await storesResponse.json()
           if (storesData.success) {
             setStores(storesData.data)
           }
-        }
-        
-        if (settingsResponse.ok) {
-          const settingsData = await settingsResponse.json()
-          setSettings(settingsData)
         }
       } catch (error) {
         console.error('Error fetching data:', error)

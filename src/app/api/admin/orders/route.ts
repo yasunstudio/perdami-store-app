@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10')
     const orderStatus = searchParams.get('orderStatus') as OrderStatus | null
     const paymentStatus = searchParams.get('paymentStatus') as PaymentStatus | null
+    const pickupDate = searchParams.get('pickupDate') || null
     const search = searchParams.get('search') || ''
     const sortBy = searchParams.get('sortBy') || 'createdAt'
     const sortOrder = searchParams.get('sortOrder') || 'desc'
@@ -40,6 +41,18 @@ export async function GET(request: NextRequest) {
     if (paymentStatus) {
       where.payment = {
         status: paymentStatus
+      }
+    }
+
+    if (pickupDate) {
+      const startOfDay = new Date(pickupDate)
+      startOfDay.setHours(0, 0, 0, 0)
+      const endOfDay = new Date(pickupDate)
+      endOfDay.setHours(23, 59, 59, 999)
+      
+      where.pickupDate = {
+        gte: startOfDay,
+        lte: endOfDay
       }
     }
     
@@ -225,6 +238,7 @@ export async function GET(request: NextRequest) {
           paymentMethod: order.payment?.method || null,
           paymentProof: order.payment?.proofUrl || null,
           pickupMethod: order.pickupMethod,
+          pickupDate: order.pickupDate,
           notes: order.notes,
           bank: order.bank,
           createdAt: order.createdAt,

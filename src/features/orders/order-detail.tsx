@@ -29,7 +29,8 @@ import {
   Upload,
   Loader2,
   XCircle,
-  InfoIcon
+  InfoIcon,
+  Calendar
 } from 'lucide-react'
 import Link from 'next/link'
 import { Order, OrderStatus, PaymentStatus } from '@/types'
@@ -357,6 +358,27 @@ export default function OrderDetailPage({ orderId, status }: OrderDetailPageProp
                     </Badge>
                   </div>
                 </div>
+
+                {/* Pickup Date Information */}
+                {order.pickupDate && (
+                  <div className="bg-muted/50 rounded-lg p-3 sm:p-4 border">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Calendar className="h-4 w-4 text-primary" />
+                      <span className="font-medium text-sm">Tanggal Pickup</span>
+                    </div>
+                    <p className="text-sm font-medium">
+                      {new Date(order.pickupDate).toLocaleDateString('id-ID', {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Jam operasional: 09:00 - 17:00 WIB di venue Perdami 2025
+                    </p>
+                  </div>
+                )}
                 
                 {/* Order Progress Indicator */}
                 <div className="mt-6">

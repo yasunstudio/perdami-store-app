@@ -52,13 +52,25 @@ interface AppSettings {
   copyrightSubtext: string
   isMaintenanceMode: boolean
   maintenanceMessage?: string
+  singleBankMode: boolean
+  defaultBankId?: string
   isActive: boolean
   createdAt: string
   updatedAt: string
 }
 
+interface Bank {
+  id: string
+  name: string
+  code: string
+  accountNumber: string
+  accountName: string
+  isActive: boolean
+}
+
 export function SettingsContainer() {
   const [settings, setSettings] = useState<AppSettings | null>(null)
+  const [banks, setBanks] = useState<Bank[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
@@ -70,13 +82,23 @@ export function SettingsContainer() {
     const fetchSettings = async () => {
       try {
         setIsLoading(true)
-        const response = await fetch('/api/settings')
-        if (response.ok) {
-          const data = await response.json()
-          setSettings(data)
+        
+        // Fetch settings
+        const settingsResponse = await fetch('/api/settings')
+        if (settingsResponse.ok) {
+          const settingsData = await settingsResponse.json()
+          setSettings(settingsData)
         } else {
           throw new Error('Failed to fetch settings')
         }
+
+        // Fetch banks for single bank mode
+        const banksResponse = await fetch('/api/admin/banks')
+        if (banksResponse.ok) {
+          const banksData = await banksResponse.json()
+          setBanks(banksData.banks || [])
+        }
+        
       } catch (error) {
         console.error('Error fetching settings:', error)
         toast.error("Gagal memuat pengaturan aplikasi")
@@ -347,10 +369,14 @@ export function SettingsContainer() {
 
       {/* Settings Tabs */}
       <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="general" className="flex items-center gap-2">
             <Settings2 className="h-4 w-4" />
             Pengaturan Umum
+          </TabsTrigger>
+          <TabsTrigger value="payment" className="flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            Pembayaran
           </TabsTrigger>
           <TabsTrigger value="contact" className="flex items-center gap-2">
             <Mail className="h-4 w-4" />
@@ -576,6 +602,113 @@ export function SettingsContainer() {
           </div>
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="payment" className="space-y-6">
+          {/* Single Bank Mode Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Mode Bank Tunggal
+              </CardTitle>
+              <CardDescription>
+                Aktifkan mode bank tunggal untuk event singkat. Pelanggan akan langsung melihat rekening yang harus dituju tanpa perlu memilih.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Single Bank Mode Toggle */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label htmlFor="singleBankMode" className="text-sm font-medium">
+                    Aktifkan Mode Bank Tunggal
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Hanya tampilkan satu bank untuk transfer, cocok untuk event singkat
+                  </p>
+                </div>
+                <Switch
+                  id="singleBankMode"
+                  checked={settings?.singleBankMode ?? false}
+                  onCheckedChange={(checked: boolean) => handleChange('singleBankMode', checked)}
+                />
+              </div>
+
+              {/* Default Bank Selection - Only show when single bank mode is enabled */}
+              {settings?.singleBankMode && (
+                <div className="space-y-3">
+                  <Separator />
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium">Bank Default</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Pilih bank yang akan ditampilkan kepada pelanggan untuk transfer
+                    </p>
+                    
+                    {banks.length > 0 ? (
+                      <div className="space-y-2">
+                        {banks.map((bank) => (
+                          <div
+                            key={bank.id}
+                            className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                              settings?.defaultBankId === bank.id
+                                ? 'border-primary bg-primary/5'
+                                : 'border-input hover:bg-muted/50'
+                            }`}
+                            onClick={() => handleChange('defaultBankId', bank.id)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium">{bank.name}</span>
+                                  <Badge variant="secondary">{bank.code}</Badge>
+                                  {!bank.isActive && <Badge variant="destructive">Nonaktif</Badge>}
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                  {bank.accountName} - {bank.accountNumber}
+                                </p>
+                              </div>
+                              {settings?.defaultBankId === bank.id && (
+                                <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                                  <div className="w-2 h-2 bg-primary-foreground rounded-full" />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-4 border border-dashed rounded-lg text-center">
+                        <p className="text-sm text-muted-foreground">
+                          Belum ada bank yang tersedia. 
+                          <a href="/admin/banks" className="text-primary hover:underline ml-1">
+                            Tambahkan bank terlebih dahulu
+                          </a>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Info about single bank mode */}
+              <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="flex gap-3">
+                  <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                      Tentang Mode Bank Tunggal
+                    </p>
+                    <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+                      <li>• Pelanggan langsung melihat rekening tujuan tanpa perlu memilih</li>
+                      <li>• Cocok untuk event singkat dengan satu bank saja</li>
+                      <li>• Mempercepat proses checkout</li>
+                      <li>• Bank lain tetap bisa digunakan dari admin panel</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="contact">

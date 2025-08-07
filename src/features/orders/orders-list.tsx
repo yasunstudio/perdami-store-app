@@ -20,7 +20,8 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
-  Loader2
+  Loader2,
+  Calendar
 } from 'lucide-react'
 import Link from 'next/link'
 import { Order, OrderStatus, PaymentStatus } from '@/types'
@@ -471,6 +472,18 @@ export default function OrdersListPage() {
                               <strong>Pembayaran:</strong> Transfer Bank
                             </span>
                           </div>
+                          {order.pickupDate && (
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                              <span className="text-muted-foreground">
+                                <strong>Pickup:</strong> {new Date(order.pickupDate).toLocaleDateString('id-ID', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  year: 'numeric'
+                                })}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                       

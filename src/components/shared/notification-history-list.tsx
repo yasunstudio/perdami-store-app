@@ -63,6 +63,14 @@ export function NotificationHistoryList({ notifications }: NotificationHistoryLi
         return <CheckCircle className="w-5 h-5 text-blue-500" />
       case 'PAYMENT_FAILED':
         return <BellOff className="w-5 h-5 text-red-500" />
+      case 'PICKUP_REMINDER_H1':
+        return <Clock className="w-5 h-5 text-yellow-500" />
+      case 'PICKUP_REMINDER_TODAY':
+        return <Bell className="w-5 h-5 text-orange-500" />
+      case 'PICKUP_READY':
+        return <CheckCircle className="w-5 h-5 text-green-500" />
+      case 'PICKUP_COMPLETED':
+        return <CheckCircle className="w-5 h-5 text-purple-500" />
       case 'SECURITY_ALERT':
         return <Bell className="w-5 h-5 text-yellow-500" />
       default:
@@ -83,6 +91,14 @@ export function NotificationHistoryList({ notifications }: NotificationHistoryLi
         return 'bg-blue-100 text-blue-800'
       case 'PAYMENT_FAILED':
         return 'bg-red-100 text-red-800'
+      case 'PICKUP_REMINDER_H1':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'PICKUP_REMINDER_TODAY':
+        return 'bg-orange-100 text-orange-800'
+      case 'PICKUP_READY':
+        return 'bg-green-100 text-green-800'
+      case 'PICKUP_COMPLETED':
+        return 'bg-purple-100 text-purple-800'
       case 'SECURITY_ALERT':
         return 'bg-yellow-100 text-yellow-800'
       default:

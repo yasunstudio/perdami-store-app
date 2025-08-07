@@ -37,7 +37,7 @@ export function Header() {
             <Link href="/" className="flex items-center space-x-3 group" prefetch={true}>
               <Package className="h-7 w-7 text-primary group-hover:scale-105 transition-transform duration-200" />
               <span className="hidden font-bold text-xl sm:inline-block group-hover:text-primary transition-colors duration-200">
-                Perdami Store
+                Dharma Wanita Perdami
               </span>
             </Link>
           </div>
@@ -137,7 +137,7 @@ export function Header() {
                   <SheetHeader>
                     <div className="flex items-center space-x-3">
                       <Package className="h-6 w-6 text-primary" />
-                      <SheetTitle className="text-lg font-bold">Perdami Store</SheetTitle>
+                      <SheetTitle className="text-lg font-bold">Dharma Wanita Perdami</SheetTitle>
                     </div>
                   </SheetHeader>
                 </div>

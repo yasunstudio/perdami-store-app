@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { PaymentMethod, OrderStatus, PaymentStatus } from '@prisma/client'
 import { auditLog } from '@/lib/audit'
 import { notificationService } from '@/lib/notification'
+import { SERVICE_FEE, calculateServiceFeePerStore } from '@/lib/service-fee'
 
 const createOrderSchema = z.object({
   customerName: z.string().min(2, 'Nama minimal 2 karakter'),
@@ -13,6 +14,7 @@ const createOrderSchema = z.object({
   paymentMethod: z.enum(['BANK_TRANSFER']),
   bankId: z.string().optional(), // Optional karena bisa dipilih nanti
   paymentProof: z.string().optional(), // Optional karena baru create order, belum upload bukti
+  pickupDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format tanggal harus YYYY-MM-DD'),
   notes: z.string().optional(),
   items: z.array(z.object({
     bundleId: z.string(),
@@ -95,13 +97,28 @@ export async function POST(request: NextRequest) {
 
     // Create order in transaction
     const result = await prisma.$transaction(async (tx) => {
+      // Calculate breakdown with service fee per store
+      const subtotalAmount = totalAmount // Current total is actually subtotal
+      
+      // Count unique stores from items
+      const uniqueStores = [...new Set(validatedData.items.map(item => {
+        const bundle = bundles.find(b => b.id === item.bundleId)
+        return bundle?.storeId
+      }).filter(Boolean))]
+      
+      const serviceFee = calculateServiceFeePerStore(uniqueStores.length)
+      const finalTotalAmount = subtotalAmount + serviceFee
+      
       // Create main order
       const order = await tx.order.create({
         data: {
           orderNumber: generateOrderNumber(),
           userId: session.user.id!,
-          totalAmount,
+          subtotalAmount,
+          serviceFee,
+          totalAmount: finalTotalAmount,
           bankId: validatedData.bankId || null,
+          pickupDate: new Date(validatedData.pickupDate),
           notes: validatedData.notes || null,
           orderStatus: 'PENDING',
           orderItems: {
@@ -127,7 +144,7 @@ export async function POST(request: NextRequest) {
       const payment = await tx.payment.create({
         data: {
           orderId: order.id,
-          amount: totalAmount,
+          amount: finalTotalAmount, // Use final total including service fee
           method: validatedData.paymentMethod as PaymentMethod,
           status: 'PENDING',
           proofUrl: validatedData.paymentProof || null,
@@ -178,6 +195,7 @@ export async function POST(request: NextRequest) {
         paymentMethod: result.payment.method,
         orderStatus: result.order.orderStatus,
         paymentStatus: result.payment.status,
+        pickupDate: result.order.pickupDate,
         createdAt: result.order.createdAt
       }
     })

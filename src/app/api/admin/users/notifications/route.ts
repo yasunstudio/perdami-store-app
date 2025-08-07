@@ -172,7 +172,22 @@ export async function POST(request: NextRequest) {
     // TODO: Implement bulk notification sending
     // This would integrate with email service or push notification service
     
-    // For now, just log the activity
+    // For now, create in-app notifications for each user
+    const notifications = await Promise.all(
+      userIds.map(async (userId) => {
+        return await prisma.inAppNotification.create({
+          data: {
+            userId,
+            type: 'ADMIN_MESSAGE',
+            title: subject,
+            message,
+            isRead: false,
+          }
+        })
+      })
+    )
+    
+    // Log the activity
     await prisma.userActivityLog.create({
       data: {
         userId: session.user.id,
@@ -185,7 +200,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: `Notification sent to ${userIds.length} users`,
-      sentCount: userIds.length
+      sent: userIds.length,
+      notifications: notifications.length
     })
 
   } catch (error) {

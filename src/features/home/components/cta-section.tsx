@@ -1,9 +1,14 @@
+'use client'
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ShoppingBag, Package } from "lucide-react"
+import { useAppSettings } from "@/hooks/use-app-settings"
 
 export function CTASection() {
+  const { settings, isLoading } = useAppSettings()
+
   return (
     <section className="py-8 px-4">
       <div className="container mx-auto max-w-4xl">
@@ -17,7 +22,7 @@ export function CTASection() {
             </CardTitle>
             <CardDescription className="text-lg max-w-2xl mx-auto">
               Jangan sampai kehabisan! Pre-order sekarang dan dapatkan oleh-oleh khas Bandung 
-              terbaik untuk dibawa pulang dari PIT PERDAMI 2025.
+              terbaik untuk dibawa pulang dari {isLoading ? 'Loading...' : settings?.eventName || 'PIT PERDAMI 2025'}.
             </CardDescription>
           </CardHeader>
           
@@ -37,7 +42,7 @@ export function CTASection() {
             </div>
             
             <p className="text-sm text-muted-foreground mt-6">
-              * Pesanan dapat diambil di venue PIT PERDAMI 2025 hari ke-3
+              * Pesanan dapat diambil di {isLoading ? 'Loading...' : settings?.pickupLocation || 'venue PIT PERDAMI 2025'} hari ke-3
             </p>
           </CardContent>
         </Card>

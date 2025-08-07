@@ -1,19 +1,20 @@
 // Types for admin dashboard
 export interface DashboardStats {
-  totalProducts: number
-  totalStores: number
   totalUsers: number
+  totalProducts: number  // Mapped from totalBundles in API
   totalOrders: number
-  productGrowthRate?: number
-  storeGrowthRate?: number
+  totalStores: number
   userGrowthRate?: number
+  productGrowthRate?: number
   orderGrowthRate?: number
+  storeGrowthRate?: number
 }
 
 export interface RecentOrder {
   id: string
   orderNumber: string
   customerName: string
+  customerEmail: string
   itemCount: number
   totalAmount: number
   status: 'PENDING' | 'CONFIRMED' | 'READY' | 'COMPLETED' | 'CANCELLED'

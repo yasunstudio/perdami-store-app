@@ -34,16 +34,33 @@ export function useContactInfo() {
       setIsLoading(true)
       setError(null)
       
-      const response = await fetch('/api/contact-info')
+      const response = await fetch('/api/contact-info', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch contact info')
+        const errorText = await response.text()
+        throw new Error(`HTTP ${response.status}: ${errorText || 'Failed to fetch contact info'}`)
       }
       
       const data = await response.json()
+      
+      // Ensure data is an array
+      if (!Array.isArray(data)) {
+        throw new Error('Invalid response format: expected array')
+      }
+      
       setContactInfo(data)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred'
+      setError(errorMessage)
       console.error('Error fetching contact info:', err)
+      
+      // Set empty array as fallback
+      setContactInfo([])
     } finally {
       setIsLoading(false)
     }

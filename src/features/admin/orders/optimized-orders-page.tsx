@@ -69,6 +69,7 @@ export default function OptimizedOrdersPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [paymentFilter, setPaymentFilter] = useState<string>('all')
+  const [pickupDateFilter, setPickupDateFilter] = useState<string>('all')
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   
@@ -85,10 +86,10 @@ export default function OptimizedOrdersPage() {
     try {
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: '50', // Increased limit for virtual table
-        ...(debouncedSearch && { search: debouncedSearch }),
+        search: debouncedSearch,
         ...(statusFilter && statusFilter !== '' && statusFilter !== 'all' && { orderStatus: statusFilter }),
-        ...(paymentFilter && paymentFilter !== '' && paymentFilter !== 'all' && { paymentStatus: paymentFilter })
+        ...(paymentFilter && paymentFilter !== '' && paymentFilter !== 'all' && { paymentStatus: paymentFilter }),
+        ...(pickupDateFilter && pickupDateFilter !== '' && pickupDateFilter !== 'all' && { pickupDate: pickupDateFilter })
       })
 
       const response = await fetch(`/api/admin/orders?${params}`)
@@ -104,7 +105,7 @@ export default function OptimizedOrdersPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, debouncedSearch, statusFilter, paymentFilter])
+  }, [page, debouncedSearch, statusFilter, paymentFilter, pickupDateFilter])
 
   useEffect(() => {
     fetchOrders()
@@ -250,6 +251,16 @@ export default function OptimizedOrdersPage() {
           <Badge variant={getPaymentVariant(order.paymentStatus)} className="text-xs">
             {order.paymentStatus}
           </Badge>
+        </div>
+      )
+    },
+    {
+      key: 'pickup',
+      header: 'Pickup',
+      width: 100,
+      render: (order: Order) => (
+        <div className="text-sm">
+          {order.pickupDate ? format(new Date(order.pickupDate), 'dd MMM', { locale: id }) : '-'}
         </div>
       )
     },
@@ -424,6 +435,17 @@ export default function OptimizedOrdersPage() {
                 <SelectItem value="PAID">Lunas</SelectItem>
                 <SelectItem value="FAILED">Gagal</SelectItem>
                 <SelectItem value="REFUNDED">Refund</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={pickupDateFilter} onValueChange={setPickupDateFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter Pickup" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Tanggal</SelectItem>
+                <SelectItem value="2025-09-05">5 September 2025</SelectItem>
+                <SelectItem value="2025-09-06">6 September 2025</SelectItem>
+                <SelectItem value="2025-09-07">7 September 2025</SelectItem>
               </SelectContent>
             </Select>
           </div>

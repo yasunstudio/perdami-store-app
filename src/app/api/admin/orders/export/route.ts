@@ -107,6 +107,7 @@ export async function GET(request: NextRequest) {
         'Status Pembayaran': getPaymentStatusLabel(order.payment?.status || 'PENDING' as any),
         'Total Amount': order.totalAmount,
         'Metode Pengambilan': getPickupMethodText(order.pickupMethod),
+        'Tanggal Pickup': order.pickupDate ? format(new Date(order.pickupDate), 'dd/MM/yyyy', { locale: id }) : '-',
         'Catatan': order.notes || '-',
         'Tanggal Dibuat': format(new Date(order.createdAt), 'dd/MM/yyyy HH:mm', { locale: id }),
         'Tanggal Update': format(new Date(order.updatedAt), 'dd/MM/yyyy HH:mm', { locale: id })
@@ -162,6 +163,7 @@ export async function GET(request: NextRequest) {
         { wch: 18 }, // Status Pembayaran
         { wch: 12 }, // Total Amount
         { wch: 15 }, // Metode Pengambilan
+        { wch: 12 }, // Tanggal Pickup
         { wch: 30 }, // Catatan
         { wch: 18 }, // Tanggal Dibuat
         { wch: 18 }, // Tanggal Update

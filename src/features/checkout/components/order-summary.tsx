@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { formatPrice } from '@/lib/utils'
+import { SERVICE_FEE, calculateServiceFeePerStore } from '@/lib/service-fee'
 import { toast } from 'sonner'
 import { Package2, Store, CreditCard, Copy } from 'lucide-react'
 import type { Cart } from '@/types'
@@ -12,8 +13,11 @@ interface OrderSummaryProps {
 }
 
 export function OrderSummary({ cart }: OrderSummaryProps) {
-  const { stores, total, itemCount } = cart
-  const finalTotal = total
+  const { stores, subtotal, serviceFee, total, itemCount } = cart
+  
+  // Calculate store count for display
+  const storeCount = stores.filter(store => store.items.length > 0).length
+  const serviceFeePerStore = SERVICE_FEE.VENUE_PICKUP_PER_STORE
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
@@ -61,19 +65,36 @@ export function OrderSummary({ cart }: OrderSummaryProps) {
         {/* Totals */}
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span>Total Item ({itemCount} produk)</span>
-            <span>{formatPrice(total)}</span>
+            <span>Subtotal Produk ({itemCount} item)</span>
+            <span>{formatPrice(subtotal)}</span>
           </div>
+          
+          {/* Service Fee Row */}
+          <div className="flex justify-between text-sm">
+            <div className="flex items-center gap-1">
+              <span>Ongkos Kirim ({storeCount} toko)</span>
+              <span className="text-xs">📦</span>
+            </div>
+            <span>{serviceFee > 0 ? formatPrice(serviceFee) : 'Gratis'}</span>
+          </div>
+          
+          {/* Service fee breakdown per store */}
+          {storeCount > 1 && (
+            <div className="pl-4 text-xs text-muted-foreground">
+              {formatPrice(serviceFeePerStore)} × {storeCount} toko
+            </div>
+          )}
+          
           <Separator />
           <div className="flex justify-between items-center font-bold text-lg">
             <span>Total Pembayaran</span>
             <div className="flex items-center gap-2">
-              <span className="text-primary">{formatPrice(finalTotal)}</span>
+              <span className="text-primary">{formatPrice(total)}</span>
               <Button 
                 type="button"
                 size="sm" 
                 variant="ghost" 
-                onClick={() => copyToClipboard(finalTotal.toString())}
+                onClick={() => copyToClipboard(total.toString())}
                 className="h-6 w-6 p-0"
               >
                 <Copy className="h-3 w-3" />

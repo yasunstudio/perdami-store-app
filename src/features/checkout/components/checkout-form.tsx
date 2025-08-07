@@ -16,6 +16,7 @@ import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { CreditCard, Building2, User, Mail, Phone, MessageSquare, Loader2, Copy } from 'lucide-react'
 import { type Bank } from '@/types'
+import { PickupDateSelector } from './pickup-date-selector'
 
 const checkoutSchema = z.object({
   customerName: z.string().min(2, 'Nama minimal 2 karakter'),
@@ -23,6 +24,7 @@ const checkoutSchema = z.object({
   customerPhone: z.string().min(10, 'Nomor HP minimal 10 digit'),
   paymentMethod: z.literal('BANK_TRANSFER'),
   bankId: z.string().optional(), // Optional, can be selected later
+  pickupDate: z.string().min(1, 'Pilih tanggal pickup'),
   notes: z.string().optional(),
 })
 
@@ -40,6 +42,7 @@ export function CheckoutForm({ onSubmit, isProcessing, userEmail, userName, user
   const [error, setError] = useState<string | null>(null)
   const [banks, setBanks] = useState<Bank[]>([])
   const [loadingBanks, setLoadingBanks] = useState(false)
+  const [singleBankMode, setSingleBankMode] = useState(false)
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
@@ -64,6 +67,7 @@ export function CheckoutForm({ onSubmit, isProcessing, userEmail, userName, user
 
   const selectedPaymentMethod = watch('paymentMethod')
   const selectedBankId = watch('bankId')
+  const selectedPickupDate = watch('pickupDate')
 
   // Load banks when component mounts
   useEffect(() => {
@@ -72,8 +76,14 @@ export function CheckoutForm({ onSubmit, isProcessing, userEmail, userName, user
         setLoadingBanks(true)
         const response = await fetch('/api/banks')
         if (!response.ok) throw new Error('Failed to fetch banks')
-        const banksData = await response.json()
-        setBanks(banksData.banks || [])
+        const data = await response.json()
+        setBanks(data.banks || [])
+        setSingleBankMode(data.singleBankMode || false)
+        
+        // Auto-select bank if in single bank mode
+        if (data.singleBankMode && data.banks?.length === 1) {
+          setValue('bankId', data.banks[0].id)
+        }
       } catch (error) {
         console.error('Error loading banks:', error)
       } finally {
@@ -194,37 +204,74 @@ export function CheckoutForm({ onSubmit, isProcessing, userEmail, userName, user
 
           {/* Bank Selection */}
           <div className="mt-4 space-y-4">
-            <div className="space-y-2">
-              <Label>Pilih Bank (Opsional)</Label>
-              <p className="text-xs text-muted-foreground">
-                Anda dapat memilih bank sekarang atau nanti setelah pesanan dibuat
-              </p>
-              <Select 
-                value={selectedBankId || ''} 
-                onValueChange={(value) => setValue('bankId', value)}
-                disabled={loadingBanks}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={loadingBanks ? 'Memuat bank...' : 'Pilih bank tujuan transfer (opsional)'} />
-                </SelectTrigger>
-                <SelectContent>
-                  {banks.map((bank) => (
-                    <SelectItem key={bank.id} value={bank.id}>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{bank.name}</span>
-                        <span className="text-muted-foreground">({bank.code})</span>
+            {singleBankMode ? (
+              // Single Bank Mode - Show bank info directly
+              banks.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Bank Transfer</Label>
+                  <div className="bg-muted/50 dark:bg-muted/20 rounded-lg p-3 sm:p-4 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4" />
+                      <span className="font-medium">{banks[0].name} ({banks[0].code})</span>
+                    </div>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Nomor Rekening:</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-medium">{banks[0].accountNumber}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={() => copyToClipboard(banks[0].accountNumber)}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.bankId && (
-                <p className="text-sm text-destructive">{errors.bankId.message}</p>
-              )}
-            </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Nama Rekening:</span>
+                        <span className="font-medium">{banks[0].accountName}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            ) : (
+              // Multiple Bank Mode - Show selection dropdown
+              <div className="space-y-2">
+                <Label>Pilih Bank (Opsional)</Label>
+                <p className="text-xs text-muted-foreground">
+                  Anda dapat memilih bank sekarang atau nanti setelah pesanan dibuat
+                </p>
+                <Select 
+                  value={selectedBankId || ''} 
+                  onValueChange={(value) => setValue('bankId', value)}
+                  disabled={loadingBanks}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={loadingBanks ? 'Memuat bank...' : 'Pilih bank tujuan transfer (opsional)'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {banks.map((bank) => (
+                      <SelectItem key={bank.id} value={bank.id}>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{bank.name}</span>
+                          <span className="text-muted-foreground">({bank.code})</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.bankId && (
+                  <p className="text-sm text-destructive">{errors.bankId.message}</p>
+                )}
+              </div>
+            )}
 
-            {/* Bank Details - Show when bank is selected */}
-            {selectedBank && (
+            {/* Bank Details - Show when bank is selected in multiple bank mode */}
+            {!singleBankMode && selectedBank && (
               <div className="bg-muted/50 dark:bg-muted/20 rounded-lg p-3 sm:p-4 space-y-2">
                 <h4 className="font-medium text-sm">Detail Rekening</h4>
                 <div className="space-y-1 text-sm">
@@ -268,6 +315,15 @@ export function CheckoutForm({ onSubmit, isProcessing, userEmail, userName, user
           )}
         </CardContent>
       </Card>
+
+      {/* Pickup Date Selection */}
+      <PickupDateSelector
+        selectedDate={selectedPickupDate || null}
+        onDateSelect={(date) => setValue('pickupDate', date)}
+      />
+      {errors.pickupDate && (
+        <p className="text-sm text-red-500 -mt-4 ml-4">{errors.pickupDate.message}</p>
+      )}
 
       {/* Additional Notes */}
       <Card>

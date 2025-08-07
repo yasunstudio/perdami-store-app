@@ -123,7 +123,7 @@ export function AdminBulkActions({
     }
   }
 
-  const handleBulkNotificationUpdate = async (action: string, enabled: boolean) => {
+  const handleBulkNotificationUpdate = async (action: string, enabled: boolean = true) => {
     if (selectedUsers.length === 0) {
       toast.error('Pilih minimal satu pengguna')
       return
@@ -131,7 +131,7 @@ export function AdminBulkActions({
 
     try {
       setIsLoading(true)
-      const response = await fetch('/api/admin/users/bulk-notification-update', {
+      const response = await fetch('/api/admin/users/notifications/bulk', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -139,7 +139,6 @@ export function AdminBulkActions({
         body: JSON.stringify({
           userIds: selectedUsers,
           action,
-          enabled
         }),
       })
 
@@ -174,7 +173,7 @@ export function AdminBulkActions({
 
     try {
       setIsLoading(true)
-      const response = await fetch('/api/admin/users/send-bulk-notification', {
+      const response = await fetch('/api/admin/users/notifications', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -312,7 +311,7 @@ export function AdminBulkActions({
             {/* Enable All Notifications */}
             <Button
               variant="outline"
-              onClick={() => handleBulkNotificationUpdate('enableAll', true)}
+              onClick={() => handleBulkNotificationUpdate('enable_all')}
               disabled={isLoading || selectedUsers.length === 0}
               className="justify-start"
             >
@@ -323,18 +322,18 @@ export function AdminBulkActions({
             {/* Disable Optional Notifications */}
             <Button
               variant="outline"
-              onClick={() => handleBulkNotificationUpdate('disableOptional', false)}
+              onClick={() => handleBulkNotificationUpdate('disable_all')}
               disabled={isLoading || selectedUsers.length === 0}
               className="justify-start"
             >
               <AlertTriangle className="h-4 w-4 mr-2" />
-              Hanya Wajib
+              Nonaktifkan Semua
             </Button>
 
             {/* Enable Promotions */}
             <Button
               variant="outline"
-              onClick={() => handleBulkNotificationUpdate('promotionalEmails', true)}
+              onClick={() => handleBulkNotificationUpdate('enable_promo')}
               disabled={isLoading || selectedUsers.length === 0}
               className="justify-start"
             >

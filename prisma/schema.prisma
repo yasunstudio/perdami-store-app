@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -143,6 +144,7 @@ model Bank {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   orders        Order[]
+  appSettings   AppSettings[]  // Relation for default bank
 
   @@index([code])
   @@index([isActive])
@@ -150,24 +152,31 @@ model Bank {
 }
 
 model Order {
-  id           String       @id @default(cuid())
-  orderNumber  String       @unique
-  userId       String
-  bankId       String?
-  totalAmount  Float
-  orderStatus  OrderStatus  @default(PENDING)
-  pickupMethod PickupMethod @default(VENUE)
-  notes        String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  orderItems   OrderItem[]
-  bank         Bank?        @relation(fields: [bankId], references: [id])
-  user         User         @relation(fields: [userId], references: [id])
-  payment      Payment?
+  id                String       @id @default(cuid())
+  orderNumber       String       @unique
+  userId            String
+  bankId            String?
+  subtotalAmount    Float        // Total produk tanpa service fee
+  serviceFee        Float        @default(25000) // Fixed Rp 25.000
+  totalAmount       Float        // subtotalAmount + serviceFee
+  orderStatus       OrderStatus  @default(PENDING)
+  paymentStatus     PaymentStatus @default(PENDING)
+  pickupMethod      PickupMethod @default(VENUE)
+  pickupDate        DateTime?    // Tanggal pickup yang dipilih customer
+  pickupStatus      PickupStatus @default(NOT_PICKED_UP)
+  paymentProofUrl   String?      // URL bukti transfer
+  notes             String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  orderItems        OrderItem[]
+  bank              Bank?        @relation(fields: [bankId], references: [id])
+  user              User         @relation(fields: [userId], references: [id])
+  payment           Payment?
 
   @@index([userId])
   @@index([orderNumber])
   @@index([orderStatus])
+  @@index([pickupDate])
   @@index([createdAt])
   @@map("orders")
 }
@@ -219,26 +228,29 @@ model AppSettings {
   copyrightSubtext   String   @default("Semua hak cipta dilindungi.")
   isMaintenanceMode  Boolean  @default(false)
   maintenanceMessage String?
+  singleBankMode     Boolean  @default(true)  // Enable single bank mode for short events
+  defaultBankId      String?  // Default bank for single bank mode
   isActive           Boolean  @default(true)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+  defaultBank        Bank?    @relation(fields: [defaultBankId], references: [id])
 
   @@index([isActive])
   @@map("app_settings")
 }
 
 model InAppNotification {
-  id        String    @id @default(cuid())
+  id        String           @id @default(cuid())
   userId    String
-  type      String
+  type      NotificationType
   title     String
   message   String
   data      Json?
-  isRead    Boolean   @default(false)
+  isRead    Boolean          @default(false)
   readAt    DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([isRead])
@@ -320,10 +332,21 @@ enum PickupMethod {
   VENUE
 }
 
+enum PickupStatus {
+  NOT_PICKED_UP
+  PICKED_UP
+}
+
 enum ContactType {
   EMAIL
   PHONE
   WHATSAPP
   ADDRESS
   SOCIAL_MEDIA
+}
+
+enum NotificationType {
+  ORDER_UPDATE
+  PAYMENT_REMINDER
+  GENERAL
 }
