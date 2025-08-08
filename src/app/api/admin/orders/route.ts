@@ -23,13 +23,6 @@ export async function GET(request: NextRequest) {
   console.log('🔍 Admin orders API called')
   
   try {
-    // Temporarily disable auth check for debugging
-    // TODO: Re-enable auth check after testing
-    // const session = await auth()
-    // if (!session?.user || !['ADMIN', 'STAFF'].includes(session.user.role)) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    // }
-    
     const client = await getDbClient()
     
     const { searchParams } = new URL(request.url)
@@ -106,6 +99,7 @@ export async function GET(request: NextRequest) {
         o."totalAmount",
         o."orderStatus",
         o."pickupDate",
+        o."pickupTime",
         o.notes,
         o."createdAt",
         o."updatedAt",
@@ -160,7 +154,7 @@ export async function GET(request: NextRequest) {
           oi."orderId",
           oi.id as item_id,
           oi.quantity,
-          oi.price as item_price,
+          oi."price" as item_price,
           pb.id as bundle_id,
           pb.name as bundle_name,
           pb.price as bundle_price,
@@ -240,6 +234,7 @@ export async function GET(request: NextRequest) {
         paymentMethod: order.payment_method,
         paymentProof: order.payment_proof,
         pickupDate: order.pickupDate,
+        pickupTime: order.pickupTime,
         notes: order.notes,
         createdAt: order.createdAt,
         updatedAt: order.updatedAt,
