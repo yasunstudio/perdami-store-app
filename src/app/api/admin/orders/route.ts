@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
         u.email as "userEmail",
         u.phone as "userPhone",
         p.status as "currentPaymentStatus",
-        p."paymentMethod",
+        p.method as "paymentMethod",
         p.amount as "paymentAmount",
         b.name as "bankName",
         b.code as "bankCode",
@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
       LEFT JOIN banks b ON o."bankId" = b.id
       LEFT JOIN order_items oi ON o.id = oi."orderId"
       ${whereClause}
-      GROUP BY o.id, u.name, u.email, u.phone, p.status, p."paymentMethod", p.amount, b.name, b.code, b."accountNumber", b."accountName"
+      GROUP BY o.id, u.name, u.email, u.phone, p.status, p.method, p.amount, b.name, b.code, b."accountNumber", b."accountName"
       ${orderByClause}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `
