@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { createPrismaClient } from '@/lib/prisma-serverless'
 import { withDatabaseRetry, createErrorResponse } from '@/lib/database-utils'
 
 export async function GET(request: NextRequest) {
@@ -14,14 +14,22 @@ export async function GET(request: NextRequest) {
     
     // Use retry logic for database operations
     const result = await withDatabaseRetry(async () => {
-      console.log('Fetching stores from database...')
-      const stores = await prisma.store.findMany({
-        include: {
-          bundles: true
-        }
-      })
-      console.log(`Found ${stores.length} stores`)
-      return stores;
+      // Create fresh prisma client for serverless environment to avoid prepared statement conflicts
+      const prisma = createPrismaClient()
+      
+      try {
+        console.log('Fetching stores from database...')
+        const stores = await prisma.store.findMany({
+          include: {
+            bundles: true
+          }
+        })
+        console.log(`Found ${stores.length} stores`)
+        return stores;
+      } finally {
+        // Clean up prisma client
+        await prisma.$disconnect()
+      }
     });
     
     // Filter by status if provided
