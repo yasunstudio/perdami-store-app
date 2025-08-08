@@ -121,8 +121,15 @@ export function UserManagement() {
       if (!response.ok) throw new Error('Failed to fetch users')
       
       const data = await response.json()
-      setUsers(data.users)
-      setPagination(data.pagination)
+      console.log('Users API response:', data) // Debug log
+      
+      // Handle the response format from our fixed API
+      if (data.success) {
+        setUsers(data.data || [])
+        setPagination(data.pagination || { page: 1, limit: 10, total: 0, totalPages: 0 })
+      } else {
+        throw new Error(data.error || 'Failed to fetch users')
+      }
     } catch (err) {
       console.error('Error fetching users:', err)
       setError('Gagal memuat data user')
