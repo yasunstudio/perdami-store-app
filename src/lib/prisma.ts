@@ -14,7 +14,9 @@ export const prisma = globalForPrisma.prisma ??
       db: {
         url: process.env.DATABASE_URL
       }
-    }
+    },
+    // Configuration for serverless environments like Vercel
+    errorFormat: 'pretty',
   });
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;

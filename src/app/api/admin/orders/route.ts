@@ -66,10 +66,10 @@ export async function GET(request: NextRequest) {
       orderBy = { orderStatus: sortOrder as 'asc' | 'desc' }
     }
 
-    // Execute queries in parallel for better performance
-    const [orders, total, orderStats, paymentStats] = await Promise.all([
+    // Execute queries with simpler approach for Vercel compatibility
+    try {
       // Get orders with full relations
-      prisma.order.findMany({
+      const orders = await prisma.order.findMany({
         where: whereConditions,
         include: {
           user: {
@@ -118,138 +118,138 @@ export async function GET(request: NextRequest) {
         orderBy,
         skip: offset,
         take: limit
-      }),
+      })
       
       // Get total count
-      prisma.order.count({
+      const total = await prisma.order.count({
         where: whereConditions
-      }),
-      
-      // Get order statistics
-      prisma.order.groupBy({
-        by: ['orderStatus'],
-        _count: {
-          orderStatus: true
-        }
-      }),
-      
-      // Get payment statistics
-      prisma.payment.groupBy({
-        by: ['status'],
-        _count: {
-          status: true
-        }
       })
-    ])
+      
+      // Get order statistics manually to avoid groupBy issues
+      const [pendingCount, confirmedCount, readyCount, completedCount, cancelledCount] = await Promise.all([
+        prisma.order.count({ where: { orderStatus: 'PENDING' } }),
+        prisma.order.count({ where: { orderStatus: 'CONFIRMED' } }),
+        prisma.order.count({ where: { orderStatus: 'READY' } }),
+        prisma.order.count({ where: { orderStatus: 'COMPLETED' } }),
+        prisma.order.count({ where: { orderStatus: 'CANCELLED' } })
+      ])
+      
+      // Get payment statistics manually
+      const [paymentPendingCount, paymentPaidCount, paymentFailedCount, paymentRefundedCount] = await Promise.all([
+        prisma.payment.count({ where: { status: 'PENDING' } }),
+        prisma.payment.count({ where: { status: 'PAID' } }),
+        prisma.payment.count({ where: { status: 'FAILED' } }),
+        prisma.payment.count({ where: { status: 'REFUNDED' } })
+      ])
 
-    // Calculate total revenue from paid orders
-    const revenueResult = await prisma.order.aggregate({
-      _sum: {
-        totalAmount: true
-      },
-      where: {
-        payment: {
-          status: 'PAID'
-        }
-      }
-    })
-
-    const totalRevenue = revenueResult._sum.totalAmount || 0
-
-    // Format orders data
-    const formattedOrders = orders.map(order => ({
-      id: order.id,
-      orderNumber: order.orderNumber,
-      customer: {
-        id: order.user.id,
-        name: order.user.name,
-        email: order.user.email,
-        phone: order.user.phone
-      },
-      subtotalAmount: Number(order.subtotalAmount),
-      serviceFee: Number(order.serviceFee),
-      totalAmount: Number(order.totalAmount),
-      orderStatus: order.orderStatus,
-      paymentStatus: order.payment?.status || 'PENDING',
-      paymentMethod: order.payment?.method,
-      paymentProof: order.payment?.proofUrl,
-      pickupDate: order.pickupDate,
-      notes: order.notes,
-      createdAt: order.createdAt,
-      updatedAt: order.updatedAt,
-      items: order.orderItems.map(item => ({
-        id: item.id,
-        quantity: item.quantity,
-        price: Number(item.price),
-        bundle: {
-          id: item.bundle.id,
-          name: item.bundle.name,
-          price: Number(item.bundle.price),
-          image: item.bundle.image,
-          store: {
-            id: item.bundle.store.id,
-            name: item.bundle.store.name
+      // Calculate total revenue from paid orders
+      const revenueResult = await prisma.order.aggregate({
+        _sum: {
+          totalAmount: true
+        },
+        where: {
+          payment: {
+            status: 'PAID'
           }
         }
-      })),
-      bank: order.bank,
-      payment: order.payment
-    }))
+      })
 
-    // Format statistics
-    const formattedOrderStats = {
-      total: total,
-      pending: orderStats.find(stat => stat.orderStatus === 'PENDING')?._count.orderStatus || 0,
-      confirmed: orderStats.find(stat => stat.orderStatus === 'CONFIRMED')?._count.orderStatus || 0,
-      ready: orderStats.find(stat => stat.orderStatus === 'READY')?._count.orderStatus || 0,
-      completed: orderStats.find(stat => stat.orderStatus === 'COMPLETED')?._count.orderStatus || 0,
-      cancelled: orderStats.find(stat => stat.orderStatus === 'CANCELLED')?._count.orderStatus || 0,
-      totalRevenue: Number(totalRevenue)
-    }
+      const totalRevenue = revenueResult._sum.totalAmount || 0
 
-    const formattedPaymentStats = {
-      pending: paymentStats.find(stat => stat.status === 'PENDING')?._count.status || 0,
-      paid: paymentStats.find(stat => stat.status === 'PAID')?._count.status || 0,
-      failed: paymentStats.find(stat => stat.status === 'FAILED')?._count.status || 0,
-      refunded: paymentStats.find(stat => stat.status === 'REFUNDED')?._count.status || 0
-    }
-
-    const response = {
-      success: true,
-      data: {
-        orders: formattedOrders,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-          hasNext: page < Math.ceil(total / limit),
-          hasPrev: page > 1
+      // Format orders data
+      const formattedOrders = orders.map(order => ({
+        id: order.id,
+        orderNumber: order.orderNumber,
+        customer: {
+          id: order.user.id,
+          name: order.user.name,
+          email: order.user.email,
+          phone: order.user.phone
         },
-        stats: formattedOrderStats,
-        paymentStats: formattedPaymentStats
+        subtotalAmount: Number(order.subtotalAmount),
+        serviceFee: Number(order.serviceFee),
+        totalAmount: Number(order.totalAmount),
+        orderStatus: order.orderStatus,
+        paymentStatus: order.payment?.status || 'PENDING',
+        paymentMethod: order.payment?.method,
+        paymentProof: order.payment?.proofUrl,
+        pickupDate: order.pickupDate,
+        notes: order.notes,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+        items: order.orderItems.map(item => ({
+          id: item.id,
+          quantity: item.quantity,
+          price: Number(item.price),
+          bundle: {
+            id: item.bundle.id,
+            name: item.bundle.name,
+            price: Number(item.bundle.price),
+            image: item.bundle.image,
+            store: {
+              id: item.bundle.store.id,
+              name: item.bundle.store.name
+            }
+          }
+        })),
+        bank: order.bank,
+        payment: order.payment
+      }))
+
+      // Format statistics using the manual counts
+      const formattedOrderStats = {
+        total: total,
+        pending: pendingCount,
+        confirmed: confirmedCount,
+        ready: readyCount,
+        completed: completedCount,
+        cancelled: cancelledCount,
+        totalRevenue: Number(totalRevenue)
       }
+
+      const formattedPaymentStats = {
+        pending: paymentPendingCount,
+        paid: paymentPaidCount,
+        failed: paymentFailedCount,
+        refunded: paymentRefundedCount
+      }
+
+      const response = {
+        success: true,
+        data: {
+          orders: formattedOrders,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+            hasNext: page < Math.ceil(total / limit),
+            hasPrev: page > 1
+          },
+          stats: formattedOrderStats,
+          paymentStats: formattedPaymentStats
+        }
+      }
+
+      console.log('✅ Orders data fetched successfully (Prisma):', {
+        ordersCount: formattedOrders.length,
+        total,
+        orderStats: formattedOrderStats,
+        paymentStats: formattedPaymentStats
+      })
+
+      return NextResponse.json(response)
+
+    } catch (error) {
+      console.error('❌ Error fetching orders (Prisma):', error)
+      return NextResponse.json(
+        { 
+          error: 'Failed to fetch orders',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        },
+        { status: 500 }
+      )
     }
-
-    console.log('✅ Orders data fetched successfully (Prisma):', {
-      ordersCount: formattedOrders.length,
-      total,
-      orderStats: formattedOrderStats,
-      paymentStats: formattedPaymentStats
-    })
-
-    return NextResponse.json(response)
-
-  } catch (error) {
-    console.error('❌ Error fetching orders (Prisma):', error)
-    return NextResponse.json(
-      { 
-        error: 'Failed to fetch orders',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    )
-  }
 }
 
 // Update order status (PUT method) with Prisma
