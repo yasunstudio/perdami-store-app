@@ -21,7 +21,7 @@ export async function GET() {
     // Get basic stats using direct SQL
     const [usersResult, bundlesResult, ordersResult, storesResult] = await Promise.all([
       client.query('SELECT COUNT(*) as count FROM users'),
-      client.query('SELECT COUNT(*) as count FROM bundles'),
+      client.query('SELECT COUNT(*) as count FROM product_bundles'),
       client.query('SELECT COUNT(*) as count FROM orders'),
       client.query('SELECT COUNT(*) as count FROM stores')
     ])
@@ -39,7 +39,7 @@ export async function GET() {
     // Get popular bundles (with mock sales data)
     const popularBundlesResult = await client.query(`
       SELECT b.id, b.name, b.price, b.image, s.name as store_name
-      FROM bundles b
+      FROM product_bundles b
       LEFT JOIN stores s ON b."storeId" = s.id
       WHERE b."showToCustomer" = true
       ORDER BY b.price DESC

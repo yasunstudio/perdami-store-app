@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
           COUNT(*) as total_bundles,
           COUNT(CASE WHEN "showToCustomer" = true THEN 1 END) as active_bundles,
           AVG(price) as avg_price
-        FROM bundles
+        FROM product_bundles
       `),
       
       // Stores stats
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
         SELECT 
           b.id, b.name, b.price, b.image, b."showToCustomer",
           s.name as store_name, s."isActive" as store_active
-        FROM bundles b
+        FROM product_bundles b
         LEFT JOIN stores s ON b."storeId" = s.id
         WHERE b."showToCustomer" = true
         ORDER BY b.price DESC
