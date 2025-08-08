@@ -11,9 +11,9 @@ export class SingleBankService {
         where: { isActive: true }
       })
       return appSettings?.singleBankMode ?? false
-    } catch (error) {
-      console.error('Error checking single bank mode:', error)
-      return false
+    } catch (error: any) {
+      console.warn('AppSettings not found, defaulting to multiple bank mode:', error?.message || error)
+      return false // Default to multiple bank mode if AppSettings doesn't exist
     } finally {
       await prisma.$disconnect()
     }
@@ -57,14 +57,29 @@ export class SingleBankService {
         return defaultBank ? [defaultBank] : []
       } else {
         // Regular mode - return all active banks
-        return await prisma.bank.findMany({
-          where: { isActive: true },
-          orderBy: { name: 'asc' }
-        })
+        try {
+          return await prisma.bank.findMany({
+            where: { isActive: true },
+            orderBy: { name: 'asc' }
+          })
+        } catch (bankError: any) {
+          console.warn('Bank table not found, returning empty array:', bankError?.message || bankError)
+          return []
+        }
       }
     } catch (error) {
       console.error('Error getting available banks:', error)
-      return []
+      // Return default mock banks if database has issues
+      return [{
+        id: 'default',
+        name: 'Bank Transfer - Perdami Store',
+        code: 'TRANSFER',
+        accountNumber: 'Akan diinformasikan via WhatsApp',
+        accountName: 'PT Perdami Store Indonesia',
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }]
     } finally {
       await prisma.$disconnect()
     }
