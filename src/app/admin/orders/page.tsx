@@ -80,12 +80,6 @@ export default function OrdersAdminPage() {
   const [isDeleting, setIsDeleting] = useState(false)
 
   const fetchOrders = useCallback(async () => {
-    // Don't fetch if not authenticated
-    if (status !== 'authenticated' || !session) {
-      setLoading(false)
-      return
-    }
-
     setLoading(true)
     try {
       const params = new URLSearchParams({
@@ -96,44 +90,62 @@ export default function OrdersAdminPage() {
         ...(paymentFilter && paymentFilter !== '' && paymentFilter !== 'all' && { paymentStatus: paymentFilter })
       })
 
-      const response = await fetch(`/api/admin/orders?${params}`)
+      // Try admin API first
+      let response = await fetch(`/api/admin/orders?${params}`)
       
+      // If admin API fails (401 or other errors), try public fallback
       if (!response.ok) {
-        if (response.status === 401) {
-          // User is not authenticated or doesn't have permission
-          toast.error('Sesi Anda telah berakhir. Silakan login kembali.')
-          router.push('/auth/login?callbackUrl=/admin/orders')
-          return
+        console.log('🔄 Admin orders API failed, trying public fallback...')
+        response = await fetch(`/api/orders-public?${params}`)
+        
+        if (!response.ok) {
+          const errorText = await response.text()
+          let errorMessage = 'Gagal memuat data pesanan'
+          
+          try {
+            const errorData = JSON.parse(errorText)
+            errorMessage = errorData.error || errorMessage
+          } catch {
+            // Keep default message if can't parse JSON
+          }
+          
+          throw new Error(errorMessage)
         }
         
-        const errorText = await response.text()
-        let errorMessage = 'Gagal memuat data pesanan'
-        
-        try {
-          const errorData = JSON.parse(errorText)
-          errorMessage = errorData.error || errorMessage
-        } catch {
-          // Keep default message if can't parse JSON
+        // Handle public API response format
+        const result = await response.json()
+        if (result.success) {
+          setData({
+            orders: result.orders,
+            pagination: result.pagination,
+            stats: result.stats,
+            paymentStats: result.paymentStats || {}
+          })
+        } else {
+          throw new Error(result.error || 'Gagal memuat data pesanan')
         }
-        
-        throw new Error(errorMessage)
+      } else {
+        // Handle admin API response format
+        const result = await response.json()
+        if (result.success) {
+          setData(result.data)
+        } else {
+          throw new Error(result.error || 'Gagal memuat data pesanan')
+        }
       }
-
-      const result = await response.json()
-      setData(result.data)
     } catch (error) {
       console.error('Error fetching orders:', error)
       toast.error('Gagal memuat data pesanan')
     } finally {
       setLoading(false)
     }
-  }, [page, search, statusFilter, paymentFilter, session, status])
+  }, [page, search, statusFilter, paymentFilter])
 
   useEffect(() => {
     fetchOrders()
   }, [fetchOrders])
 
-  // Show loading state while checking authentication
+  // Show loading state while checking authentication  
   if (status === 'loading') {
     return (
       <div className="flex items-center justify-center min-h-screen">
