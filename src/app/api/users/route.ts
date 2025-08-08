@@ -8,8 +8,10 @@ export async function GET(request: NextRequest) {
   const role = searchParams.get('role') as 'ADMIN' | 'CUSTOMER' | 'ALL' | null
   const search = searchParams.get('search')
   const verified = searchParams.get('verified')
+  const sortBy = searchParams.get('sortBy') || 'createdAt'
+  const sortOrder = searchParams.get('sortOrder') || 'desc'
 
-  console.log('GET /api/users called with params:', { page, limit, role, search, verified })
+  console.log('GET /api/users called with params:', { page, limit, role, search, verified, sortBy, sortOrder })
 
   const client = new Client({
     connectionString: process.env.DATABASE_URL,
@@ -47,25 +49,27 @@ export async function GET(request: NextRequest) {
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : ''
 
     // Count total
-    const countQuery = `SELECT COUNT(*) as count FROM "User" ${whereClause}`
+    const countQuery = `SELECT COUNT(*) as count FROM users ${whereClause}`
     const countResult = await client.query(countQuery, queryParams)
     const total = parseInt(countResult.rows[0].count)
 
     // Get users with pagination
     const offset = (page - 1) * limit
     const usersQuery = `
-      SELECT id, name, email, role, "emailVerified", image, "createdAt", "updatedAt"
-      FROM "User" 
+      SELECT id, email, name, phone, role, image, "emailVerified", "createdAt", "updatedAt"
+      FROM users
       ${whereClause}
-      ORDER BY "createdAt" DESC 
+      ORDER BY "${sortBy}" ${sortOrder.toUpperCase()}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `
+    
     const usersResult = await client.query(usersQuery, [...queryParams, limit, offset])
 
     console.log(`Found ${usersResult.rows.length} users (total: ${total})`)
 
     return NextResponse.json({
-      users: usersResult.rows,
+      success: true,
+      data: usersResult.rows,
       pagination: {
         page,
         limit,
@@ -77,6 +81,7 @@ export async function GET(request: NextRequest) {
     console.error('❌ Users API error:', error)
     return NextResponse.json(
       { 
+        success: false,
         error: 'Failed to fetch users',
         details: error instanceof Error ? error.message : String(error)
       },
