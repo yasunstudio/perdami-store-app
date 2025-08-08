@@ -1,4 +1,4 @@
-import { createPrismaClient } from './prisma-serverless'
+import SupabasePrismaClient from './supabase-prisma-client'
 import { STATIC_BANKS, STATIC_APP_SETTINGS } from './static-bank-data'
 
 export class SingleBankService {
@@ -6,17 +6,17 @@ export class SingleBankService {
    * Check if single bank mode is enabled
    */
   static async isSingleBankModeEnabled(): Promise<boolean> {
-    const prisma = createPrismaClient()
     try {
-      const appSettings = await prisma.appSettings.findFirst({
-        where: { isActive: true }
+      const result = await SupabasePrismaClient.executeModelOperation(async (prisma) => {
+        return await prisma.appSettings.findFirst({
+          where: { isActive: true }
+        })
       })
-      return appSettings?.singleBankMode ?? STATIC_APP_SETTINGS.singleBankMode
+      
+      return result?.singleBankMode ?? STATIC_APP_SETTINGS.singleBankMode
     } catch (error: any) {
       console.warn('AppSettings not found, using static settings:', error?.message || error)
       return STATIC_APP_SETTINGS.singleBankMode // Default from static data
-    } finally {
-      await prisma.$disconnect()
     }
   }
 
@@ -24,24 +24,29 @@ export class SingleBankService {
    * Get the default bank for single bank mode
    */
   static async getDefaultBank() {
-    const prisma = createPrismaClient()
     try {
-      const appSettings = await prisma.appSettings.findFirst({
-        where: { 
-          isActive: true,
-          singleBankMode: true 
-        },
-        include: {
-          defaultBank: true
-        }
-      })
+      const result = await SupabasePrismaClient.executeModelOperation(async (prisma) => {
+        const appSettings = await prisma.appSettings.findFirst({
+          where: { 
+            isActive: true,
+            defaultBankId: { not: null }
+          }
+        })
 
-      return appSettings?.defaultBank || null
-    } catch (error) {
-      console.error('Error getting default bank:', error)
+        if (!appSettings?.defaultBankId) return null
+
+        return await prisma.bank.findUnique({
+          where: { 
+            id: appSettings.defaultBankId,
+            isActive: true 
+          }
+        })
+      })
+      
+      return result
+    } catch (error: any) {
+      console.warn('Default bank lookup failed:', error?.message || error)
       return null
-    } finally {
-      await prisma.$disconnect()
     }
   }
 
@@ -49,7 +54,6 @@ export class SingleBankService {
    * Get available banks based on single bank mode setting
    */
   static async getAvailableBanks() {
-    const prisma = createPrismaClient()
     try {
       const isSingleBankMode = await this.isSingleBankModeEnabled()
       
@@ -59,10 +63,13 @@ export class SingleBankService {
       } else {
         // Regular mode - return all active banks
         try {
-          return await prisma.bank.findMany({
-            where: { isActive: true },
-            orderBy: { name: 'asc' }
+          const banks = await SupabasePrismaClient.executeModelOperation(async (prisma) => {
+            return await prisma.bank.findMany({
+              where: { isActive: true },
+              orderBy: { name: 'asc' }
+            })
           })
+          return banks
         } catch (bankError: any) {
           console.warn('Bank table not found, using static banks:', bankError?.message || bankError)
           return STATIC_BANKS.filter(bank => bank.isActive)
@@ -74,8 +81,6 @@ export class SingleBankService {
       const activeBanks = STATIC_BANKS.filter(bank => bank.isActive)
       console.log('Using static bank data as fallback:', activeBanks.length, 'banks')
       return activeBanks
-    } finally {
-      await prisma.$disconnect()
     }
   }
 
