@@ -1,11 +1,49 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { prisma, disconnectPrisma } from "@/lib/prisma"
 import { OrderStatus, PaymentStatus } from "@prisma/client"
 
+// Helper function for retry logic
+async function executeWithRetry<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 2
+): Promise<T> {
+  let lastError: Error;
+  
+  for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+    try {
+      const result = await operation();
+      return result;
+    } catch (error) {
+      lastError = error as Error;
+      console.warn(`Attempt ${attempt} failed:`, error);
+      
+      if (attempt <= maxRetries) {
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, 100 * attempt));
+        
+        // If it's a connection error, try to reconnect
+        if (error instanceof Error && error.message.includes('prepared statement')) {
+          try {
+            await prisma.$disconnect();
+            await prisma.$connect();
+          } catch (reconnectError) {
+            console.warn('Reconnection failed:', reconnectError);
+          }
+        }
+      }
+    }
+  }
+  
+  throw lastError!;
+}
+
 export async function GET(request: NextRequest) {
-  console.log("📊 Admin orders API called (Simple Prisma)")
+  console.log("📊 Admin orders API called (Robust Prisma)")
   
   try {
+    // Ensure connection is fresh
+    await prisma.$connect();
+    
     const { searchParams } = new URL(request.url)
     
     // Extract query parameters
@@ -19,7 +57,7 @@ export async function GET(request: NextRequest) {
     
     const offset = (page - 1) * limit
     
-    // Build simple where conditions
+    // Build where conditions
     const whereConditions: any = {}
     
     if (orderStatus) {
@@ -28,53 +66,114 @@ export async function GET(request: NextRequest) {
     
     if (search) {
       whereConditions.OR = [
-        { orderNumber: { contains: search, mode: 'insensitive' } }
+        { orderNumber: { contains: search, mode: 'insensitive' } },
+        { user: { name: { contains: search, mode: 'insensitive' } } },
+        { user: { email: { contains: search, mode: 'insensitive' } } }
       ]
     }
     
-    // Add payment status filter if specified
     if (paymentStatus) {
       whereConditions.payment = {
         status: paymentStatus
       }
     }
 
-    // Get orders with minimal relations to avoid complex joins
-    const orders = await prisma.order.findMany({
-      where: whereConditions,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true
-          }
-        },
-        payment: {
-          select: {
-            id: true,
-            status: true,
-            method: true,
-            amount: true,
-            proofUrl: true
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' },
-      skip: offset,
-      take: limit
-    })
-    
-    // Get simple total count
-    const total = await prisma.order.count({
-      where: whereConditions
-    })
-    
-    // Simple statistics - just get basic counts
-    const totalOrders = await prisma.order.count()
-    
-    // Format orders data with minimal processing
+    // Execute operations with retry logic
+    const [orders, total] = await Promise.all([
+      executeWithRetry(() => 
+        prisma.order.findMany({
+          where: whereConditions,
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true
+              }
+            },
+            payment: {
+              select: {
+                id: true,
+                status: true,
+                method: true,
+                amount: true,
+                proofUrl: true
+              }
+            },
+            bank: {
+              select: {
+                id: true,
+                name: true,
+                code: true,
+                accountNumber: true,
+                accountName: true
+              }
+            },
+            orderItems: {
+              include: {
+                bundle: {
+                  include: {
+                    store: {
+                      select: {
+                        id: true,
+                        name: true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' },
+          skip: offset,
+          take: limit
+        })
+      ),
+      
+      executeWithRetry(() => 
+        prisma.order.count({
+          where: whereConditions
+        })
+      )
+    ]);
+
+    // Get statistics with individual queries to avoid groupBy issues
+    const [
+      pendingCount,
+      confirmedCount, 
+      readyCount,
+      completedCount,
+      cancelledCount,
+      revenueResult
+    ] = await Promise.all([
+      executeWithRetry(() => prisma.order.count({ where: { orderStatus: 'PENDING' } })),
+      executeWithRetry(() => prisma.order.count({ where: { orderStatus: 'CONFIRMED' } })),
+      executeWithRetry(() => prisma.order.count({ where: { orderStatus: 'READY' } })),
+      executeWithRetry(() => prisma.order.count({ where: { orderStatus: 'COMPLETED' } })),
+      executeWithRetry(() => prisma.order.count({ where: { orderStatus: 'CANCELLED' } })),
+      executeWithRetry(() => 
+        prisma.order.aggregate({
+          _sum: { totalAmount: true },
+          where: { payment: { status: 'PAID' } }
+        })
+      )
+    ]);
+
+    // Get payment statistics
+    const [
+      paymentPendingCount,
+      paymentPaidCount,
+      paymentFailedCount,
+      paymentRefundedCount
+    ] = await Promise.all([
+      executeWithRetry(() => prisma.payment.count({ where: { status: 'PENDING' } })),
+      executeWithRetry(() => prisma.payment.count({ where: { status: 'PAID' } })),
+      executeWithRetry(() => prisma.payment.count({ where: { status: 'FAILED' } })),
+      executeWithRetry(() => prisma.payment.count({ where: { status: 'REFUNDED' } }))
+    ]);
+
+    // Format response
     const formattedOrders = orders.map(order => ({
       id: order.id,
       orderNumber: order.orderNumber,
@@ -94,26 +193,25 @@ export async function GET(request: NextRequest) {
       pickupDate: order.pickupDate,
       notes: order.notes,
       createdAt: order.createdAt,
-      updatedAt: order.updatedAt
-    }))
-
-    // Simple stats without complex grouping
-    const formattedOrderStats = {
-      total: totalOrders,
-      pending: 0,
-      confirmed: 0,
-      ready: 0,
-      completed: 0,
-      cancelled: 0,
-      totalRevenue: 0
-    }
-
-    const formattedPaymentStats = {
-      pending: 0,
-      paid: 0,
-      failed: 0,
-      refunded: 0
-    }
+      updatedAt: order.updatedAt,
+      items: order.orderItems.map(item => ({
+        id: item.id,
+        quantity: item.quantity,
+        price: Number(item.price),
+        bundle: {
+          id: item.bundle.id,
+          name: item.bundle.name,
+          price: Number(item.bundle.price),
+          image: item.bundle.image,
+          store: {
+            id: item.bundle.store.id,
+            name: item.bundle.store.name
+          }
+        }
+      })),
+      bank: order.bank,
+      payment: order.payment
+    }));
 
     const response = {
       success: true,
@@ -127,35 +225,56 @@ export async function GET(request: NextRequest) {
           hasNext: page < Math.ceil(total / limit),
           hasPrev: page > 1
         },
-        stats: formattedOrderStats,
-        paymentStats: formattedPaymentStats
+        stats: {
+          total,
+          pending: pendingCount,
+          confirmed: confirmedCount,
+          ready: readyCount,
+          completed: completedCount,
+          cancelled: cancelledCount,
+          totalRevenue: Number(revenueResult._sum.totalAmount || 0)
+        },
+        paymentStats: {
+          pending: paymentPendingCount,
+          paid: paymentPaidCount,
+          failed: paymentFailedCount,
+          refunded: paymentRefundedCount
+        }
       }
-    }
+    };
 
-    console.log('✅ Orders data fetched successfully (Simple Prisma):', {
+    console.log('✅ Orders fetched successfully with retry logic:', {
       ordersCount: formattedOrders.length,
-      total
-    })
+      total,
+      attempts: 'Variable'
+    });
 
-    return NextResponse.json(response)
+    return NextResponse.json(response);
 
   } catch (error) {
-    console.error('❌ Error fetching orders (Simple Prisma):', error)
+    console.error('❌ Error fetching orders after retries:', error);
+    
     return NextResponse.json(
       { 
         error: 'Failed to fetch orders',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
       },
       { status: 500 }
-    )
+    );
+  } finally {
+    // Optional: disconnect to free resources
+    // await disconnectPrisma();
   }
 }
 
-// Simple PUT method
+// Update order status (PUT method) with retry logic
 export async function PUT(request: NextRequest) {
-  console.log('🔄 Admin order update API called (Simple Prisma)')
+  console.log('🔄 Admin order update API called (Robust Prisma)')
   
   try {
+    await prisma.$connect();
+    
     const body = await request.json()
     const { orderId, orderStatus, notes } = body
     
@@ -166,17 +285,39 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Simple update without complex relations
-    const updatedOrder = await prisma.order.update({
-      where: { id: orderId },
-      data: {
-        orderStatus: orderStatus as OrderStatus,
-        notes: notes || null,
-        updatedAt: new Date()
-      }
-    })
+    // Validate order status
+    const validStatuses: OrderStatus[] = ['PENDING', 'CONFIRMED', 'READY', 'COMPLETED', 'CANCELLED']
+    if (!validStatuses.includes(orderStatus)) {
+      return NextResponse.json(
+        { error: 'Invalid order status' },
+        { status: 400 }
+      )
+    }
+    
+    // Update order with retry logic
+    const updatedOrder = await executeWithRetry(() =>
+      prisma.order.update({
+        where: { id: orderId },
+        data: {
+          orderStatus: orderStatus as OrderStatus,
+          notes: notes || null,
+          updatedAt: new Date()
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          },
+          payment: true,
+          bank: true
+        }
+      })
+    );
 
-    console.log('✅ Order status updated successfully (Simple Prisma):', { orderId, orderStatus })
+    console.log('✅ Order status updated successfully (Robust Prisma):', { orderId, orderStatus })
 
     return NextResponse.json({
       success: true,
@@ -185,7 +326,7 @@ export async function PUT(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('❌ Error updating order (Simple Prisma):', error)
+    console.error('❌ Error updating order (Robust Prisma):', error)
     
     if (error instanceof Error && error.message.includes('Record to update not found')) {
       return NextResponse.json(
@@ -201,5 +342,78 @@ export async function PUT(request: NextRequest) {
       },
       { status: 500 }
     )
+  } finally {
+    // Optional: disconnect to free resources
+    // await disconnectPrisma();
+  }
+}
+
+// Delete order (DELETE method) with retry logic
+export async function DELETE(request: NextRequest) {
+  console.log('🗑️ Admin order delete API called (Robust Prisma)')
+  
+  try {
+    await prisma.$connect();
+    
+    const { searchParams } = new URL(request.url)
+    const orderId = searchParams.get('orderId')
+    
+    if (!orderId) {
+      return NextResponse.json(
+        { error: 'Order ID is required' },
+        { status: 400 }
+      )
+    }
+
+    // Delete order with transaction and retry logic
+    const result = await executeWithRetry(() =>
+      prisma.$transaction(async (tx) => {
+        // First delete order items
+        await tx.orderItem.deleteMany({
+          where: { orderId }
+        })
+        
+        // Delete payment if exists
+        await tx.payment.deleteMany({
+          where: { orderId }
+        })
+        
+        // Finally delete the order
+        const deletedOrder = await tx.order.delete({
+          where: { id: orderId }
+        })
+        
+        return deletedOrder
+      })
+    );
+
+    console.log('✅ Order deleted successfully (Robust Prisma):', { orderId })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Order deleted successfully',
+      orderId
+    })
+
+  } catch (error) {
+    console.error('❌ Error deleting order (Robust Prisma):', error)
+    
+    if (error instanceof Error && error.message.includes('Record to delete does not exist')) {
+      return NextResponse.json(
+        { error: 'Order not found' },
+        { status: 404 }
+      )
+    }
+    
+    return NextResponse.json(
+      { 
+        error: 'Failed to delete order',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    )
+  } finally {
+    // Optional: disconnect to free resources
+    // await disconnectPrisma();
   }
 }
