@@ -160,7 +160,7 @@ export async function GET(request: NextRequest) {
           oi."orderId",
           oi.id as item_id,
           oi.quantity,
-          oi."price" as item_price,
+          oi."totalPrice" as item_price,
           pb.id as bundle_id,
           pb.name as bundle_name,
           pb.price as bundle_price,
