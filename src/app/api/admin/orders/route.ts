@@ -94,32 +94,39 @@ export async function GET(request: NextRequest) {
       SELECT 
         o.id,
         o."orderNumber",
+        o."userId",
         o."subtotalAmount",
         o."serviceFee", 
         o."totalAmount",
         o."orderStatus",
+        o."paymentStatus",
+        o."pickupMethod",
         o."pickupDate",
+        o."pickupStatus",
+        o."paymentProofUrl",
         o.notes,
         o."createdAt",
         o."updatedAt",
-        u.id as user_id,
-        u.name as user_name,
-        u.email as user_email,
-        u.phone as user_phone,
-        p.status as payment_status,
-        p.method as payment_method,
-        p."proofUrl" as payment_proof,
-        p."createdAt" as payment_created_at,
-        p."updatedAt" as payment_updated_at,
-        b.id as bank_id,
-        b.name as bank_name,
-        b."accountNumber" as bank_account_number,
-        b."accountName" as bank_account_name
+        u.name as "userName",
+        u.email as "userEmail",
+        u.phone as "userPhone",
+        p.status as "currentPaymentStatus",
+        p."paymentMethod",
+        p.amount as "paymentAmount",
+        b.name as "bankName",
+        b.code as "bankCode",
+        b."accountNumber",
+        b."accountName",
+        COUNT(oi.id) as "itemCount",
+        SUM(oi.quantity) as "totalQuantity",
+        SUM(oi.price * oi.quantity) as "calculatedSubtotal"
       FROM orders o
       LEFT JOIN users u ON o."userId" = u.id
       LEFT JOIN payments p ON o.id = p."orderId"
       LEFT JOIN banks b ON o."bankId" = b.id
+      LEFT JOIN order_items oi ON o.id = oi."orderId"
       ${whereClause}
+      GROUP BY o.id, u.name, u.email, u.phone, p.status, p."paymentMethod", p.amount, b.name, b.code, b."accountNumber", b."accountName"
       ${orderByClause}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `
