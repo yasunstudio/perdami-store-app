@@ -21,20 +21,10 @@ async function getDbClient() {
 
 export async function GET(request: NextRequest) {
   console.log('🔍 Admin orders API called')
+  
   try {
-    const session = await auth()
-    console.log('🔑 Session check:', session?.user?.role)
+    const client = await getDbClient()
     
-    if (!session?.user || !['ADMIN', 'STAFF'].includes(session.user.role)) {
-      console.log('❌ Unauthorized access attempt')
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    console.log('✅ User authorized:', session?.user?.email)
-
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
@@ -44,20 +34,24 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || ''
     const sortBy = searchParams.get('sortBy') || 'createdAt'
     const sortOrder = searchParams.get('sortOrder') || 'desc'
-
-    const skip = (page - 1) * limit
-
-    // Build where clause
-    const where: any = {}
     
+    const offset = (page - 1) * limit
+
+    // Build WHERE clause
+    let whereConditions = []
+    let queryParams = []
+    let paramIndex = 1
+
     if (orderStatus) {
-      where.orderStatus = orderStatus
+      whereConditions.push(`o."orderStatus" = $${paramIndex}`)
+      queryParams.push(orderStatus)
+      paramIndex++
     }
-    
+
     if (paymentStatus) {
-      where.payment = {
-        status: paymentStatus
-      }
+      whereConditions.push(`p.status = $${paramIndex}`)
+      queryParams.push(paymentStatus)
+      paramIndex++
     }
 
     if (pickupDate) {
@@ -66,200 +60,243 @@ export async function GET(request: NextRequest) {
       const endOfDay = new Date(pickupDate)
       endOfDay.setHours(23, 59, 59, 999)
       
-      where.pickupDate = {
-        gte: startOfDay,
-        lte: endOfDay
-      }
-    }
-    
-    if (search) {
-      where.OR = [
-        {
-          orderNumber: {
-            contains: search,
-            mode: 'insensitive'
-          }
-        },
-        {
-          user: {
-            OR: [
-              {
-                name: {
-                  contains: search,
-                  mode: 'insensitive'
-                }
-              },
-              {
-                email: {
-                  contains: search,
-                  mode: 'insensitive'
-                }
-              }
-            ]
-          }
-        }
-      ]
+      whereConditions.push(`o."pickupDate" >= $${paramIndex} AND o."pickupDate" <= $${paramIndex + 1}`)
+      queryParams.push(startOfDay.toISOString(), endOfDay.toISOString())
+      paramIndex += 2
     }
 
-    // Build orderBy clause
-    let orderBy: any = {}
+    if (search) {
+      whereConditions.push(`(
+        o."orderNumber" ILIKE $${paramIndex} OR 
+        u.name ILIKE $${paramIndex} OR 
+        u.email ILIKE $${paramIndex}
+      )`)
+      queryParams.push(`%${search}%`)
+      paramIndex++
+    }
+
+    const whereClause = whereConditions.length > 0 
+      ? `WHERE ${whereConditions.join(' AND ')}`
+      : ''
+
+    // Build ORDER BY clause
+    let orderByClause = 'ORDER BY o."createdAt" DESC'
     if (sortBy === 'customerName') {
-      orderBy = {
-        user: {
-          name: sortOrder
-        }
-      }
-    } else {
-      orderBy[sortBy] = sortOrder
+      orderByClause = `ORDER BY u.name ${sortOrder.toUpperCase()}`
+    } else if (sortBy === 'totalAmount') {
+      orderByClause = `ORDER BY o."totalAmount" ${sortOrder.toUpperCase()}`
+    } else if (sortBy === 'orderStatus') {
+      orderByClause = `ORDER BY o."orderStatus" ${sortOrder.toUpperCase()}`
     }
 
     // Get orders with pagination
-    console.log('📊 Fetching orders with pagination...')
-    console.log('📊 Query params:', { page, limit, skip, where, orderBy })
+    const ordersQuery = `
+      SELECT 
+        o.id,
+        o."orderNumber",
+        o."userId",
+        o."subtotalAmount",
+        o."serviceFee", 
+        o."totalAmount",
+        o."orderStatus",
+        o."paymentStatus",
+        o."pickupMethod",
+        o."pickupDate",
+        o."pickupStatus",
+        o."paymentProofUrl",
+        o.notes,
+        o."createdAt",
+        o."updatedAt",
+        u.name as "userName",
+        u.email as "userEmail",
+        u.phone as "userPhone",
+        p.status as "currentPaymentStatus",
+        p.method as "paymentMethod",
+        p.amount as "paymentAmount",
+        b.name as "bankName",
+        b.code as "bankCode",
+        b."accountNumber",
+        b."accountName",
+        COUNT(oi.id) as "itemCount",
+        SUM(oi.quantity) as "totalQuantity",
+        SUM(oi."totalPrice") as "calculatedSubtotal"
+      FROM orders o
+      LEFT JOIN users u ON o."userId" = u.id
+      LEFT JOIN payments p ON o.id = p."orderId"
+      LEFT JOIN banks b ON o."bankId" = b.id
+      LEFT JOIN order_items oi ON o.id = oi."orderId"
+      ${whereClause}
+      GROUP BY o.id, u.name, u.email, u.phone, p.status, p.method, p.amount, b.name, b.code, b."accountNumber", b."accountName"
+      ${orderByClause}
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `
     
-    const [orders, total] = await Promise.all([
-      prisma.order.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy,
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              phone: true
-            }
-          },
-          orderItems: {
-            include: {
-              bundle: {
-                select: {
-                  id: true,
-                  name: true,
-                  price: true,
-                  image: true,
-                  store: {
-                    select: {
-                      id: true,
-                      name: true
-                    }
-                  }
-                }
-              }
-            }
-          },
-          bank: {
-            select: {
-              id: true,
-              name: true,
-              accountNumber: true,
-              accountName: true
-            }
-          },
-          payment: {
-            select: {
-              id: true,
-              status: true,
-              method: true,
-              proofUrl: true,
-              createdAt: true,
-              updatedAt: true
-            }
-          }
-        }
-      }),
-      prisma.order.count({ where })
-    ])
+    queryParams.push(limit, offset)
     
-    console.log('✅ Orders fetched:', orders.length, 'Total:', total)
+    console.log('📊 Executing orders query with params:', { page, limit, orderStatus, paymentStatus, search })
+    
+    const ordersResult = await client.query(ordersQuery, queryParams)
+    
+    // Get total count
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM orders o
+      LEFT JOIN users u ON o."userId" = u.id
+      LEFT JOIN payments p ON o.id = p."orderId"
+      ${whereClause}
+    `
+    
+    const countParams = queryParams.slice(0, -2) // Remove limit and offset
+    const countResult = await client.query(countQuery, countParams)
+    const total = parseInt(countResult.rows[0].total)
+
+    // Get order items for each order
+    const orderIds = ordersResult.rows.map((order: any) => order.id)
+    let orderItems: any[] = []
+    
+    if (orderIds.length > 0) {
+      const itemsQuery = `
+        SELECT 
+          oi."orderId",
+          oi.id as item_id,
+          oi.quantity,
+          oi."totalPrice" as item_price,
+          pb.id as bundle_id,
+          pb.name as bundle_name,
+          pb.price as bundle_price,
+          pb.image as bundle_image,
+          s.id as store_id,
+          s.name as store_name
+        FROM order_items oi
+        LEFT JOIN product_bundles pb ON oi."bundleId" = pb.id
+        LEFT JOIN stores s ON pb."storeId" = s.id
+        WHERE oi."orderId" = ANY($1)
+        ORDER BY oi."createdAt"
+      `
+      
+      const itemsResult = await client.query(itemsQuery, [orderIds])
+      orderItems = itemsResult.rows
+    }
 
     // Get order statistics
-    console.log('📈 Fetching order statistics...')
-    const stats = await prisma.order.groupBy({
-      by: ['orderStatus'],
-      _count: {
-        id: true
-      }
-    })
-    console.log('✅ Order stats:', stats)
+    const statsQuery = `
+      SELECT 
+        COUNT(*) as total,
+        COUNT(CASE WHEN "orderStatus" = 'PENDING' THEN 1 END) as pending,
+        COUNT(CASE WHEN "orderStatus" = 'CONFIRMED' THEN 1 END) as confirmed,
+        COUNT(CASE WHEN "orderStatus" = 'READY' THEN 1 END) as ready,
+        COUNT(CASE WHEN "orderStatus" = 'COMPLETED' THEN 1 END) as completed,
+        COUNT(CASE WHEN "orderStatus" = 'CANCELLED' THEN 1 END) as cancelled
+      FROM orders
+    `
+    
+    const statsResult = await client.query(statsQuery)
+    const stats = statsResult.rows[0]
 
-    // Get payment statistics from Payment model
-    console.log('💳 Fetching payment statistics...')
-    const paymentStats = await prisma.payment.groupBy({
-      by: ['status'],
-      _count: {
-        id: true
-      }
-    })
-    console.log('✅ Payment stats:', paymentStats)
+    // Get payment statistics
+    const paymentStatsQuery = `
+      SELECT 
+        COUNT(CASE WHEN status = 'PENDING' THEN 1 END) as pending,
+        COUNT(CASE WHEN status = 'PAID' THEN 1 END) as paid,
+        COUNT(CASE WHEN status = 'FAILED' THEN 1 END) as failed,
+        COUNT(CASE WHEN status = 'REFUNDED' THEN 1 END) as refunded
+      FROM payments
+    `
+    
+    const paymentStatsResult = await client.query(paymentStatsQuery)
+    const paymentStats = paymentStatsResult.rows[0]
 
-    // Calculate total revenue from paid orders
-    console.log('💰 Calculating revenue...')
-    const totalRevenue = await prisma.order.aggregate({
-      where: {
-        payment: {
-          status: 'PAID'
-        }
-      },
-      _sum: {
-        totalAmount: true
+    // Calculate total revenue
+    const revenueQuery = `
+      SELECT COALESCE(SUM(o."totalAmount"), 0) as total_revenue
+      FROM orders o
+      LEFT JOIN payments p ON o.id = p."orderId"
+      WHERE p.status = 'PAID'
+    `
+    
+    const revenueResult = await client.query(revenueQuery)
+    const totalRevenue = parseFloat(revenueResult.rows[0].total_revenue || 0)
+
+    await client.end()
+
+    // Format orders data
+    const orders = ordersResult.rows.map((order: any) => {
+      const items = orderItems.filter((item: any) => item.orderId === order.id)
+      
+      return {
+        id: order.id,
+        orderNumber: order.orderNumber,
+        customer: {
+          id: order.user_id,
+          name: order.user_name,
+          email: order.user_email,
+          phone: order.user_phone
+        },
+        subtotalAmount: parseFloat(order.subtotalAmount),
+        serviceFee: parseFloat(order.serviceFee),
+        totalAmount: parseFloat(order.totalAmount),
+        orderStatus: order.orderStatus,
+        paymentStatus: order.payment_status || 'PENDING',
+        paymentMethod: order.payment_method,
+        paymentProof: order.payment_proof,
+        pickupDate: order.pickupDate,
+        notes: order.notes,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+        items: items.map((item: any) => ({
+          id: item.item_id,
+          quantity: item.quantity,
+          price: parseFloat(item.item_price),
+          bundle: {
+            id: item.bundle_id,
+            name: item.bundle_name,
+            price: parseFloat(item.bundle_price || 0),
+            image: item.bundle_image,
+            store: {
+              id: item.store_id,
+              name: item.store_name
+            }
+          }
+        })),
+        bank: order.bank_id ? {
+          id: order.bank_id,
+          name: order.bank_name,
+          accountNumber: order.bank_account_number,
+          accountName: order.bank_account_name
+        } : null,
+        payment: order.payment_status ? {
+          id: `payment-${order.id}`,
+          status: order.payment_status,
+          method: order.payment_method,
+          proofUrl: order.payment_proof,
+          createdAt: order.payment_created_at,
+          updatedAt: order.payment_updated_at
+        } : null
       }
     })
-    console.log('✅ Total revenue:', totalRevenue._sum.totalAmount || 0)
 
     // Format statistics
     const orderStats = {
-      total: total,
-      pending: stats.find(s => s.orderStatus === 'PENDING')?._count.id || 0,
-      confirmed: stats.find(s => s.orderStatus === 'CONFIRMED')?._count.id || 0,
-      ready: stats.find(s => s.orderStatus === 'READY')?._count.id || 0,
-      completed: stats.find(s => s.orderStatus === 'COMPLETED')?._count.id || 0,
-      cancelled: stats.find(s => s.orderStatus === 'CANCELLED')?._count.id || 0,
-      totalRevenue: totalRevenue._sum.totalAmount || 0
+      total: parseInt(stats.total),
+      pending: parseInt(stats.pending),
+      confirmed: parseInt(stats.confirmed),
+      ready: parseInt(stats.ready),
+      completed: parseInt(stats.completed),
+      cancelled: parseInt(stats.cancelled),
+      totalRevenue
     }
 
-    const paymentStatistics = {
-      pending: paymentStats.find(s => s.status === 'PENDING')?._count.id || 0,
-      paid: paymentStats.find(s => s.status === 'PAID')?._count.id || 0,
-      failed: paymentStats.find(s => s.status === 'FAILED')?._count.id || 0,
-      refunded: paymentStats.find(s => s.status === 'REFUNDED')?._count.id || 0
+    const paymentStatsFormatted = {
+      pending: parseInt(paymentStats.pending),
+      paid: parseInt(paymentStats.paid),
+      failed: parseInt(paymentStats.failed),
+      refunded: parseInt(paymentStats.refunded)
     }
 
-    return NextResponse.json({
+    const response = {
       success: true,
       data: {
-        orders: orders.map(order => ({
-          id: order.id,
-          orderNumber: order.orderNumber,
-          userId: order.userId,
-          bankId: order.bankId,
-          customer: {
-            id: order.user.id,
-            name: order.user.name,
-            email: order.user.email,
-            phone: order.user.phone
-          },
-          items: (order.orderItems || []).map(item => ({
-            id: item.id,
-            bundle: item.bundle,
-            quantity: item.quantity,
-            price: item.price,
-            subtotal: item.quantity * item.price
-          })),
-          totalAmount: order.totalAmount,
-          orderStatus: order.orderStatus,
-          paymentStatus: order.payment?.status || 'PENDING',
-          paymentMethod: order.payment?.method || null,
-          paymentProof: order.payment?.proofUrl || null,
-          pickupMethod: order.pickupMethod,
-          pickupDate: order.pickupDate,
-          notes: order.notes,
-          bank: order.bank,
-          createdAt: order.createdAt,
-          updatedAt: order.updatedAt
-        })),
+        orders,
         pagination: {
           page,
           limit,
@@ -269,15 +306,86 @@ export async function GET(request: NextRequest) {
           hasPrev: page > 1
         },
         stats: orderStats,
-        paymentStats: paymentStatistics
+        paymentStats: paymentStatsFormatted
       }
+    }
+
+    console.log('✅ Orders data fetched successfully:', {
+      ordersCount: orders.length,
+      total,
+      orderStats,
+      paymentStats: paymentStatsFormatted
     })
+
+    return NextResponse.json(response)
+
   } catch (error) {
     console.error('❌ Error fetching orders:', error)
-    console.error('❌ Error stack:', error instanceof Error ? error.stack : error)
-    console.error('❌ Error message:', error instanceof Error ? error.message : String(error))
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Failed to fetch orders',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    )
+  }
+}
+
+// Update order status (PUT method)
+export async function PUT(request: NextRequest) {
+  console.log('🔄 Admin order update API called')
+  
+  try {
+    const body = await request.json()
+    const { orderId, orderStatus, notes } = body
+    
+    if (!orderId || !orderStatus) {
+      return NextResponse.json(
+        { error: 'Order ID and order status are required' },
+        { status: 400 }
+      )
+    }
+
+    const client = await getDbClient()
+    
+    // Update order status
+    const updateQuery = `
+      UPDATE orders 
+      SET 
+        "orderStatus" = $1,
+        notes = $2,
+        "updatedAt" = CURRENT_TIMESTAMP
+      WHERE id = $3
+      RETURNING *
+    `
+    
+    const updateResult = await client.query(updateQuery, [orderStatus, notes || null, orderId])
+    
+    if (updateResult.rows.length === 0) {
+      await client.end()
+      return NextResponse.json(
+        { error: 'Order not found' },
+        { status: 404 }
+      )
+    }
+
+    await client.end()
+
+    console.log('✅ Order status updated successfully:', { orderId, orderStatus })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Order status updated successfully',
+      order: updateResult.rows[0]
+    })
+
+  } catch (error) {
+    console.error('❌ Error updating order:', error)
+    return NextResponse.json(
+      { 
+        error: 'Failed to update order',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
