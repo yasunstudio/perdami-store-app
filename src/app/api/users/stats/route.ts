@@ -1,48 +1,41 @@
 import { NextResponse } from 'next/server'
-import { Client } from 'pg'
+import { prisma } from '@/lib/prisma'
 
 export async function GET() {
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-  })
-
   try {
-    await client.connect()
-    console.log('✅ Connected to database for user stats query')
+    console.log('✅ Fetching user stats with Prisma')
 
-    // Get total users
-    const totalUsersResult = await client.query('SELECT COUNT(*) as count FROM users')
-    const totalUsers = parseInt(totalUsersResult.rows[0].count)
+    // Get total users, admins, customers in parallel
+    const [totalUsers, totalAdmins, totalCustomers, newUsers] = await Promise.all([
+      prisma.user.count(),
+      prisma.user.count({ where: { role: 'ADMIN' } }),
+      prisma.user.count({ where: { role: 'CUSTOMER' } }),
+      prisma.user.count({
+        where: {
+          createdAt: {
+            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+          }
+        }
+      })
+    ])
 
-    // Get total admins
-    const totalAdminsResult = await client.query('SELECT COUNT(*) as count FROM users WHERE role = $1', ['ADMIN'])
-    const totalAdmins = parseInt(totalAdminsResult.rows[0].count)
-
-    // Get total customers
-    const totalCustomersResult = await client.query('SELECT COUNT(*) as count FROM users WHERE role = $1', ['CUSTOMER'])
-    const totalCustomers = parseInt(totalCustomersResult.rows[0].count)
-
-    // Get new users this month
-    const currentDate = new Date()
-    const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
-    const newUsersResult = await client.query(
-      'SELECT COUNT(*) as count FROM users WHERE "createdAt" >= $1',
-      [startOfMonth]
-    )
-    const newUsersThisMonth = parseInt(newUsersResult.rows[0].count)
-
-    const stats = {
+    return NextResponse.json({
       totalUsers,
       totalAdmins,
       totalCustomers,
-      newUsersThisMonth
-    }
-
-    console.log('User stats:', stats)
-
-    return NextResponse.json(stats)
+      newUsers,
+      userGrowthPercentage: totalUsers > 0 ? ((newUsers / totalUsers) * 100).toFixed(1) : '0',
+      stats: {
+        totalUsers,
+        totalAdmins,
+        totalCustomers,
+        newUsers,
+        adminPercentage: totalUsers > 0 ? ((totalAdmins / totalUsers) * 100).toFixed(1) : '0',
+        customerPercentage: totalUsers > 0 ? ((totalCustomers / totalUsers) * 100).toFixed(1) : '0'
+      }
+    })
   } catch (error) {
-    console.error('❌ User stats API error:', error)
+    console.error('❌ User stats error:', error)
     return NextResponse.json(
       { 
         error: 'Failed to fetch user stats',
@@ -50,7 +43,5 @@ export async function GET() {
       },
       { status: 500 }
     )
-  } finally {
-    await client.end()
   }
 }

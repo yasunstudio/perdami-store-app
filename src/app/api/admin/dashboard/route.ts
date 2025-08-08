@@ -1,81 +1,82 @@
 import { NextResponse } from 'next/server'
-import { Client } from 'pg'
+import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 
 export async function GET() {
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-  })
-
   try {
-    // Skip auth check for now to debug dashboard issues
-    // TODO: Re-enable auth after fixing dashboard data loading
-    // const session = await auth()
-    // if (!session?.user || session.user.role !== 'ADMIN') {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    // }
+    const session = await auth()
+    if (!session?.user || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-    await client.connect()
-    console.log('✅ Connected to database for dashboard stats')
+    console.log('✅ Fetching dashboard stats with Prisma')
 
-    // Get basic stats using direct SQL
-    const [usersResult, bundlesResult, ordersResult, storesResult] = await Promise.all([
-      client.query('SELECT COUNT(*) as count FROM users'),
-      client.query('SELECT COUNT(*) as count FROM product_bundles'),
-      client.query('SELECT COUNT(*) as count FROM orders'),
-      client.query('SELECT COUNT(*) as count FROM stores')
+    // Get basic stats using Prisma with parallel queries
+    const [totalUsers, totalBundles, totalOrders, totalStores] = await Promise.all([
+      prisma.user.count(),
+      prisma.productBundle.count(),
+      prisma.order.count(),
+      prisma.store.count()
     ])
 
-    // Get recent orders (last 5)
-    const recentOrdersResult = await client.query(`
-      SELECT o.id, o."orderNumber", o."totalAmount", o."orderStatus", o."createdAt",
-             u.name as user_name, u.email as user_email
-      FROM orders o
-      LEFT JOIN users u ON o."userId" = u.id
-      ORDER BY o."createdAt" DESC
-      LIMIT 5
-    `)
+    // Get recent orders (last 5) with user details
+    const recentOrders = await prisma.order.findMany({
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true
+          }
+        }
+      }
+    })
 
-    // Get popular bundles (with mock sales data)
-    const popularBundlesResult = await client.query(`
-      SELECT b.id, b.name, b.price, b.image, s.name as store_name
-      FROM product_bundles b
-      LEFT JOIN stores s ON b."storeId" = s.id
-      WHERE b."showToCustomer" = true
-      ORDER BY b.price DESC
-      LIMIT 5
-    `)
+    // Get popular bundles with store details
+    const popularBundles = await prisma.productBundle.findMany({
+      take: 5,
+      where: { showToCustomer: true },
+      orderBy: { price: 'desc' },
+      include: {
+        store: {
+          select: {
+            name: true
+          }
+        }
+      }
+    })
 
     // Structure the response
     const dashboardData = {
       stats: {
-        totalUsers: parseInt(usersResult.rows[0].count),
-        totalProducts: parseInt(bundlesResult.rows[0].count),
-        totalOrders: parseInt(ordersResult.rows[0].count),
-        totalStores: parseInt(storesResult.rows[0].count),
+        totalUsers,
+        totalProducts: totalBundles,
+        totalOrders,
+        totalStores,
         userGrowthRate: 12.5, // Mock growth rates
         productGrowthRate: 8.3,
         orderGrowthRate: 15.7,
         storeGrowthRate: 5.2
       },
-      recentOrders: recentOrdersResult.rows.map(order => ({
+      recentOrders: recentOrders.map(order => ({
         id: order.id,
         orderNumber: order.orderNumber,
-        customerName: order.user_name || 'Unknown',
-        customerEmail: order.user_email,
-        totalAmount: parseFloat(order.totalAmount),
+        customerName: order.user?.name || 'Unknown',
+        customerEmail: order.user?.email || '',
+        totalAmount: parseFloat(order.totalAmount.toString()),
         status: order.orderStatus,
         itemCount: 1, // Mock item count
         createdAt: order.createdAt
       })),
-      popularProducts: popularBundlesResult.rows.map((bundle, index) => ({
+      popularProducts: popularBundles.map((bundle, index) => ({
         id: bundle.id,
         name: bundle.name,
-        price: parseFloat(bundle.price),
+        price: parseFloat(bundle.price.toString()),
         image: bundle.image,
-        storeName: bundle.store_name,
+        storeName: bundle.store?.name || 'Unknown',
         totalSold: Math.floor(Math.random() * 50) + 10, // Mock sales
-        revenue: parseFloat(bundle.price) * (Math.floor(Math.random() * 50) + 10),
+        revenue: parseFloat(bundle.price.toString()) * (Math.floor(Math.random() * 50) + 10),
         isFeatured: index < 2
       }))
     }
@@ -92,7 +93,5 @@ export async function GET() {
       },
       { status: 500 }
     )
-  } finally {
-    await client.end()
   }
 }
