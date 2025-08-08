@@ -1,13 +1,21 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { createPrismaClient } from '@/lib/prisma-serverless'
 
 export async function GET() {
   try {
-    const contactInfo = await prisma.contactInfo.findMany({
-      orderBy: { id: 'asc' }
-    })
+    // Create fresh prisma client for serverless environment to avoid prepared statement conflicts
+    const prisma = createPrismaClient()
     
-    return NextResponse.json(contactInfo)
+    try {
+      const contactInfo = await prisma.contactInfo.findMany({
+        orderBy: { id: 'asc' }
+      })
+      
+      return NextResponse.json(contactInfo)
+    } finally {
+      // Clean up prisma client
+      await prisma.$disconnect()
+    }
   } catch (error) {
     console.error('Error fetching contact info:', error)
     return NextResponse.json(
@@ -19,18 +27,26 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const data = await request.json()
-    const { id, ...updateData } = data
+    // Create fresh prisma client for serverless environment to avoid prepared statement conflicts
+    const prisma = createPrismaClient()
     
-    const updatedContactInfo = await prisma.contactInfo.update({
-      where: { id },
-      data: {
-        ...updateData,
-        updatedAt: new Date()
-      }
-    })
-    
-    return NextResponse.json(updatedContactInfo)
+    try {
+      const data = await request.json()
+      const { id, ...updateData } = data
+      
+      const updatedContactInfo = await prisma.contactInfo.update({
+        where: { id },
+        data: {
+          ...updateData,
+          updatedAt: new Date()
+        }
+      })
+      
+      return NextResponse.json(updatedContactInfo)
+    } finally {
+      // Clean up prisma client
+      await prisma.$disconnect()
+    }
   } catch (error) {
     console.error('Error updating contact info:', error)
     return NextResponse.json(

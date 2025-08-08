@@ -5,6 +5,7 @@ export class SingleBankService {
    * Check if single bank mode is enabled
    */
   static async isSingleBankModeEnabled(): Promise<boolean> {
+    const prisma = createPrismaClient()
     try {
       const appSettings = await prisma.appSettings.findFirst({
         where: { isActive: true }
@@ -13,6 +14,8 @@ export class SingleBankService {
     } catch (error) {
       console.error('Error checking single bank mode:', error)
       return false
+    } finally {
+      await prisma.$disconnect()
     }
   }
 
@@ -20,6 +23,7 @@ export class SingleBankService {
    * Get the default bank for single bank mode
    */
   static async getDefaultBank() {
+    const prisma = createPrismaClient()
     try {
       const appSettings = await prisma.appSettings.findFirst({
         where: { 
@@ -35,6 +39,8 @@ export class SingleBankService {
     } catch (error) {
       console.error('Error getting default bank:', error)
       return null
+    } finally {
+      await prisma.$disconnect()
     }
   }
 
@@ -42,17 +48,25 @@ export class SingleBankService {
    * Get available banks based on single bank mode setting
    */
   static async getAvailableBanks() {
-    const isSingleBankMode = await this.isSingleBankModeEnabled()
-    
-    if (isSingleBankMode) {
-      const defaultBank = await this.getDefaultBank()
-      return defaultBank ? [defaultBank] : []
-    } else {
-      // Regular mode - return all active banks
-      return await prisma.bank.findMany({
-        where: { isActive: true },
-        orderBy: { name: 'asc' }
-      })
+    const prisma = createPrismaClient()
+    try {
+      const isSingleBankMode = await this.isSingleBankModeEnabled()
+      
+      if (isSingleBankMode) {
+        const defaultBank = await this.getDefaultBank()
+        return defaultBank ? [defaultBank] : []
+      } else {
+        // Regular mode - return all active banks
+        return await prisma.bank.findMany({
+          where: { isActive: true },
+          orderBy: { name: 'asc' }
+        })
+      }
+    } catch (error) {
+      console.error('Error getting available banks:', error)
+      return []
+    } finally {
+      await prisma.$disconnect()
     }
   }
 
@@ -60,6 +74,7 @@ export class SingleBankService {
    * Toggle single bank mode
    */
   static async toggleSingleBankMode(enabled: boolean, defaultBankId?: string) {
+    const prisma = createPrismaClient()
     try {
       const appSettings = await prisma.appSettings.findFirst({
         where: { isActive: true }
@@ -96,6 +111,8 @@ export class SingleBankService {
     } catch (error) {
       console.error('Error toggling single bank mode:', error)
       throw error
+    } finally {
+      await prisma.$disconnect()
     }
   }
 
@@ -103,6 +120,7 @@ export class SingleBankService {
    * Set default bank for single bank mode
    */
   static async setDefaultBank(bankId: string) {
+    const prisma = createPrismaClient()
     try {
       // Verify bank exists and is active
       const bank = await prisma.bank.findFirst({
@@ -136,6 +154,8 @@ export class SingleBankService {
     } catch (error) {
       console.error('Error setting default bank:', error)
       throw error
+    } finally {
+      await prisma.$disconnect()
     }
   }
 
@@ -143,6 +163,7 @@ export class SingleBankService {
    * Get single bank mode configuration
    */
   static async getConfiguration() {
+    const prisma = createPrismaClient()
     try {
       const appSettings = await prisma.appSettings.findFirst({
         where: { isActive: true },
@@ -166,6 +187,8 @@ export class SingleBankService {
     } catch (error) {
       console.error('Error getting single bank configuration:', error)
       return null
+    } finally {
+      await prisma.$disconnect()
     }
   }
 }

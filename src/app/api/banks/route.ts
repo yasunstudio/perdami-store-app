@@ -1,5 +1,5 @@
-import { prisma } from '@/lib/prisma'
-import { SingleBankService } from '@/lib/single-bank'
+import { createPrismaClient } from '@/lib/prisma-serverless'
+import { SingleBankService } from '@/lib/single-bank-serverless'
 import { NextResponse } from 'next/server'
 import { withDatabaseRetry, createErrorResponse } from '@/lib/database-utils'
 
