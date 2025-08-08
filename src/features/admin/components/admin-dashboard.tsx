@@ -54,26 +54,57 @@ function AdminDashboard() {
     // Fetch real dashboard data from API
     const fetchDashboardData = async () => {
       try {
-        const response = await fetch('/api/admin/dashboard');
+        console.log('🔄 Fetching dashboard data...');
+        
+        // Try admin API first, then fallback to public API
+        let response = await fetch('/api/admin/dashboard');
+        
+        if (!response.ok) {
+          console.warn('Admin dashboard API failed, trying public fallback...');
+          response = await fetch('/api/dashboard-public');
+        }
         
         if (!response.ok) {
           throw new Error(`Failed to fetch dashboard data: ${response.status}`);
         }
         
         const data = await response.json();
+        console.log('✅ Dashboard data received:', data);
         
-        setStats(data.stats);
-        setRecentOrders(data.recentOrders);
-        setPopularProducts(data.popularProducts);
+        // Handle different response formats
+        if (data.success) {
+          // Public API format
+          setStats({
+            totalUsers: data.stats.totalUsers,
+            totalProducts: data.stats.totalBundles,
+            totalOrders: data.stats.totalOrders,
+            totalStores: data.stats.totalStores,
+            userGrowthRate: data.stats.userGrowthRate,
+            productGrowthRate: data.stats.bundleGrowthRate,
+            orderGrowthRate: data.stats.orderGrowthRate,
+            storeGrowthRate: data.stats.storeGrowthRate
+          });
+          setRecentOrders(data.recentOrders || []);
+          setPopularProducts(data.popularBundles || []);
+        } else {
+          // Admin API format
+          setStats(data.stats);
+          setRecentOrders(data.recentOrders || []);
+          setPopularProducts(data.popularProducts || []);
+        }
         
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-        // Set empty data on error
+        console.error('❌ Error fetching dashboard data:', error);
+        // Set fallback data on error
         setStats({
           totalUsers: 0,
           totalProducts: 0,
           totalOrders: 0,
-          totalStores: 0
+          totalStores: 0,
+          userGrowthRate: 0,
+          productGrowthRate: 0,
+          orderGrowthRate: 0,
+          storeGrowthRate: 0
         });
         setRecentOrders([]);
         setPopularProducts([]);
