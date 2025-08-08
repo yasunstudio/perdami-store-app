@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Client } from 'pg'
-import { OrderStatus, PaymentStatus, PaymentMethod } from '@/types'
 
 // Database connection
 async function getDbClient() {
@@ -20,7 +19,7 @@ async function getDbClient() {
 }
 
 export async function GET(request: NextRequest) {
-  console.log('🔍 Admin orders API called')
+  console.log('🔍 Public orders API called')
   
   try {
     const client = await getDbClient()
@@ -28,12 +27,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
-    const orderStatus = searchParams.get('orderStatus') as OrderStatus | null
-    const paymentStatus = searchParams.get('paymentStatus') as PaymentStatus | null
-    const pickupDate = searchParams.get('pickupDate') || null
+    const orderStatus = searchParams.get('orderStatus') || null
+    const paymentStatus = searchParams.get('paymentStatus') || null
     const search = searchParams.get('search') || ''
-    const sortBy = searchParams.get('sortBy') || 'createdAt'
-    const sortOrder = searchParams.get('sortOrder') || 'desc'
     
     const offset = (page - 1) * limit
 
@@ -54,17 +50,6 @@ export async function GET(request: NextRequest) {
       paramIndex++
     }
 
-    if (pickupDate) {
-      const startOfDay = new Date(pickupDate)
-      startOfDay.setHours(0, 0, 0, 0)
-      const endOfDay = new Date(pickupDate)
-      endOfDay.setHours(23, 59, 59, 999)
-      
-      whereConditions.push(`o."pickupDate" >= $${paramIndex} AND o."pickupDate" <= $${paramIndex + 1}`)
-      queryParams.push(startOfDay.toISOString(), endOfDay.toISOString())
-      paramIndex += 2
-    }
-
     if (search) {
       whereConditions.push(`(
         o."orderNumber" ILIKE $${paramIndex} OR 
@@ -78,16 +63,6 @@ export async function GET(request: NextRequest) {
     const whereClause = whereConditions.length > 0 
       ? `WHERE ${whereConditions.join(' AND ')}`
       : ''
-
-    // Build ORDER BY clause
-    let orderByClause = 'ORDER BY o."createdAt" DESC'
-    if (sortBy === 'customerName') {
-      orderByClause = `ORDER BY u.name ${sortOrder.toUpperCase()}`
-    } else if (sortBy === 'totalAmount') {
-      orderByClause = `ORDER BY o."totalAmount" ${sortOrder.toUpperCase()}`
-    } else if (sortBy === 'orderStatus') {
-      orderByClause = `ORDER BY o."orderStatus" ${sortOrder.toUpperCase()}`
-    }
 
     // Get orders with pagination
     const ordersQuery = `
@@ -110,8 +85,6 @@ export async function GET(request: NextRequest) {
         p.status as payment_status,
         p.method as payment_method,
         p."proofUrl" as payment_proof,
-        p."createdAt" as payment_created_at,
-        p."updatedAt" as payment_updated_at,
         b.id as bank_id,
         b.name as bank_name,
         b."accountNumber" as bank_account_number,
@@ -121,13 +94,14 @@ export async function GET(request: NextRequest) {
       LEFT JOIN payments p ON o.id = p."orderId"
       LEFT JOIN banks b ON o."bankId" = b.id
       ${whereClause}
-      ${orderByClause}
+      ORDER BY o."createdAt" DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `
     
     queryParams.push(limit, offset)
     
-    console.log('📊 Executing orders query with params:', { page, limit, orderStatus, paymentStatus, search })
+    console.log('📊 Executing orders query:', ordersQuery)
+    console.log('📊 Query params:', queryParams)
     
     const ordersResult = await client.query(ordersQuery, queryParams)
     
@@ -145,8 +119,8 @@ export async function GET(request: NextRequest) {
     const total = parseInt(countResult.rows[0].total)
 
     // Get order items for each order
-    const orderIds = ordersResult.rows.map((order: any) => order.id)
-    let orderItems: any[] = []
+    const orderIds = ordersResult.rows.map(order => order.id)
+    let orderItems = []
     
     if (orderIds.length > 0) {
       const itemsQuery = `
@@ -165,7 +139,6 @@ export async function GET(request: NextRequest) {
         LEFT JOIN product_bundles pb ON oi."bundleId" = pb.id
         LEFT JOIN stores s ON pb."storeId" = s.id
         WHERE oi."orderId" = ANY($1)
-        ORDER BY oi."createdAt"
       `
       
       const itemsResult = await client.query(itemsQuery, [orderIds])
@@ -180,42 +153,20 @@ export async function GET(request: NextRequest) {
         COUNT(CASE WHEN "orderStatus" = 'CONFIRMED' THEN 1 END) as confirmed,
         COUNT(CASE WHEN "orderStatus" = 'READY' THEN 1 END) as ready,
         COUNT(CASE WHEN "orderStatus" = 'COMPLETED' THEN 1 END) as completed,
-        COUNT(CASE WHEN "orderStatus" = 'CANCELLED' THEN 1 END) as cancelled
-      FROM orders
+        COUNT(CASE WHEN "orderStatus" = 'CANCELLED' THEN 1 END) as cancelled,
+        COALESCE(SUM(CASE WHEN p.status = 'PAID' THEN o."totalAmount" ELSE 0 END), 0) as total_revenue
+      FROM orders o
+      LEFT JOIN payments p ON o.id = p."orderId"
     `
     
     const statsResult = await client.query(statsQuery)
     const stats = statsResult.rows[0]
 
-    // Get payment statistics
-    const paymentStatsQuery = `
-      SELECT 
-        COUNT(CASE WHEN status = 'PENDING' THEN 1 END) as pending,
-        COUNT(CASE WHEN status = 'PAID' THEN 1 END) as paid,
-        COUNT(CASE WHEN status = 'FAILED' THEN 1 END) as failed,
-        COUNT(CASE WHEN status = 'REFUNDED' THEN 1 END) as refunded
-      FROM payments
-    `
-    
-    const paymentStatsResult = await client.query(paymentStatsQuery)
-    const paymentStats = paymentStatsResult.rows[0]
-
-    // Calculate total revenue
-    const revenueQuery = `
-      SELECT COALESCE(SUM(o."totalAmount"), 0) as total_revenue
-      FROM orders o
-      LEFT JOIN payments p ON o.id = p."orderId"
-      WHERE p.status = 'PAID'
-    `
-    
-    const revenueResult = await client.query(revenueQuery)
-    const totalRevenue = parseFloat(revenueResult.rows[0].total_revenue || 0)
-
     await client.end()
 
     // Format orders data
-    const orders = ordersResult.rows.map((order: any) => {
-      const items = orderItems.filter((item: any) => item.orderId === order.id)
+    const orders = ordersResult.rows.map(order => {
+      const items = orderItems.filter(item => item.orderId === order.id)
       
       return {
         id: order.id,
@@ -238,7 +189,7 @@ export async function GET(request: NextRequest) {
         notes: order.notes,
         createdAt: order.createdAt,
         updatedAt: order.updatedAt,
-        items: items.map((item: any) => ({
+        items: items.map(item => ({
           id: item.item_id,
           quantity: item.quantity,
           price: parseFloat(item.item_price),
@@ -258,58 +209,36 @@ export async function GET(request: NextRequest) {
           name: order.bank_name,
           accountNumber: order.bank_account_number,
           accountName: order.bank_account_name
-        } : null,
-        payment: order.payment_status ? {
-          id: `payment-${order.id}`,
-          status: order.payment_status,
-          method: order.payment_method,
-          proofUrl: order.payment_proof,
-          createdAt: order.payment_created_at,
-          updatedAt: order.payment_updated_at
         } : null
       }
     })
 
-    // Format statistics
-    const orderStats = {
-      total: parseInt(stats.total),
-      pending: parseInt(stats.pending),
-      confirmed: parseInt(stats.confirmed),
-      ready: parseInt(stats.ready),
-      completed: parseInt(stats.completed),
-      cancelled: parseInt(stats.cancelled),
-      totalRevenue
-    }
-
-    const paymentStatsFormatted = {
-      pending: parseInt(paymentStats.pending),
-      paid: parseInt(paymentStats.paid),
-      failed: parseInt(paymentStats.failed),
-      refunded: parseInt(paymentStats.refunded)
-    }
-
     const response = {
       success: true,
-      data: {
-        orders,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-          hasNext: page < Math.ceil(total / limit),
-          hasPrev: page > 1
-        },
-        stats: orderStats,
-        paymentStats: paymentStatsFormatted
+      orders,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1
+      },
+      stats: {
+        total: parseInt(stats.total),
+        pending: parseInt(stats.pending),
+        confirmed: parseInt(stats.confirmed),
+        ready: parseInt(stats.ready),
+        completed: parseInt(stats.completed),
+        cancelled: parseInt(stats.cancelled),
+        totalRevenue: parseFloat(stats.total_revenue)
       }
     }
 
     console.log('✅ Orders data fetched successfully:', {
       ordersCount: orders.length,
       total,
-      orderStats,
-      paymentStats: paymentStatsFormatted
+      stats: response.stats
     })
 
     return NextResponse.json(response)
@@ -318,67 +247,8 @@ export async function GET(request: NextRequest) {
     console.error('❌ Error fetching orders:', error)
     return NextResponse.json(
       { 
+        success: false, 
         error: 'Failed to fetch orders',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    )
-  }
-}
-
-// Update order status (PUT method)
-export async function PUT(request: NextRequest) {
-  console.log('🔄 Admin order update API called')
-  
-  try {
-    const body = await request.json()
-    const { orderId, orderStatus, notes } = body
-    
-    if (!orderId || !orderStatus) {
-      return NextResponse.json(
-        { error: 'Order ID and order status are required' },
-        { status: 400 }
-      )
-    }
-
-    const client = await getDbClient()
-    
-    // Update order status
-    const updateQuery = `
-      UPDATE orders 
-      SET 
-        "orderStatus" = $1,
-        notes = $2,
-        "updatedAt" = CURRENT_TIMESTAMP
-      WHERE id = $3
-      RETURNING *
-    `
-    
-    const updateResult = await client.query(updateQuery, [orderStatus, notes || null, orderId])
-    
-    if (updateResult.rows.length === 0) {
-      await client.end()
-      return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
-      )
-    }
-
-    await client.end()
-
-    console.log('✅ Order status updated successfully:', { orderId, orderStatus })
-
-    return NextResponse.json({
-      success: true,
-      message: 'Order status updated successfully',
-      order: updateResult.rows[0]
-    })
-
-  } catch (error) {
-    console.error('❌ Error updating order:', error)
-    return NextResponse.json(
-      { 
-        error: 'Failed to update order',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }

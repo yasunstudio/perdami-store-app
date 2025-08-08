@@ -1,280 +1,204 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
-import { pickupScheduler } from '@/lib/pickup-scheduler'
+import { Client } from 'pg'
+
+// Database connection
+async function getDbClient() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL not found')
+  }
+
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? {
+      rejectUnauthorized: false
+    } : false
+  })
+  
+  await client.connect()
+  return client
+}
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  console.log('🔍 Admin order detail API called')
+  
   try {
     const { id } = await params
-    const session = await auth()
-
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Order ID is required' },
+        { status: 400 }
+      )
     }
 
-    const order = await prisma.order.findUnique({
-      where: { id },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true
-          }
-        },
-        orderItems: {
-          include: {
-            bundle: {
-              select: {
-                id: true,
-                name: true,
-                price: true,
-                image: true,
-                storeId: true,
-                store: {
-                  select: {
-                    id: true,
-                    name: true
-                  }
-                }
-              }
-            }
-          }
-        },
-        bank: {
-          select: {
-            id: true,
-            name: true,
-            accountNumber: true,
-            accountName: true
-          }
-        },
-        payment: {
-          select: {
-            id: true,
-            status: true,
-            method: true,
-            amount: true,
-            proofUrl: true,
-            notes: true,
-            createdAt: true,
-            updatedAt: true
-          }
-        }
-      }
-    })
+    const client = await getDbClient()
 
-    if (!order) {
-      return NextResponse.json({ error: 'Order tidak ditemukan' }, { status: 404 })
+    // Get order details
+    const orderQuery = `
+      SELECT 
+        o.id,
+        o."orderNumber",
+        o."subtotalAmount",
+        o."serviceFee", 
+        o."totalAmount",
+        o."orderStatus",
+        o."pickupDate",
+        o."pickupTime",
+        o.notes,
+        o."createdAt",
+        o."updatedAt",
+        u.id as user_id,
+        u.name as user_name,
+        u.email as user_email,
+        u.phone as user_phone,
+        p.id as payment_id,
+        p.status as payment_status,
+        p.method as payment_method,
+        p."proofUrl" as payment_proof,
+        p."createdAt" as payment_created_at,
+        p."updatedAt" as payment_updated_at,
+        b.id as bank_id,
+        b.name as bank_name,
+        b."accountNumber" as bank_account_number,
+        b."accountName" as bank_account_name
+      FROM orders o
+      LEFT JOIN users u ON o."userId" = u.id
+      LEFT JOIN payments p ON o.id = p."orderId"
+      LEFT JOIN banks b ON o."bankId" = b.id
+      WHERE o.id = $1
+    `
+    
+    const orderResult = await client.query(orderQuery, [id])
+    
+    if (orderResult.rows.length === 0) {
+      await client.end()
+      return NextResponse.json(
+        { error: 'Order not found' },
+        { status: 404 }
+      )
     }
 
-    // Transform the response to match expected format
-    const transformedOrder = {
-      ...order,
-      // Map orderItems to items for backward compatibility
-      items: order.orderItems.map(item => ({
-        id: item.id,
-        bundleId: item.bundleId,
+    const order = orderResult.rows[0]
+
+    // Get order items
+    const itemsQuery = `
+      SELECT 
+        oi.id as item_id,
+        oi.quantity,
+        oi.price as item_price,
+        pb.id as bundle_id,
+        pb.name as bundle_name,
+        pb.price as bundle_price,
+        pb.image as bundle_image,
+        pb.description as bundle_description,
+        s.id as store_id,
+        s.name as store_name,
+        s."isActive" as store_active
+      FROM order_items oi
+      LEFT JOIN product_bundles pb ON oi."bundleId" = pb.id
+      LEFT JOIN stores s ON pb."storeId" = s.id
+      WHERE oi."orderId" = $1
+      ORDER BY oi."createdAt"
+    `
+    
+    const itemsResult = await client.query(itemsQuery, [id])
+
+    // Get activity logs if exists
+    const activityQuery = `
+      SELECT 
+        id,
+        action,
+        description,
+        "createdAt",
+        "performedBy"
+      FROM order_activity_logs
+      WHERE "orderId" = $1
+      ORDER BY "createdAt" DESC
+    `
+    
+    const activityResult = await client.query(activityQuery, [id])
+
+    await client.end()
+
+    // Format response
+    const orderDetail = {
+      id: order.id,
+      orderNumber: order.orderNumber,
+      customer: {
+        id: order.user_id,
+        name: order.user_name,
+        email: order.user_email,
+        phone: order.user_phone
+      },
+      subtotalAmount: parseFloat(order.subtotalAmount),
+      serviceFee: parseFloat(order.serviceFee),
+      totalAmount: parseFloat(order.totalAmount),
+      orderStatus: order.orderStatus,
+      paymentStatus: order.payment_status || 'PENDING',
+      paymentMethod: order.payment_method,
+      paymentProof: order.payment_proof,
+      pickupDate: order.pickupDate,
+      pickupTime: order.pickupTime,
+      notes: order.notes,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      items: itemsResult.rows.map((item: any) => ({
+        id: item.item_id,
         quantity: item.quantity,
-        price: item.price,
+        price: parseFloat(item.item_price),
         bundle: {
-          ...item.bundle,
-          store: item.bundle.store
+          id: item.bundle_id,
+          name: item.bundle_name,
+          price: parseFloat(item.bundle_price || 0),
+          image: item.bundle_image,
+          description: item.bundle_description,
+          store: {
+            id: item.store_id,
+            name: item.store_name,
+            isActive: item.store_active
+          }
         }
       })),
-      // Also include orderItems for new components
-      orderItems: order.orderItems.map(item => ({
-        id: item.id,
-        orderId: order.id,
-        bundleId: item.bundleId,
-        quantity: item.quantity,
-        price: item.price,
-        bundle: {
-          ...item.bundle,
-          storeId: item.bundle.storeId,
-          store: item.bundle.store
-        }
-      })),
-      // Add derived payment fields for backward compatibility
-      paymentStatus: order.payment?.status || 'PENDING',
-      paymentMethod: order.payment?.method || 'BANK_TRANSFER',
-      paymentProof: order.payment?.proofUrl || undefined
+      bank: order.bank_id ? {
+        id: order.bank_id,
+        name: order.bank_name,
+        accountNumber: order.bank_account_number,
+        accountName: order.bank_account_name
+      } : null,
+      payment: order.payment_status ? {
+        id: order.payment_id,
+        status: order.payment_status,
+        method: order.payment_method,
+        proofUrl: order.payment_proof,
+        createdAt: order.payment_created_at,
+        updatedAt: order.payment_updated_at
+      } : null,
+      activityLogs: activityResult.rows.map((log: any) => ({
+        id: log.id,
+        action: log.action,
+        description: log.description,
+        createdAt: log.createdAt,
+        performedBy: log.performedBy
+      }))
     }
 
-    return NextResponse.json(transformedOrder)
-
-  } catch (error) {
-    console.error('Error fetching order:', error)
-    return NextResponse.json(
-      { error: 'Gagal mengambil data order' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params
-    const session = await auth()
-
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const body = await request.json()
-    const { orderStatus, paymentStatus, notes, pickupStatus } = body
-
-    // Get current order to check status changes
-    const currentOrder = await prisma.order.findUnique({
-      where: { id }
-    })
-
-    if (!currentOrder) {
-      return NextResponse.json({ error: 'Order tidak ditemukan' }, { status: 404 })
-    }
-
-    // Update the order
-    const updateData: any = {
-      updatedAt: new Date()
-    }
-
-    if (orderStatus !== undefined) updateData.orderStatus = orderStatus
-    if (notes !== undefined) updateData.notes = notes
-    if (pickupStatus !== undefined) updateData.pickupStatus = pickupStatus
-
-    const updatedOrder = await prisma.order.update({
-      where: { id },
-      data: updateData,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true
-          }
-        },
-        orderItems: {
-          include: {
-            bundle: {
-              select: {
-                id: true,
-                name: true,
-                price: true,
-                image: true,
-                storeId: true,
-                store: {
-                  select: {
-                    id: true,
-                    name: true
-                  }
-                }
-              }
-            }
-          }
-        },
-        bank: {
-          select: {
-            id: true,
-            name: true,
-            accountNumber: true,
-            accountName: true
-          }
-        },
-        payment: {
-          select: {
-            id: true,
-            status: true,
-            method: true,
-            amount: true,
-            proofUrl: true,
-            notes: true,
-            createdAt: true,
-            updatedAt: true
-          }
-        }
-      }
-    })
-
-    // If paymentStatus is provided, update the payment record
-    if (paymentStatus && updatedOrder.payment) {
-      await prisma.payment.update({
-        where: { id: updatedOrder.payment.id },
-        data: {
-          status: paymentStatus,
-          updatedAt: new Date()
-        }
-      })
-    }
-
-    // Trigger pickup notifications based on status changes
-    try {
-      // When order status changes to READY, send pickup ready notification
-      if (orderStatus === 'READY' && currentOrder.orderStatus !== 'READY') {
-        await pickupScheduler.sendPickupReadyNotification(id)
-        console.log(`✅ Pickup ready notification sent for order: ${id}`)
-      }
-
-      // When pickup status changes to PICKED_UP, send pickup completed notification
-      if (pickupStatus === 'PICKED_UP' && currentOrder.pickupStatus !== 'PICKED_UP') {
-        await pickupScheduler.sendPickupCompletedNotification(id)
-        console.log(`✅ Pickup completed notification sent for order: ${id}`)
-      }
-    } catch (notificationError) {
-      console.error('Error sending pickup notifications:', notificationError)
-      // Don't fail the order update if notifications fail
-    }
-
-    // Transform the response to match expected format
-    const transformedOrder = {
-      ...updatedOrder,
-      // Map orderItems to items for backward compatibility
-      items: updatedOrder.orderItems.map(item => ({
-        id: item.id,
-        bundleId: item.bundleId,
-        quantity: item.quantity,
-        price: item.price,
-        bundle: {
-          ...item.bundle,
-          store: item.bundle.store
-        }
-      })),
-      // Also include orderItems for new components
-      orderItems: updatedOrder.orderItems.map(item => ({
-        id: item.id,
-        orderId: updatedOrder.id,
-        bundleId: item.bundleId,
-        quantity: item.quantity,
-        price: item.price,
-        bundle: {
-          ...item.bundle,
-          storeId: item.bundle.storeId,
-          store: item.bundle.store
-        }
-      })),
-      // Add derived payment fields for backward compatibility
-      paymentStatus: updatedOrder.payment?.status || 'PENDING',
-      paymentMethod: updatedOrder.payment?.method || 'BANK_TRANSFER',
-      paymentProof: updatedOrder.payment?.proofUrl || undefined
-    }
+    console.log('✅ Order detail fetched successfully:', { orderId: id })
 
     return NextResponse.json({
       success: true,
-      message: 'Order berhasil diperbarui',
-      order: transformedOrder
+      order: orderDetail
     })
 
   } catch (error) {
-    console.error('Error updating order:', error)
+    console.error('❌ Error fetching order detail:', error)
     return NextResponse.json(
-      { error: 'Gagal memperbarui order' },
+      { 
+        error: 'Failed to fetch order detail',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
@@ -284,55 +208,95 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  console.log('🔄 Admin order update API called')
+  
   try {
     const { id } = await params
-    const session = await auth()
-
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const body = await request.json()
+    const { orderStatus, paymentStatus, notes } = body
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Order ID is required' },
+        { status: 400 }
+      )
     }
 
-    const body = await request.json()
-    const { orderStatus, notes } = body
+    const client = await getDbClient()
+    
+    // Update order
+    const updateOrderQuery = `
+      UPDATE orders 
+      SET 
+        "orderStatus" = COALESCE($1, "orderStatus"),
+        notes = COALESCE($2, notes),
+        "updatedAt" = CURRENT_TIMESTAMP
+      WHERE id = $3
+      RETURNING *
+    `
+    
+    const orderUpdateResult = await client.query(updateOrderQuery, [
+      orderStatus || null, 
+      notes || null, 
+      id
+    ])
+    
+    if (orderUpdateResult.rows.length === 0) {
+      await client.end()
+      return NextResponse.json(
+        { error: 'Order not found' },
+        { status: 404 }
+      )
+    }
 
-    const updatedOrder = await prisma.order.update({
-      where: { id },
-      data: {
-        orderStatus,
-        notes,
-        updatedAt: new Date()
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        },
-        orderItems: {
-          include: {
-            bundle: {
-              include: {
-                store: true
-              }
-            }
-          }
-        },
-        payment: true
-      }
-    })
+    // Update payment status if provided
+    if (paymentStatus) {
+      const updatePaymentQuery = `
+        UPDATE payments 
+        SET 
+          status = $1,
+          "updatedAt" = CURRENT_TIMESTAMP
+        WHERE "orderId" = $2
+      `
+      
+      await client.query(updatePaymentQuery, [paymentStatus, id])
+    }
+
+    // Log activity
+    const logQuery = `
+      INSERT INTO order_activity_logs ("orderId", action, description, "performedBy", "createdAt")
+      VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+    `
+    
+    let actionDescription = []
+    if (orderStatus) actionDescription.push(`Order status changed to ${orderStatus}`)
+    if (paymentStatus) actionDescription.push(`Payment status changed to ${paymentStatus}`)
+    if (notes) actionDescription.push(`Notes updated`)
+    
+    await client.query(logQuery, [
+      id,
+      'STATUS_UPDATE',
+      actionDescription.join(', '),
+      'admin'
+    ])
+
+    await client.end()
+
+    console.log('✅ Order updated successfully:', { orderId: id, orderStatus, paymentStatus })
 
     return NextResponse.json({
       success: true,
-      message: 'Order berhasil diperbarui',
-      order: updatedOrder
+      message: 'Order updated successfully',
+      order: orderUpdateResult.rows[0]
     })
 
   } catch (error) {
-    console.error('Error updating order:', error)
+    console.error('❌ Error updating order:', error)
     return NextResponse.json(
-      { error: 'Gagal memperbarui order' },
+      { 
+        error: 'Failed to update order',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
@@ -342,59 +306,52 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  console.log('🗑️ Admin order delete API called')
+  
   try {
     const { id } = await params
-    const session = await auth()
-
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if order exists
-    const existingOrder = await prisma.order.findUnique({
-      where: { id },
-      include: {
-        orderItems: true
-      }
-    })
-
-    if (!existingOrder) {
-      return NextResponse.json({ error: 'Pesanan tidak ditemukan' }, { status: 404 })
-    }
-
-    // Delete order items first (due to foreign key constraints)
-    await prisma.orderItem.deleteMany({
-      where: { orderId: id }
-    })
-
-    // Delete payment records if any
-    await prisma.payment.deleteMany({
-      where: { orderId: id }
-    })
-
-    // Delete the order
-    await prisma.order.delete({
-      where: { id }
-    })
-
-    return NextResponse.json({
-      success: true,
-      message: 'Pesanan berhasil dihapus'
-    })
-
-  } catch (error) {
-    console.error('Error deleting order:', error)
     
-    // Check if it's a foreign key constraint error
-    if (error instanceof Error && error.message.includes('foreign key constraint')) {
+    if (!id) {
       return NextResponse.json(
-        { error: 'Tidak dapat menghapus pesanan karena masih memiliki data terkait' },
+        { error: 'Order ID is required' },
         { status: 400 }
       )
     }
 
+    const client = await getDbClient()
+    
+    // First, delete related records (due to foreign key constraints)
+    await client.query('DELETE FROM order_activity_logs WHERE "orderId" = $1', [id])
+    await client.query('DELETE FROM payments WHERE "orderId" = $1', [id])
+    await client.query('DELETE FROM order_items WHERE "orderId" = $1', [id])
+    
+    // Then delete the order
+    const deleteResult = await client.query('DELETE FROM orders WHERE id = $1 RETURNING *', [id])
+    
+    if (deleteResult.rows.length === 0) {
+      await client.end()
+      return NextResponse.json(
+        { error: 'Order not found' },
+        { status: 404 }
+      )
+    }
+
+    await client.end()
+
+    console.log('✅ Order deleted successfully:', { orderId: id })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Order deleted successfully'
+    })
+
+  } catch (error) {
+    console.error('❌ Error deleting order:', error)
     return NextResponse.json(
-      { error: 'Gagal menghapus pesanan' },
+      { 
+        error: 'Failed to delete order',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
