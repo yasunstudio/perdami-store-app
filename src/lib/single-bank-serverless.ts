@@ -1,4 +1,5 @@
 import { createPrismaClient } from './prisma-serverless'
+import { STATIC_BANKS, STATIC_APP_SETTINGS } from './static-bank-data'
 
 export class SingleBankService {
   /**
@@ -10,10 +11,10 @@ export class SingleBankService {
       const appSettings = await prisma.appSettings.findFirst({
         where: { isActive: true }
       })
-      return appSettings?.singleBankMode ?? false
+      return appSettings?.singleBankMode ?? STATIC_APP_SETTINGS.singleBankMode
     } catch (error: any) {
-      console.warn('AppSettings not found, defaulting to multiple bank mode:', error?.message || error)
-      return false // Default to multiple bank mode if AppSettings doesn't exist
+      console.warn('AppSettings not found, using static settings:', error?.message || error)
+      return STATIC_APP_SETTINGS.singleBankMode // Default from static data
     } finally {
       await prisma.$disconnect()
     }
@@ -63,23 +64,16 @@ export class SingleBankService {
             orderBy: { name: 'asc' }
           })
         } catch (bankError: any) {
-          console.warn('Bank table not found, returning empty array:', bankError?.message || bankError)
-          return []
+          console.warn('Bank table not found, using static banks:', bankError?.message || bankError)
+          return STATIC_BANKS.filter(bank => bank.isActive)
         }
       }
     } catch (error) {
       console.error('Error getting available banks:', error)
-      // Return default mock banks if database has issues
-      return [{
-        id: 'default',
-        name: 'Bank Transfer - Perdami Store',
-        code: 'TRANSFER',
-        accountNumber: 'Akan diinformasikan via WhatsApp',
-        accountName: 'PT Perdami Store Indonesia',
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }]
+      // Return static banks as fallback
+      const activeBanks = STATIC_BANKS.filter(bank => bank.isActive)
+      console.log('Using static bank data as fallback:', activeBanks.length, 'banks')
+      return activeBanks
     } finally {
       await prisma.$disconnect()
     }

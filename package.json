@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "db:seed": "tsx prisma/seed/seed.ts",
+    "seed:banks": "tsx prisma/seed/bank-seed.ts",
     "docker:dev": "./docker-setup.sh dev",
     "docker:prod": "./docker-setup.sh prod",
     "docker:stop": "./docker-setup.sh stop",
