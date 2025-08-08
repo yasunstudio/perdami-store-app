@@ -4,9 +4,21 @@ import { auth } from '@/lib/auth'
 
 export async function GET() {
   try {
+    console.log('🔍 Admin dashboard API called')
+    
     const session = await auth()
+    console.log('👤 Session:', session?.user ? { id: session.user.id, role: session.user.role } : 'null')
+    
     if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      console.log('❌ Unauthorized access attempt')
+      return NextResponse.json({ 
+        error: 'Unauthorized',
+        debug: {
+          hasSession: !!session,
+          hasUser: !!session?.user,
+          userRole: session?.user?.role
+        }
+      }, { status: 401 })
     }
 
     console.log('✅ Fetching dashboard stats with Prisma')
