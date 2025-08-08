@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
         b."accountName",
         COUNT(oi.id) as "itemCount",
         SUM(oi.quantity) as "totalQuantity",
-        SUM(oi.price * oi.quantity) as "calculatedSubtotal"
+        SUM(oi."totalPrice") as "calculatedSubtotal"
       FROM orders o
       LEFT JOIN users u ON o."userId" = u.id
       LEFT JOIN payments p ON o.id = p."orderId"
