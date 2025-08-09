@@ -2,19 +2,30 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 export async function GET() {
-  console.log('📊 Dashboard Public API - Vercel Optimized')
+  console.log('📊 Dashboard Public API - Fixed Version')
   
   try {
     console.log('🔗 Testing database connection...')
     
-    // Get basic stats with simple error handling
-    const [totalUsers, totalBundles, totalOrders] = await Promise.all([
-      prisma.user.count().catch(() => 0),
-      prisma.productBundle.count({ where: { showToCustomer: true } }).catch(() => 0),
-      prisma.order.count().catch(() => 0)
-    ])
+    // Simple connection test first
+    const connectionTest = await prisma.user.count().catch(() => -1);
+    if (connectionTest === -1) {
+      throw new Error("Database connection failed");
+    }
 
-    console.log('📊 Stats retrieved:', { totalUsers, totalBundles, totalOrders })
+    console.log(`✅ Database connected, ${connectionTest} users found`);
+
+    // Get basic stats using same approach as fixed endpoints
+    const [totalUsers, totalBundles, totalOrders] = await Promise.all([
+      prisma.user.findMany({ select: { id: true } }).then(users => users.length).catch(() => 0),
+      prisma.productBundle.findMany({ 
+        where: { showToCustomer: true },
+        select: { id: true }
+      }).then(bundles => bundles.length).catch(() => 0),
+      prisma.order.findMany({ select: { id: true } }).then(orders => orders.length).catch(() => 0)
+    ]);
+
+    console.log('📊 Stats retrieved via findMany:', { totalUsers, totalBundles, totalOrders });
 
     // Get recent orders (minimal info)
     const recentOrders = await prisma.order.findMany({
