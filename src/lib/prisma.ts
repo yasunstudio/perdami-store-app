@@ -7,13 +7,23 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-// Create Prisma client with optimized settings for Vercel
+// Create Prisma client with optimized settings for Vercel and SSL bypass
 const createPrismaClient = () => {
+  const databaseUrl = process.env.DATABASE_URL;
+  
+  // Ensure SSL mode is properly set for Vercel deployment
+  let connectionUrl = databaseUrl;
+  if (databaseUrl && !databaseUrl.includes('sslmode=')) {
+    connectionUrl = databaseUrl.includes('?') 
+      ? `${databaseUrl}&sslmode=require&sslcert=&sslkey=&sslrootcert=`
+      : `${databaseUrl}?sslmode=require&sslcert=&sslkey=&sslrootcert=`;
+  }
+  
   return new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     datasources: {
       db: {
-        url: process.env.DATABASE_URL
+        url: connectionUrl
       }
     },
     // Optimized configuration for serverless environments
