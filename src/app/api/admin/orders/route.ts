@@ -1,48 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma, disconnectPrisma } from "@/lib/prisma"
 import { OrderStatus, PaymentStatus } from "@prisma/client"
-
-// Helper function for retry logic
-async function executeWithRetry<T>(
-  operation: () => Promise<T>,
-  maxRetries: number = 2
-): Promise<T> {
-  let lastError: Error;
-  
-  for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
-    try {
-      const result = await operation();
-      return result;
-    } catch (error) {
-      lastError = error as Error;
-      console.warn(`Attempt ${attempt} failed:`, error);
-      
-      if (attempt <= maxRetries) {
-        // Wait before retry
-        await new Promise(resolve => setTimeout(resolve, 100 * attempt));
-        
-        // If it's a connection error, try to reconnect
-        if (error instanceof Error && error.message.includes('prepared statement')) {
-          try {
-            await prisma.$disconnect();
-            await prisma.$connect();
-          } catch (reconnectError) {
-            console.warn('Reconnection failed:', reconnectError);
-          }
-        }
-      }
-    }
-  }
-  
-  throw lastError!;
-}
+import { ensureDatabaseConnection, executeWithRetry } from "@/lib/database-connection"
 
 export async function GET(request: NextRequest) {
   console.log("📊 Admin orders API called (Robust Prisma)")
   
   try {
-    // Ensure connection is fresh
-    await prisma.$connect();
+    // Ensure robust database connection
+    await ensureDatabaseConnection()
     
     const { searchParams } = new URL(request.url)
     

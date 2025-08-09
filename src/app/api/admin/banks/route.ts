@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { auditLog } from '@/lib/audit'
 import { withDatabaseRetry, createErrorResponse } from '@/lib/database-utils'
+import { ensureDatabaseConnection } from '@/lib/database-connection'
 
 
 // Request validation schemas
@@ -28,6 +29,9 @@ const querySchema = z.object({
 // GET /api/admin/banks - List banks with filtering and pagination
 export async function GET(request: NextRequest) {
   try {
+    // Ensure robust database connection
+    await ensureDatabaseConnection()
+    
     const { searchParams } = new URL(request.url)
     const {
       page,
