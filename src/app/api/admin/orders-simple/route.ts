@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
 
     console.log('🔍 Where conditions:', JSON.stringify(whereConditions, null, 2))
 
-    // Execute queries
+    // Execute queries - simplified without orderItems first
     const [orders, total] = await Promise.all([
       prisma.order.findMany({
         where: whereConditions,
@@ -71,24 +71,6 @@ export async function GET(request: NextRequest) {
               code: true,
               accountNumber: true,
               accountName: true
-            }
-          },
-          orderItems: {
-            select: {
-              id: true,
-              quantity: true,
-              unitPrice: true,
-              totalPrice: true,
-              bundle: {
-                include: {
-                  store: {
-                    select: {
-                      id: true,
-                      name: true
-                    }
-                  }
-                }
-              }
             }
           }
         },
