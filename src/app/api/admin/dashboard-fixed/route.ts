@@ -2,47 +2,56 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export async function GET() {
-  console.log('📊 Admin Dashboard API - Fixed Version');
+  console.log('📊 Admin Dashboard API - Fixed Version (Prisma Postgres)');
   
   try {
-    // Use raw query to test connection and avoid prepared statement conflicts
-    await prisma.$queryRaw`SELECT 1 as test`;
-    console.log('✅ Database connected via queryRaw');
+    // Test connection using simple Prisma ORM call
+    const userCount = await prisma.user.count();
+    console.log(`✅ Prisma Postgres connected, ${userCount} users found`);
 
-    // Get basic stats using raw queries to avoid prepared statement issues
-    const userCountResult = await prisma.$queryRaw`
-      SELECT COUNT(*)::int as count FROM "User"
-    `;
-    const bundleCountResult = await prisma.$queryRaw`
-      SELECT COUNT(*)::int as count FROM "ProductBundle"
-    `;
-    const orderCountResult = await prisma.$queryRaw`
-      SELECT COUNT(*)::int as count FROM "Order"
-    `;
+    // Get basic stats using Prisma ORM (no more prepared statement issues!)
+    const [totalUsers, totalBundles, totalOrders] = await Promise.all([
+      prisma.user.count(),
+      prisma.productBundle.count(),
+      prisma.order.count()
+    ]);
 
-    const totalUsers = (userCountResult as any)[0]?.count || 0;
-    const totalBundles = (bundleCountResult as any)[0]?.count || 0;
-    const totalOrders = (orderCountResult as any)[0]?.count || 0;
+    console.log('📊 Stats retrieved via Prisma ORM:', { totalUsers, totalBundles, totalOrders });
 
-    console.log('📊 Stats retrieved via raw queries:', { totalUsers, totalBundles, totalOrders });
+    // Get recent orders with user details (Prisma ORM works perfectly now)
+    const recentOrders = await prisma.order.findMany({
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true
+          }
+        }
+      }
+    });
 
-    // Get recent orders using raw query
-    const recentOrdersData = await prisma.$queryRaw`
-      SELECT 
-        o.id, o."orderNumber", o."totalAmount", o."orderStatus", 
-        o."paymentStatus", o."createdAt", o."userId",
-        u.name as user_name, u.email as user_email
-      FROM "Order" o
-      LEFT JOIN "User" u ON o."userId" = u.id
-      ORDER BY o."createdAt" DESC
-      LIMIT 5
-    `;
+    // Get popular bundles with store details
+    const popularBundles = await prisma.productBundle.findMany({
+      take: 5,
+      where: { showToCustomer: true },
+      orderBy: { price: 'desc' },
+      include: {
+        store: {
+          select: {
+            name: true
+          }
+        }
+      }
+    });
 
-    const recentOrders = (recentOrdersData as any[]).map(order => ({
+    // Format data for response
+    const formattedOrders = recentOrders.map(order => ({
       id: order.id,
       orderNumber: order.orderNumber,
-      customerName: order.user_name || 'Unknown',
-      customerEmail: order.user_email || '',
+      customerName: order.user?.name || 'Unknown',
+      customerEmail: order.user?.email || '',
       totalAmount: parseFloat(order.totalAmount.toString()),
       status: order.orderStatus,
       paymentStatus: order.paymentStatus,
@@ -50,24 +59,12 @@ export async function GET() {
       createdAt: order.createdAt
     }));
 
-    // Get popular bundles using raw query
-    const popularBundlesData = await prisma.$queryRaw`
-      SELECT 
-        pb.id, pb.name, pb.price, pb.image, pb.description, pb."storeId",
-        s.name as store_name
-      FROM "ProductBundle" pb
-      LEFT JOIN "Store" s ON pb."storeId" = s.id
-      WHERE pb."showToCustomer" = true
-      ORDER BY pb.price DESC
-      LIMIT 5
-    `;
-
-    const popularBundles = (popularBundlesData as any[]).map((bundle, index) => ({
+    const formattedBundles = popularBundles.map((bundle, index) => ({
       id: bundle.id,
       name: bundle.name,
       price: parseFloat(bundle.price.toString()),
       image: bundle.image,
-      storeName: bundle.store_name || 'Unknown Store',
+      storeName: bundle.store?.name || 'Unknown Store',
       description: bundle.description?.substring(0, 100) || 'No description',
       totalSold: Math.floor(Math.random() * 50) + 10,
       revenue: parseFloat(bundle.price.toString()) * (Math.floor(Math.random() * 50) + 10),
@@ -75,9 +72,9 @@ export async function GET() {
     }));
 
     // Calculate revenue stats
-    const totalRevenue = recentOrders.reduce((sum: number, order: any) => sum + order.totalAmount, 0);
-    const pendingOrders = recentOrders.filter((order: any) => order.status === 'PENDING').length;
-    const completedOrders = recentOrders.filter((order: any) => order.status === 'COMPLETED').length;
+    const totalRevenue = formattedOrders.reduce((sum: number, order: any) => sum + order.totalAmount, 0);
+    const pendingOrders = formattedOrders.filter((order: any) => order.status === 'PENDING').length;
+    const completedOrders = formattedOrders.filter((order: any) => order.status === 'COMPLETED').length;
 
     const dashboardData = {
       stats: {
@@ -93,8 +90,8 @@ export async function GET() {
         orderGrowthRate: 15.7,
         storeGrowthRate: 5.2
       },
-      recentOrders: recentOrders,
-      popularProducts: popularBundles
+      recentOrders: formattedOrders,
+      popularProducts: formattedBundles
     };
 
     console.log(`✅ Dashboard data prepared successfully - ${totalUsers} users, ${totalBundles} bundles, ${totalOrders} orders`);
