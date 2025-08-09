@@ -5,101 +5,79 @@ export async function GET() {
   console.log('📊 Admin Dashboard API - Fixed Version');
   
   try {
-    // Simple connection test first
-    const connectionTest = await prisma.user.count().catch(() => -1);
-    if (connectionTest === -1) {
-      throw new Error("Database connection failed");
-    }
+    // Use raw query to test connection and avoid prepared statement conflicts
+    await prisma.$queryRaw`SELECT 1 as test`;
+    console.log('✅ Database connected via queryRaw');
 
-    console.log(`✅ Database connected, ${connectionTest} users found`);
+    // Get basic stats using raw queries to avoid prepared statement issues
+    const userCountResult = await prisma.$queryRaw`
+      SELECT COUNT(*)::int as count FROM "User"
+    `;
+    const bundleCountResult = await prisma.$queryRaw`
+      SELECT COUNT(*)::int as count FROM "ProductBundle"
+    `;
+    const orderCountResult = await prisma.$queryRaw`
+      SELECT COUNT(*)::int as count FROM "Order"
+    `;
 
-    // Get basic stats using same approach as other fixed endpoints
-    const [totalUsers, totalBundles, totalOrders] = await Promise.all([
-      prisma.user.findMany({ select: { id: true } }).then(users => users.length).catch(() => 0),
-      prisma.productBundle.findMany({ select: { id: true } }).then(bundles => bundles.length).catch(() => 0),
-      prisma.order.findMany({ select: { id: true } }).then(orders => orders.length).catch(() => 0)
-    ]);
+    const totalUsers = (userCountResult as any)[0]?.count || 0;
+    const totalBundles = (bundleCountResult as any)[0]?.count || 0;
+    const totalOrders = (orderCountResult as any)[0]?.count || 0;
 
-    console.log('📊 Stats retrieved via findMany:', { totalUsers, totalBundles, totalOrders });
+    console.log('📊 Stats retrieved via raw queries:', { totalUsers, totalBundles, totalOrders });
 
-    // Get recent orders using same pattern as orders-fixed
-    const recentOrders = await prisma.order.findMany({
-      take: 5,
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        orderNumber: true,
-        totalAmount: true,
-        orderStatus: true,
-        paymentStatus: true,
-        createdAt: true,
-        userId: true
-      }
-    }).catch(() => []);
+    // Get recent orders using raw query
+    const recentOrdersData = await prisma.$queryRaw`
+      SELECT 
+        o.id, o."orderNumber", o."totalAmount", o."orderStatus", 
+        o."paymentStatus", o."createdAt", o."userId",
+        u.name as user_name, u.email as user_email
+      FROM "Order" o
+      LEFT JOIN "User" u ON o."userId" = u.id
+      ORDER BY o."createdAt" DESC
+      LIMIT 5
+    `;
 
-    // Get user details for recent orders
-    const ordersWithUsers = await Promise.all(
-      recentOrders.map(async (order) => {
-        const user = await prisma.user.findUnique({
-          where: { id: order.userId },
-          select: { name: true, email: true }
-        }).catch(() => null);
+    const recentOrders = (recentOrdersData as any[]).map(order => ({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      customerName: order.user_name || 'Unknown',
+      customerEmail: order.user_email || '',
+      totalAmount: parseFloat(order.totalAmount.toString()),
+      status: order.orderStatus,
+      paymentStatus: order.paymentStatus,
+      itemCount: 1,
+      createdAt: order.createdAt
+    }));
 
-        return {
-          id: order.id,
-          orderNumber: order.orderNumber,
-          customerName: user?.name || 'Unknown',
-          customerEmail: user?.email || '',
-          totalAmount: parseFloat(order.totalAmount.toString()),
-          status: order.orderStatus,
-          paymentStatus: order.paymentStatus,
-          itemCount: 1,
-          createdAt: order.createdAt
-        };
-      })
-    );
+    // Get popular bundles using raw query
+    const popularBundlesData = await prisma.$queryRaw`
+      SELECT 
+        pb.id, pb.name, pb.price, pb.image, pb.description, pb."storeId",
+        s.name as store_name
+      FROM "ProductBundle" pb
+      LEFT JOIN "Store" s ON pb."storeId" = s.id
+      WHERE pb."showToCustomer" = true
+      ORDER BY pb.price DESC
+      LIMIT 5
+    `;
 
-    // Get popular bundles using same pattern as bundles-fixed
-    const popularBundles = await prisma.productBundle.findMany({
-      take: 5,
-      where: { showToCustomer: true },
-      orderBy: { price: 'desc' },
-      select: {
-        id: true,
-        name: true,
-        price: true,
-        image: true,
-        description: true,
-        storeId: true
-      }
-    }).catch(() => []);
-
-    // Get store details for bundles
-    const bundlesWithStores = await Promise.all(
-      popularBundles.map(async (bundle, index) => {
-        const store = await prisma.store.findUnique({
-          where: { id: bundle.storeId },
-          select: { name: true }
-        }).catch(() => null);
-
-        return {
-          id: bundle.id,
-          name: bundle.name,
-          price: parseFloat(bundle.price.toString()),
-          image: bundle.image,
-          storeName: store?.name || 'Unknown Store',
-          description: bundle.description?.substring(0, 100) || 'No description',
-          totalSold: Math.floor(Math.random() * 50) + 10,
-          revenue: parseFloat(bundle.price.toString()) * (Math.floor(Math.random() * 50) + 10),
-          isFeatured: index < 2
-        };
-      })
-    );
+    const popularBundles = (popularBundlesData as any[]).map((bundle, index) => ({
+      id: bundle.id,
+      name: bundle.name,
+      price: parseFloat(bundle.price.toString()),
+      image: bundle.image,
+      storeName: bundle.store_name || 'Unknown Store',
+      description: bundle.description?.substring(0, 100) || 'No description',
+      totalSold: Math.floor(Math.random() * 50) + 10,
+      revenue: parseFloat(bundle.price.toString()) * (Math.floor(Math.random() * 50) + 10),
+      isFeatured: index < 2
+    }));
 
     // Calculate revenue stats
-    const totalRevenue = ordersWithUsers.reduce((sum, order) => sum + order.totalAmount, 0);
-    const pendingOrders = ordersWithUsers.filter(order => order.status === 'PENDING').length;
-    const completedOrders = ordersWithUsers.filter(order => order.status === 'COMPLETED').length;
+    const totalRevenue = recentOrders.reduce((sum: number, order: any) => sum + order.totalAmount, 0);
+    const pendingOrders = recentOrders.filter((order: any) => order.status === 'PENDING').length;
+    const completedOrders = recentOrders.filter((order: any) => order.status === 'COMPLETED').length;
 
     const dashboardData = {
       stats: {
@@ -115,8 +93,8 @@ export async function GET() {
         orderGrowthRate: 15.7,
         storeGrowthRate: 5.2
       },
-      recentOrders: ordersWithUsers,
-      popularProducts: bundlesWithStores
+      recentOrders: recentOrders,
+      popularProducts: popularBundles
     };
 
     console.log(`✅ Dashboard data prepared successfully - ${totalUsers} users, ${totalBundles} bundles, ${totalOrders} orders`);
