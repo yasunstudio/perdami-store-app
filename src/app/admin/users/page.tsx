@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import { UserAdmin } from '@/features/admin/users'
+import { AdminAuthWrapper } from '@/components/admin/admin-auth-wrapper'
 
 export const metadata: Metadata = {
   title: 'Manajemen User | Admin Perdami Store',
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 }
 
 export default function UsersAdminPage() {
-  return <UserAdmin />
+  return (
+    <AdminAuthWrapper>
+      <UserAdmin />
+    </AdminAuthWrapper>
+  )
 }

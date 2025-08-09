@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { AdminPageLayout, StatsCard } from '@/components/admin/admin-page-layout'
+import { AdminAuthWrapper } from '@/components/admin/admin-auth-wrapper'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -63,7 +64,7 @@ interface OrdersResponse {
   }
 }
 
-export default function OrdersAdminPage() {
+function OrdersAdminPageContent() {
   const router = useRouter()
   const { data: session, status } = useSession()
   const [data, setData] = useState<OrdersResponse | null>(null)
@@ -655,5 +656,13 @@ export default function OrdersAdminPage() {
         </DialogContent>
       </Dialog>
     </AdminPageLayout>
+  )
+}
+
+export default function OrdersAdminPage() {
+  return (
+    <AdminAuthWrapper>
+      <OrdersAdminPageContent />
+    </AdminAuthWrapper>
   )
 }

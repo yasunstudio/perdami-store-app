@@ -4,6 +4,7 @@ import "./globals.css";
 import { MainLayout } from "@/components/layout/main-layout";
 import { ZustandErrorBoundary } from "@/components/error/zustand-error-boundary";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { AuthProvider } from "@/components/providers/auth-provider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -41,11 +42,13 @@ export default function RootLayout({
         className={`${inter.variable} font-sans antialiased`}
       >
         <ThemeProvider>
+          <AuthProvider>
             <ZustandErrorBoundary>
               <MainLayout>
                 {children}
               </MainLayout>
             </ZustandErrorBoundary>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
