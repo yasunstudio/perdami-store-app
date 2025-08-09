@@ -2,6 +2,10 @@
 
 A comprehensive e-commerce platform built with Next.js 15, featuring admin management, customer shopping, and product bundles.
 
+## 🌐 Live Deployment
+- **Production URL**: https://perdami-store-2od6558t8-yasunstudios-projects.vercel.app
+- **Auto-Deploy**: ✅ Connected to GitHub for automatic deployments on push
+
 ## 🚀 Features
 
 ### Admin Dashboard
