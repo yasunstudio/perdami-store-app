@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { altPrisma } from '@/lib/prisma-alt';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
+  console.log("👥 Admin users API - Fixed Version");
+  
   try {
+    // Simple connection test first
+    const connectionTest = await prisma.user.count().catch(() => -1);
+    if (connectionTest === -1) {
+      throw new Error("Database connection failed");
+    }
+
     // Use raw query to avoid prepared statement conflicts
-    const users = await altPrisma.$queryRaw`
+    const users = await prisma.$queryRaw`
       SELECT 
         id, name, email, phone, role, image, "emailVerified", "createdAt", "updatedAt",
         COALESCE((
@@ -16,7 +24,7 @@ export async function GET(request: NextRequest) {
       ORDER BY "createdAt" DESC
     `;
 
-    const totalResult = await altPrisma.$queryRaw`
+    const totalResult = await prisma.$queryRaw`
       SELECT COUNT(*)::int as total FROM "User"
     `;
     
@@ -38,6 +46,8 @@ export async function GET(request: NextRequest) {
       }
     }));
 
+    console.log(`✅ Successfully fetched ${formattedUsers.length} users`);
+
     return NextResponse.json({
       success: true,
       data: formattedUsers,
@@ -46,7 +56,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Users API Error:', error);
+    console.error('❌ Users API Error:', error);
     return NextResponse.json(
       { 
         success: false, 
