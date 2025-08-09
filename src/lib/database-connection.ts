@@ -3,24 +3,37 @@ import { prisma } from './prisma'
 const MAX_RETRIES = 3
 const RETRY_DELAY = 1000
 
-// Robust database connection helper for Vercel
+// Simplified database connection helper for Vercel
 export async function ensureDatabaseConnection(maxRetries = MAX_RETRIES): Promise<void> {
   let lastError: Error | null = null
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      await prisma.$disconnect()
-      await new Promise(resolve => setTimeout(resolve, 100))
+      // Just ensure connection without disconnect/reconnect
       await prisma.$connect()
       
-      // Test connection with a simple query
-      await prisma.$queryRaw`SELECT 1`
+      // Test connection with a simple count query
+      await prisma.user.count()
       
-      console.log(`✅ Database connection established (attempt ${attempt})`)
+      console.log(`✅ Database connection verified (attempt ${attempt})`)
       return
     } catch (error) {
       lastError = error as Error
       console.warn(`⚠️ Database connection attempt ${attempt} failed:`, error instanceof Error ? error.message : 'Unknown error')
+      
+      // Only disconnect/reconnect if connection error
+      if (error instanceof Error && (
+        error.message.includes('prepared statement') ||
+        error.message.includes('Engine is not yet connected') ||
+        error.message.includes('Connection closed')
+      )) {
+        try {
+          await prisma.$disconnect()
+          await new Promise(resolve => setTimeout(resolve, 200))
+        } catch (disconnectError) {
+          console.warn('Disconnect failed:', disconnectError)
+        }
+      }
       
       if (attempt < maxRetries) {
         await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * attempt))
