@@ -67,35 +67,60 @@ export const authConfig: NextAuthConfig = {
         },
       },
       async authorize(credentials) {
-        const validatedFields = loginSchema.safeParse(credentials)
-
-        if (!validatedFields.success) {
-          return null
-        }
-
-        const { email, password } = validatedFields.data
-
-        const user = await prisma.user.findUnique({
-          where: { email },
+        console.log('🔐 Authorize called with:', { 
+          email: credentials?.email, 
+          password: credentials?.password ? '***' : 'missing',
+          credentialsType: typeof credentials,
+          credentialsKeys: Object.keys(credentials || {})
         })
+        
+        try {
+          const validatedFields = loginSchema.safeParse(credentials)
 
-        if (!user || !user.password) {
+          if (!validatedFields.success) {
+            console.log('❌ Validation failed:', validatedFields.error.issues)
+            return null
+          }
+
+          const { email, password } = validatedFields.data
+
+          console.log('🔍 Looking up user:', email)
+          const user = await prisma.user.findUnique({
+            where: { email },
+          })
+
+          if (!user) {
+            console.log('❌ User not found:', email)
+            return null
+          }
+
+          if (!user.password) {
+            console.log('❌ User has no password:', email)
+            return null
+          }
+
+          console.log('🔑 Comparing passwords for:', email)
+          console.log('🔑 Password length:', password.length, 'Hash length:', user.password.length)
+          
+          const passwordsMatch = await comparePasswords(password, user.password)
+
+          if (!passwordsMatch) {
+            console.log('❌ Password mismatch for:', email)
+            return null
+          }
+
+          console.log('✅ Login successful for:', email)
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image,
+            role: user.role,
+            phone: user.phone,
+          }
+        } catch (error) {
+          console.error('💥 Authorize error:', error)
           return null
-        }
-
-        const passwordsMatch = await comparePasswords(password, user.password)
-
-        if (!passwordsMatch) {
-          return null
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-          role: user.role,
-          phone: user.phone,
         }
       },
     }),

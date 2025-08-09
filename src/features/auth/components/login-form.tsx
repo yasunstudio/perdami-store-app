@@ -46,21 +46,40 @@ export function LoginForm({ onSuccess, className }: LoginFormProps) {
     }
 
     try {
+      // Debug log
+      console.log('Attempting login with:', { email, password: '***' })
+      
       const result = await signIn('credentials', {
         email,
         password,
         redirect: false,
+        callbackUrl: searchParams?.get('callbackUrl') || '/admin'
       })
 
+      console.log('Login result:', result)
+
       if (result?.error) {
-        setError('Email atau password salah')
-      } else {
+        console.error('Login error:', result.error)
+        
+        // More specific error messages
+        if (result.error === 'CredentialsSignin') {
+          setError('Email atau password salah. Pastikan menggunakan: admin@perdami.com / perdami123')
+        } else {
+          setError(`Login gagal: ${result.error}`)
+        }
+      } else if (result?.ok) {
+        console.log('Login successful!')
         // Success callback
         if (onSuccess) {
           onSuccess()
         } else {
+          // Small delay to ensure session is updated
+          await new Promise(resolve => setTimeout(resolve, 100))
+          
           // Get updated session to check user role
           const session = await getSession()
+          console.log('Session after login:', session)
+          
           const callbackUrl = searchParams?.get('callbackUrl')
           
           // Determine redirect URL based on user role and callback
@@ -72,12 +91,15 @@ export function LoginForm({ onSuccess, className }: LoginFormProps) {
             redirectUrl = '/admin'
           }
           
-          router.push(redirectUrl)
-          router.refresh()
+          console.log('Redirecting to:', redirectUrl)
+          window.location.href = redirectUrl
         }
+      } else {
+        setError('Login gagal, silakan coba lagi')
       }
-    } catch {
-      setError('Terjadi kesalahan saat login')
+    } catch (error) {
+      console.error('Login catch error:', error)
+      setError('Terjadi kesalahan saat login. Silakan refresh halaman dan coba lagi.')
     } finally {
       setIsLoading(false)
     }

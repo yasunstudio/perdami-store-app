@@ -5,7 +5,6 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  // directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -87,17 +86,17 @@ model UserNotificationSettings {
 }
 
 model Store {
-  id          String     @id @default(cuid())
-  name        String     @unique
+  id          String          @id @default(cuid())
+  name        String          @unique
   description String?
   image       String?
   address     String?
-  city        String?    @default("Bandung")
-  province    String?    @default("Jawa Barat")
-  isActive    Boolean    @default(true)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  bundles     ProductBundle[]  // Direct relation to bundles
+  city        String?         @default("Bandung")
+  province    String?         @default("Jawa Barat")
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  bundles     ProductBundle[]
 
   @@index([isActive])
   @@index([city])
@@ -111,17 +110,15 @@ model ProductBundle {
   description    String?
   image          String?
   price          Float
-  contents       Json?       // Bundle contents: [{ name: string, quantity: number }]
+  contents       Json?
   isActive       Boolean     @default(true)
   isFeatured     Boolean     @default(false)
   showToCustomer Boolean     @default(false)
-  storeId        String      // Direct relation to Store
+  storeId        String
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
-  
-  // Relations
-  store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  orderItems OrderItem[]
+  orderItems     OrderItem[]
+  store          Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
   @@unique([name, storeId])
   @@index([storeId])
@@ -134,17 +131,17 @@ model ProductBundle {
 }
 
 model Bank {
-  id            String   @id @default(cuid())
-  name          String   @unique
-  code          String   @unique
+  id            String        @id @default(cuid())
+  name          String        @unique
+  code          String        @unique
   accountNumber String
   accountName   String
   logo          String?
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  appSettings   AppSettings[]
   orders        Order[]
-  appSettings   AppSettings[]  // Relation for default bank
 
   @@index([code])
   @@index([isActive])
@@ -152,26 +149,26 @@ model Bank {
 }
 
 model Order {
-  id                String       @id @default(cuid())
-  orderNumber       String       @unique
-  userId            String
-  bankId            String?
-  subtotalAmount    Float        // Total produk tanpa service fee
-  serviceFee        Float        @default(25000) // Fixed Rp 25.000
-  totalAmount       Float        // subtotalAmount + serviceFee
-  orderStatus       OrderStatus  @default(PENDING)
-  paymentStatus     PaymentStatus @default(PENDING)
-  pickupMethod      PickupMethod @default(VENUE)
-  pickupDate        DateTime?    // Tanggal pickup yang dipilih customer
-  pickupStatus      PickupStatus @default(NOT_PICKED_UP)
-  paymentProofUrl   String?      // URL bukti transfer
-  notes             String?
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
-  orderItems        OrderItem[]
-  bank              Bank?        @relation(fields: [bankId], references: [id])
-  user              User         @relation(fields: [userId], references: [id])
-  payment           Payment?
+  id              String        @id @default(cuid())
+  orderNumber     String        @unique
+  userId          String
+  bankId          String?
+  subtotalAmount  Float
+  serviceFee      Float         @default(25000)
+  totalAmount     Float
+  orderStatus     OrderStatus   @default(PENDING)
+  paymentStatus   PaymentStatus @default(PENDING)
+  pickupMethod    PickupMethod  @default(VENUE)
+  pickupDate      DateTime?
+  pickupStatus    PickupStatus  @default(NOT_PICKED_UP)
+  paymentProofUrl String?
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  orderItems      OrderItem[]
+  bank            Bank?         @relation(fields: [bankId], references: [id])
+  user            User          @relation(fields: [userId], references: [id])
+  payment         Payment?
 
   @@index([userId])
   @@index([orderNumber])
@@ -182,16 +179,16 @@ model Order {
 }
 
 model OrderItem {
-  id         String        @id @default(cuid())
+  id         String         @id @default(cuid())
   orderId    String
-  bundleId   String?       // Changed to optional based on database
+  bundleId   String?
   quantity   Int
-  unitPrice  Float         @map("unitPrice")
-  totalPrice Float         @map("totalPrice")
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
-  order      Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  unitPrice  Float          @map("unitPrice")
+  totalPrice Float          @map("totalPrice")
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
   bundle     ProductBundle? @relation(fields: [bundleId], references: [id])
+  order      Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
   @@index([bundleId])
@@ -231,8 +228,8 @@ model AppSettings {
   copyrightSubtext   String   @default("Semua hak cipta dilindungi.")
   isMaintenanceMode  Boolean  @default(false)
   maintenanceMessage String?
-  singleBankMode     Boolean  @default(true)  // Enable single bank mode for short events
-  defaultBankId      String?  // Default bank for single bank mode
+  singleBankMode     Boolean  @default(true)
+  defaultBankId      String?
   isActive           Boolean  @default(true)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
