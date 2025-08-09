@@ -11,47 +11,46 @@ export async function GET(request: NextRequest) {
       throw new Error("Database connection failed");
     }
 
-    // Use raw query to avoid prepared statement conflicts
-    const users = await prisma.$queryRaw`
-      SELECT 
-        id, name, email, phone, role, image, "emailVerified", "createdAt", "updatedAt",
-        COALESCE((
-          SELECT COUNT(*)::int 
-          FROM "Order" 
-          WHERE "userId" = "User".id
-        ), 0) as order_count
-      FROM "User" 
-      ORDER BY "createdAt" DESC
-    `;
+    console.log(`✅ Database connected, ${connectionTest} users found`);
 
-    const totalResult = await prisma.$queryRaw`
-      SELECT COUNT(*)::int as total FROM "User"
-    `;
-    
-    const total = (totalResult as any)[0]?.total || 0;
+    // Get basic users without complex relations first
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        image: true,
+        emailVerified: true,
+        createdAt: true,
+        updatedAt: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
 
-    // Format the results to match expected structure
-    const formattedUsers = (users as any[]).map(user => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      role: user.role,
-      image: user.image,
-      emailVerified: user.emailVerified,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      _count: {
-        orders: user.order_count
-      }
-    }));
+    // Get user-specific data in separate queries
+    const usersWithOrderCounts = await Promise.all(
+      users.map(async (user) => {
+        const orderCount = await prisma.order.count({
+          where: { userId: user.id }
+        }).catch(() => 0);
 
-    console.log(`✅ Successfully fetched ${formattedUsers.length} users`);
+        return {
+          ...user,
+          _count: {
+            orders: orderCount
+          }
+        };
+      })
+    );
+
+    console.log(`✅ Successfully fetched ${usersWithOrderCounts.length} users with order counts`);
 
     return NextResponse.json({
       success: true,
-      data: formattedUsers,
-      total,
+      data: usersWithOrderCounts,
+      total: connectionTest,
       timestamp: new Date().toISOString()
     });
 
