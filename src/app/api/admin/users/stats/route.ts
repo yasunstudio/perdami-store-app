@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { auth } from '@/lib/auth'
 
 // User statistics API with Prisma
 export async function GET(request: NextRequest) {
-  console.log('📊 User stats API called (Prisma)')
+  console.log('📊 Admin User stats API called (Prisma)')
   
   try {
+    // Check if user is admin
+    const session = await auth()
+    if (!session?.user || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     // Execute all statistics queries in parallel for better performance
     const [
       totalUsers,

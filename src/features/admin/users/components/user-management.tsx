@@ -88,8 +88,15 @@ export function UserManagement() {
   // Fetch user statistics
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/users/stats')
-      if (!response.ok) throw new Error('Failed to fetch stats')
+      const response = await fetch('/api/admin/users/stats')
+      if (!response.ok) {
+        // Fallback to regular users stats if admin stats not available
+        const fallbackResponse = await fetch('/api/users/stats')
+        if (!fallbackResponse.ok) throw new Error('Failed to fetch stats')
+        const data = await fallbackResponse.json()
+        setStats(data)
+        return
+      }
       const data = await response.json()
       setStats(data)
     } catch (err) {
@@ -117,13 +124,13 @@ export function UserManagement() {
         params.append('verified', filters.status === 'active' ? 'true' : 'false')
       }
       
-      const response = await fetch(`/api/users?${params}`)
+      const response = await fetch(`/api/admin/users?${params}`)
       if (!response.ok) throw new Error('Failed to fetch users')
       
       const data = await response.json()
-      console.log('Users API response:', data) // Debug log
+      console.log('Admin Users API response:', data) // Debug log
       
-      // Handle the response format from our fixed API
+      // Handle the response format from our admin API
       if (data.success) {
         setUsers(data.data || [])
         setPagination(data.pagination || { page: 1, limit: 10, total: 0, totalPages: 0 })
