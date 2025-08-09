@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { altPrisma } from '@/lib/prisma-alt';
 
 export async function GET(request: NextRequest) {
   try {
     // Get all users with basic info
-    const users = await prisma.user.findMany({
+    const users = await altPrisma.user.findMany({
       select: {
         id: true,
         name: true,
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    const total = await prisma.user.count();
+    const total = await altPrisma.user.count();
 
     return NextResponse.json({
       success: true,
