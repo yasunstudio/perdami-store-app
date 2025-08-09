@@ -1,0 +1,355 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                   String                    @id @default(cuid())
+  email                String                    @unique
+  name                 String?
+  phone                String?
+  password             String?
+  image                String?
+  role                 UserRole                  @default(CUSTOMER)
+  emailVerified        DateTime?
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+  accounts             Account[]
+  inAppNotifications   InAppNotification[]
+  orders               Order[]
+  sessions             Session[]
+  activityLogs         UserActivityLog[]
+  notificationSettings UserNotificationSettings?
+
+  @@index([email])
+  @@index([role])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtokens")
+}
+
+model UserNotificationSettings {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  orderUpdates         Boolean  @default(true)
+  paymentConfirmations Boolean  @default(true)
+  productAnnouncements Boolean  @default(true)
+  promotionalEmails    Boolean  @default(false)
+  securityAlerts       Boolean  @default(true)
+  accountUpdates       Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_notification_settings")
+}
+
+model Store {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  description String?
+  image       String?
+  address     String?
+  city        String?    @default("Bandung")
+  province    String?    @default("Jawa Barat")
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  bundles     ProductBundle[]  // Direct relation to bundles
+
+  @@index([isActive])
+  @@index([city])
+  @@index([createdAt])
+  @@map("stores")
+}
+
+model ProductBundle {
+  id             String      @id @default(cuid())
+  name           String
+  description    String?
+  image          String?
+  price          Float
+  contents       Json?       // Bundle contents: [{ name: string, quantity: number }]
+  isActive       Boolean     @default(true)
+  isFeatured     Boolean     @default(false)
+  showToCustomer Boolean     @default(false)
+  storeId        String      // Direct relation to Store
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  
+  // Relations
+  store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@unique([name, storeId])
+  @@index([storeId])
+  @@index([isActive])
+  @@index([showToCustomer])
+  @@index([createdAt])
+  @@index([isFeatured])
+  @@index([price])
+  @@map("product_bundles")
+}
+
+model Bank {
+  id            String   @id @default(cuid())
+  name          String   @unique
+  code          String   @unique
+  accountNumber String
+  accountName   String
+  logo          String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  orders        Order[]
+  appSettings   AppSettings[]  // Relation for default bank
+
+  @@index([code])
+  @@index([isActive])
+  @@map("banks")
+}
+
+model Order {
+  id                String       @id @default(cuid())
+  orderNumber       String       @unique
+  userId            String
+  bankId            String?
+  subtotalAmount    Float        // Total produk tanpa service fee
+  serviceFee        Float        @default(25000) // Fixed Rp 25.000
+  totalAmount       Float        // subtotalAmount + serviceFee
+  orderStatus       OrderStatus  @default(PENDING)
+  paymentStatus     PaymentStatus @default(PENDING)
+  pickupMethod      PickupMethod @default(VENUE)
+  pickupDate        DateTime?    // Tanggal pickup yang dipilih customer
+  pickupStatus      PickupStatus @default(NOT_PICKED_UP)
+  paymentProofUrl   String?      // URL bukti transfer
+  notes             String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  orderItems        OrderItem[]
+  bank              Bank?        @relation(fields: [bankId], references: [id])
+  user              User         @relation(fields: [userId], references: [id])
+  payment           Payment?
+
+  @@index([userId])
+  @@index([orderNumber])
+  @@index([orderStatus])
+  @@index([pickupDate])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String        @id @default(cuid())
+  orderId    String
+  bundleId   String?       // Changed to optional based on database
+  quantity   Int
+  unitPrice  Float         @map("unitPrice")
+  totalPrice Float         @map("totalPrice")
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  order      Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  bundle     ProductBundle? @relation(fields: [bundleId], references: [id])
+
+  @@index([orderId])
+  @@index([bundleId])
+  @@map("order_items")
+}
+
+model UserActivityLog {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String
+  resource   String
+  resourceId String?
+  details    String?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([action])
+  @@index([resource])
+  @@index([createdAt])
+  @@map("user_activity_logs")
+}
+
+model AppSettings {
+  id                 String   @id @default(cuid())
+  appName            String   @default("Perdami Store")
+  appDescription     String   @default("Platform pre-order oleh-oleh khas Bandung untuk peserta PIT PERDAMI 2025. Nikmati kemudahan berbelanja online dan ambil langsung di venue event.")
+  appLogo            String?  @default("/images/logo.png")
+  businessAddress    String   @default("Venue PIT PERDAMI 2025, Bandung, Jawa Barat")
+  pickupLocation     String   @default("Venue PIT PERDAMI 2025")
+  pickupCity         String   @default("Bandung, Jawa Barat")
+  eventName          String   @default("PIT PERDAMI 2025")
+  eventYear          String   @default("2025")
+  copyrightText      String   @default("© 2025 Perdami Store. Dibuat khusus untuk PIT PERDAMI 2025.")
+  copyrightSubtext   String   @default("Semua hak cipta dilindungi.")
+  isMaintenanceMode  Boolean  @default(false)
+  maintenanceMessage String?
+  singleBankMode     Boolean  @default(true)  // Enable single bank mode for short events
+  defaultBankId      String?  // Default bank for single bank mode
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  defaultBank        Bank?    @relation(fields: [defaultBankId], references: [id])
+
+  @@index([isActive])
+  @@map("app_settings")
+}
+
+model InAppNotification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("in_app_notifications")
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  orderId   String        @unique
+  amount    Float
+  method    PaymentMethod
+  status    PaymentStatus @default(PENDING)
+  proofUrl  String?
+  notes     String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  order     Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([method])
+  @@index([createdAt])
+  @@map("payments")
+}
+
+model ContactInfo {
+  id        String      @id
+  type      ContactType
+  title     String
+  value     String
+  icon      String
+  color     String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime
+
+  @@index([type])
+  @@map("contact_info")
+}
+
+model QuickAction {
+  id          String   @id
+  title       String
+  description String
+  icon        String
+  action      String
+  color       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+
+  @@map("quick_actions")
+}
+
+enum UserRole {
+  ADMIN
+  CUSTOMER
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+}
+
+enum PickupMethod {
+  VENUE
+}
+
+enum PickupStatus {
+  NOT_PICKED_UP
+  PICKED_UP
+}
+
+enum ContactType {
+  EMAIL
+  PHONE
+  WHATSAPP
+  ADDRESS
+  SOCIAL_MEDIA
+}
+
+enum NotificationType {
+  ORDER_UPDATE
+  PAYMENT_REMINDER
+  GENERAL
+}

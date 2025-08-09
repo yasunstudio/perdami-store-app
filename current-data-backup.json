@@ -1,0 +1,240 @@
+=== EXTRACTING DATA FOR MIGRATION ===
+1. Testing Health API...
+{
+  "status": "healthy",
+  "database": "connected",
+  "timestamp": "2025-08-09T12:27:02.876Z",
+  "duration": "59ms",
+  "server_time": "2025-08-09T12:27:02.847Z",
+  "db_version": "PostgreSQL 17.4 on aarch64-unknown-linux-gnu, comp..."
+}
+
+2. Testing Debug SSL (for raw data)...
+{
+  "success": true,
+  "count": 5
+}
+{
+  "success": false,
+  "error": "\nInvalid `prisma.$queryRaw()` invocation:\n\n\nRaw query failed. Code: `42P05`. Message: `ERROR: prepared statement \"s74\" already exists`"
+}
+
+3. Extracting user data via raw query...
+
+4. Extracting order data...
+[]
+
+5. Extracting bundle data...
+[
+  {
+    "id": "bundle-exclusive-vip",
+    "name": "Paket Exclusive VIP",
+    "description": "Paket eksklusif untuk tamu VIP dengan produk premium pilihan.",
+    "price": 500000,
+    "image": "/images/bundles/exclusive-vip.jpg",
+    "isActive": true,
+    "isFeatured": true,
+    "showToCustomer": false,
+    "createdAt": "2025-08-08T04:54:09.684Z",
+    "updatedAt": "2025-08-08T04:54:09.684Z",
+    "storeId": "store-souvenir",
+    "store": {
+      "id": "store-souvenir",
+      "name": "Souvenir Corner"
+    }
+  },
+  {
+    "id": "bundle-hemat-keluarga",
+    "name": "Paket Hemat Keluarga",
+    "description": "Paket ekonomis untuk keluarga dengan porsi yang cukup untuk semua.",
+    "price": 120000,
+    "image": "/images/bundles/hemat-keluarga.jpg",
+    "isActive": true,
+    "isFeatured": false,
+    "showToCustomer": true,
+    "createdAt": "2025-08-08T04:54:09.596Z",
+    "updatedAt": "2025-08-08T04:54:09.596Z",
+    "storeId": "store-food-court",
+    "store": {
+      "id": "store-food-court",
+      "name": "Food Court Perdami"
+    }
+  },
+  {
+    "id": "bundle-premium-combo",
+    "name": "Paket Premium Kombo",
+    "description": "Paket premium yang menggabungkan makanan, minuman, dan souvenir.",
+    "price": 350000,
+    "image": "/images/bundles/premium-combo.jpg",
+    "isActive": true,
+    "isFeatured": true,
+    "showToCustomer": true,
+    "createdAt": "2025-08-08T04:54:09.509Z",
+    "updatedAt": "2025-08-08T04:54:09.509Z",
+    "storeId": "store-main-venue",
+    "store": {
+      "id": "store-main-venue",
+      "name": "Toko Utama - Venue PIT PERDAMI"
+    }
+  },
+  {
+    "id": "bundle-souvenir-perdami",
+    "name": "Paket Souvenir PIT PERDAMI 2025",
+    "description": "Merchandise eksklusif dan souvenir PIT PERDAMI 2025.",
+    "price": 200000,
+    "image": "/images/bundles/souvenir-perdami.jpg",
+    "isActive": true,
+    "isFeatured": true,
+    "showToCustomer": true,
+    "createdAt": "2025-08-08T04:54:09.426Z",
+    "updatedAt": "2025-08-08T04:54:09.426Z",
+    "storeId": "store-souvenir",
+    "store": {
+      "id": "store-souvenir",
+      "name": "Souvenir Corner"
+    }
+  },
+  {
+    "id": "bundle-minuman-segar",
+    "name": "Paket Minuman Segar",
+    "description": "Koleksi minuman segar khas Bandung untuk menyegarkan hari Anda.",
+    "price": 85000,
+    "image": "/images/bundles/minuman-segar.jpg",
+    "isActive": true,
+    "isFeatured": true,
+    "showToCustomer": true,
+    "createdAt": "2025-08-08T04:54:09.340Z",
+    "updatedAt": "2025-08-08T04:54:09.340Z",
+    "storeId": "store-food-court",
+    "store": {
+      "id": "store-food-court",
+      "name": "Food Court Perdami"
+    }
+  },
+  {
+    "id": "bundle-makanan-khas",
+    "name": "Paket Makanan Khas Bandung",
+    "description": "Paket lengkap makanan khas Bandung pilihan terbaik untuk oleh-oleh.",
+    "price": 150000,
+    "image": "/images/bundles/makanan-khas.jpg",
+    "isActive": true,
+    "isFeatured": true,
+    "showToCustomer": true,
+    "createdAt": "2025-08-08T04:54:09.257Z",
+    "updatedAt": "2025-08-08T04:54:09.257Z",
+    "storeId": "store-main-venue",
+    "store": {
+      "id": "store-main-venue",
+      "name": "Toko Utama - Venue PIT PERDAMI"
+    }
+  },
+  {
+    "id": "cm0a1b2c3d4e5f6g7h8i9j8k",
+    "name": "Paket Perdami Basic",
+    "description": "Paket dasar untuk anggota Dharma Wanita",
+    "price": 150000,
+    "image": null,
+    "isActive": true,
+    "isFeatured": true,
+    "showToCustomer": true,
+    "createdAt": "2025-08-07T09:34:05.007Z",
+    "updatedAt": "2025-08-07T09:34:05.007Z",
+    "storeId": "cm0a1b2c3d4e5f6g7h8i9j6k",
+    "store": {
+      "id": "cm0a1b2c3d4e5f6g7h8i9j6k",
+      "name": "Toko Perdami Jakarta"
+    }
+  },
+  {
+    "id": "cm0a1b2c3d4e5f6g7h8i9j9k",
+    "name": "Paket Perdami Premium",
+    "description": "Paket lengkap untuk pengurus",
+    "price": 250000,
+    "image": null,
+    "isActive": true,
+    "isFeatured": true,
+    "showToCustomer": true,
+    "createdAt": "2025-08-07T09:34:05.007Z",
+    "updatedAt": "2025-08-07T09:34:05.007Z",
+    "storeId": "cm0a1b2c3d4e5f6g7h8i9j6k",
+    "store": {
+      "id": "cm0a1b2c3d4e5f6g7h8i9j6k",
+      "name": "Toko Perdami Jakarta"
+    }
+  }
+]
+
+6. Extracting user data...
+[
+  {
+    "id": "user-customer-3",
+    "name": "Dr. Rina Kartika",
+    "email": "customer3@example.com",
+    "phone": "081234567893",
+    "role": "CUSTOMER",
+    "image": null,
+    "emailVerified": null,
+    "createdAt": "2025-08-08T04:51:19.463Z",
+    "updatedAt": "2025-08-08T05:01:22.783Z",
+    "_count": {
+      "orders": 0
+    }
+  },
+  {
+    "id": "user-customer-2",
+    "name": "Dr. Budi Santoso",
+    "email": "customer2@example.com",
+    "phone": "081234567892",
+    "role": "CUSTOMER",
+    "image": "/images/avatars/customer2.png",
+    "emailVerified": "2025-08-08T11:51:19.307Z",
+    "createdAt": "2025-08-08T04:51:19.434Z",
+    "updatedAt": "2025-08-08T05:01:22.756Z",
+    "_count": {
+      "orders": 0
+    }
+  },
+  {
+    "id": "user-customer-1",
+    "name": "Dr. Siti Nurhaliza",
+    "email": "customer1@example.com",
+    "phone": "081234567891",
+    "role": "CUSTOMER",
+    "image": "/images/avatars/customer1.png",
+    "emailVerified": "2025-08-08T11:51:19.307Z",
+    "createdAt": "2025-08-08T04:51:19.404Z",
+    "updatedAt": "2025-08-08T05:01:22.729Z",
+    "_count": {
+      "orders": 1
+    }
+  },
+  {
+    "id": "cme1i6qwt0000jl04jfogt2rg",
+    "name": "Customer",
+    "email": "customer@example.com",
+    "phone": "081234567890",
+    "role": "CUSTOMER",
+    "image": null,
+    "emailVerified": null,
+    "createdAt": "2025-08-07T14:39:36.894Z",
+    "updatedAt": "2025-08-07T14:39:36.894Z",
+    "_count": {
+      "orders": 0
+    }
+  },
+  {
+    "id": "cm0a1b2c3d4e5f6g7h8i9j0k",
+    "name": "Admin Perdami",
+    "email": "admin@perdami.com",
+    "phone": "081234567890",
+    "role": "ADMIN",
+    "image": null,
+    "emailVerified": "2025-08-08T07:16:12.848Z",
+    "createdAt": "2025-08-07T09:34:04.869Z",
+    "updatedAt": "2025-08-08T07:16:14.148Z",
+    "_count": {
+      "orders": 0
+    }
+  }
+]
+=== DATA EXTRACTION COMPLETE ===
