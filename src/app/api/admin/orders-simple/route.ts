@@ -74,7 +74,11 @@ export async function GET(request: NextRequest) {
             }
           },
           orderItems: {
-            include: {
+            select: {
+              id: true,
+              quantity: true,
+              unitPrice: true,
+              totalPrice: true,
               bundle: {
                 include: {
                   store: {

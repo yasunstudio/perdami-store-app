@@ -182,13 +182,16 @@ model Order {
 }
 
 model OrderItem {
-  id       String        @id @default(cuid())
-  orderId  String
-  bundleId String        // Required - hanya bundles
-  quantity Int
-  price    Float
-  order    Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  bundle   ProductBundle @relation(fields: [bundleId], references: [id])
+  id         String        @id @default(cuid())
+  orderId    String
+  bundleId   String?       // Changed to optional based on database
+  quantity   Int
+  unitPrice  Float         @map("unitPrice")
+  totalPrice Float         @map("totalPrice")
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  order      Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  bundle     ProductBundle? @relation(fields: [bundleId], references: [id])
 
   @@index([orderId])
   @@index([bundleId])
