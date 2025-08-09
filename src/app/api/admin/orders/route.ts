@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma, disconnectPrisma } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 import { OrderStatus, PaymentStatus } from "@prisma/client"
-import { ensureDatabaseConnection, executeWithRetry } from "@/lib/database-connection"
 
 export async function GET(request: NextRequest) {
-  console.log("📊 Admin orders API called (Robust Prisma)")
+  console.log("📊 Admin orders API called")
   
   try {
-    // Ensure robust database connection
-    await ensureDatabaseConnection()
-    
+    const session = await auth()
+    if (!session?.user || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     
     // Extract query parameters
@@ -30,245 +32,49 @@ export async function GET(request: NextRequest) {
       whereConditions.orderStatus = orderStatus
     }
     
+    if (paymentStatus) {
+      whereConditions.paymentStatus = paymentStatus
+    }
+    
     if (search) {
       whereConditions.OR = [
-        { orderNumber: { contains: search, mode: 'insensitive' } },
-        { user: { name: { contains: search, mode: 'insensitive' } } },
-        { user: { email: { contains: search, mode: 'insensitive' } } }
+        {
+          user: {
+            name: {
+              contains: search,
+              mode: 'insensitive'
+            }
+          }
+        },
+        {
+          user: {
+            email: {
+              contains: search,
+              mode: 'insensitive'
+            }
+          }
+        },
+        {
+          id: {
+            contains: search,
+            mode: 'insensitive'
+          }
+        },
+        {
+          orderNumber: {
+            contains: search,
+            mode: 'insensitive'
+          }
+        }
       ]
     }
     
-    if (paymentStatus) {
-      whereConditions.payment = {
-        status: paymentStatus
-      }
-    }
-
-    // Execute operations with retry logic
-    const [orders, total] = await Promise.all([
-      executeWithRetry(() => 
-        prisma.order.findMany({
-          where: whereConditions,
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                phone: true
-              }
-            },
-            payment: {
-              select: {
-                id: true,
-                status: true,
-                method: true,
-                amount: true,
-                proofUrl: true
-              }
-            },
-            bank: {
-              select: {
-                id: true,
-                name: true,
-                code: true,
-                accountNumber: true,
-                accountName: true
-              }
-            },
-            orderItems: {
-              include: {
-                bundle: {
-                  include: {
-                    store: {
-                      select: {
-                        id: true,
-                        name: true
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          orderBy: { createdAt: 'desc' },
-          skip: offset,
-          take: limit
-        })
-      ),
-      
-      executeWithRetry(() => 
-        prisma.order.count({
-          where: whereConditions
-        })
-      )
-    ]);
-
-    // Get statistics with individual queries to avoid groupBy issues
-    const [
-      pendingCount,
-      confirmedCount, 
-      readyCount,
-      completedCount,
-      cancelledCount,
-      revenueResult
-    ] = await Promise.all([
-      executeWithRetry(() => prisma.order.count({ where: { orderStatus: 'PENDING' } })),
-      executeWithRetry(() => prisma.order.count({ where: { orderStatus: 'CONFIRMED' } })),
-      executeWithRetry(() => prisma.order.count({ where: { orderStatus: 'READY' } })),
-      executeWithRetry(() => prisma.order.count({ where: { orderStatus: 'COMPLETED' } })),
-      executeWithRetry(() => prisma.order.count({ where: { orderStatus: 'CANCELLED' } })),
-      executeWithRetry(() => 
-        prisma.order.aggregate({
-          _sum: { totalAmount: true },
-          where: { payment: { status: 'PAID' } }
-        })
-      )
-    ]);
-
-    // Get payment statistics
-    const [
-      paymentPendingCount,
-      paymentPaidCount,
-      paymentFailedCount,
-      paymentRefundedCount
-    ] = await Promise.all([
-      executeWithRetry(() => prisma.payment.count({ where: { status: 'PENDING' } })),
-      executeWithRetry(() => prisma.payment.count({ where: { status: 'PAID' } })),
-      executeWithRetry(() => prisma.payment.count({ where: { status: 'FAILED' } })),
-      executeWithRetry(() => prisma.payment.count({ where: { status: 'REFUNDED' } }))
-    ]);
-
-    // Format response
-    const formattedOrders = orders.map(order => ({
-      id: order.id,
-      orderNumber: order.orderNumber,
-      customer: {
-        id: order.user.id,
-        name: order.user.name,
-        email: order.user.email,
-        phone: order.user.phone
-      },
-      subtotalAmount: Number(order.subtotalAmount),
-      serviceFee: Number(order.serviceFee),
-      totalAmount: Number(order.totalAmount),
-      orderStatus: order.orderStatus,
-      paymentStatus: order.payment?.status || 'PENDING',
-      paymentMethod: order.payment?.method,
-      paymentProof: order.payment?.proofUrl,
-      pickupDate: order.pickupDate,
-      notes: order.notes,
-      createdAt: order.createdAt,
-      updatedAt: order.updatedAt,
-      items: order.orderItems.map(item => ({
-        id: item.id,
-        quantity: item.quantity,
-        price: Number(item.price),
-        bundle: {
-          id: item.bundle.id,
-          name: item.bundle.name,
-          price: Number(item.bundle.price),
-          image: item.bundle.image,
-          store: {
-            id: item.bundle.store.id,
-            name: item.bundle.store.name
-          }
-        }
-      })),
-      bank: order.bank,
-      payment: order.payment
-    }));
-
-    const response = {
-      success: true,
-      data: {
-        orders: formattedOrders,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-          hasNext: page < Math.ceil(total / limit),
-          hasPrev: page > 1
-        },
-        stats: {
-          total,
-          pending: pendingCount,
-          confirmed: confirmedCount,
-          ready: readyCount,
-          completed: completedCount,
-          cancelled: cancelledCount,
-          totalRevenue: Number(revenueResult._sum.totalAmount || 0)
-        },
-        paymentStats: {
-          pending: paymentPendingCount,
-          paid: paymentPaidCount,
-          failed: paymentFailedCount,
-          refunded: paymentRefundedCount
-        }
-      }
-    };
-
-    console.log('✅ Orders fetched successfully with retry logic:', {
-      ordersCount: formattedOrders.length,
-      total,
-      attempts: 'Variable'
-    });
-
-    return NextResponse.json(response);
-
-  } catch (error) {
-    console.error('❌ Error fetching orders after retries:', error);
+    console.log('🔍 Where conditions:', JSON.stringify(whereConditions, null, 2))
     
-    return NextResponse.json(
-      { 
-        error: 'Failed to fetch orders',
-        details: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString()
-      },
-      { status: 500 }
-    );
-  } finally {
-    // Optional: disconnect to free resources
-    // await disconnectPrisma();
-  }
-}
-
-// Update order status (PUT method) with retry logic
-export async function PUT(request: NextRequest) {
-  console.log('🔄 Admin order update API called (Robust Prisma)')
-  
-  try {
-    await prisma.$connect();
-    
-    const body = await request.json()
-    const { orderId, orderStatus, notes } = body
-    
-    if (!orderId || !orderStatus) {
-      return NextResponse.json(
-        { error: 'Order ID and order status are required' },
-        { status: 400 }
-      )
-    }
-
-    // Validate order status
-    const validStatuses: OrderStatus[] = ['PENDING', 'CONFIRMED', 'READY', 'COMPLETED', 'CANCELLED']
-    if (!validStatuses.includes(orderStatus)) {
-      return NextResponse.json(
-        { error: 'Invalid order status' },
-        { status: 400 }
-      )
-    }
-    
-    // Update order with retry logic
-    const updatedOrder = await executeWithRetry(() =>
-      prisma.order.update({
-        where: { id: orderId },
-        data: {
-          orderStatus: orderStatus as OrderStatus,
-          notes: notes || null,
-          updatedAt: new Date()
-        },
+    // Get orders with pagination using Prisma ORM
+    const [orders, totalCount] = await Promise.all([
+      prisma.order.findMany({
+        where: whereConditions,
         include: {
           user: {
             select: {
@@ -277,109 +83,322 @@ export async function PUT(request: NextRequest) {
               email: true
             }
           },
-          payment: true,
-          bank: true
-        }
+          orderItems: {
+            include: {
+              bundle: {
+                select: {
+                  id: true,
+                  name: true,
+                  price: true,
+                  image: true
+                }
+              }
+            }
+          },
+          payment: {
+            select: {
+              id: true,
+              status: true,
+              amount: true,
+              proofUrl: true,
+              createdAt: true,
+              updatedAt: true
+            }
+          },
+          bank: {
+            select: {
+              id: true,
+              name: true,
+              accountNumber: true,
+              accountName: true
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: offset,
+        take: limit
+      }),
+      prisma.order.count({ where: whereConditions })
+    ])
+
+    console.log(`📦 Found ${orders.length} orders out of ${totalCount} total`)
+
+    // Get order status statistics using Prisma ORM
+    const [
+      pendingCount,
+      confirmedCount,
+      readyCount,
+      completedCount,
+      cancelledCount,
+      totalRevenue
+    ] = await Promise.all([
+      prisma.order.count({ where: { orderStatus: 'PENDING' } }),
+      prisma.order.count({ where: { orderStatus: 'CONFIRMED' } }),
+      prisma.order.count({ where: { orderStatus: 'READY' } }),
+      prisma.order.count({ where: { orderStatus: 'COMPLETED' } }),
+      prisma.order.count({ where: { orderStatus: 'CANCELLED' } }),
+      prisma.order.aggregate({
+        where: { orderStatus: 'COMPLETED' },
+        _sum: { totalAmount: true }
       })
-    );
+    ])
 
-    console.log('✅ Order status updated successfully (Robust Prisma):', { orderId, orderStatus })
+    // Get payment status statistics using Prisma ORM
+    const [
+      pendingPayments,
+      paidPayments,
+      failedPayments,
+      refundedPayments
+    ] = await Promise.all([
+      prisma.payment.count({ where: { status: 'PENDING' } }),
+      prisma.payment.count({ where: { status: 'PAID' } }),
+      prisma.payment.count({ where: { status: 'FAILED' } }),
+      prisma.payment.count({ where: { status: 'REFUNDED' } })
+    ])
 
-    return NextResponse.json({
-      success: true,
-      message: 'Order status updated successfully',
-      order: updatedOrder
-    })
+    // Format orders for response
+    const formattedOrders = orders.map(order => ({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      orderStatus: order.orderStatus,
+      paymentStatus: order.paymentStatus,
+      subtotalAmount: order.subtotalAmount,
+      serviceFee: order.serviceFee,
+      totalAmount: order.totalAmount,
+      pickupDate: order.pickupDate,
+      pickupMethod: order.pickupMethod,
+      pickupStatus: order.pickupStatus,
+      paymentProofUrl: order.paymentProofUrl,
+      notes: order.notes,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      user: order.user,
+      bank: order.bank,
+      payment: order.payment,
+      items: order.orderItems.map(item => ({
+        id: item.id,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice,
+        bundle: item.bundle
+      }))
+    }))
+
+    const statistics = {
+      orderStatus: {
+        pending: pendingCount,
+        confirmed: confirmedCount,
+        ready: readyCount,
+        completed: completedCount,
+        cancelled: cancelledCount
+      },
+      paymentStatus: {
+        pending: pendingPayments,
+        paid: paidPayments,
+        failed: failedPayments,
+        refunded: refundedPayments
+      },
+      revenue: {
+        total: totalRevenue._sum.totalAmount || 0
+      }
+    }
+
+    const response = {
+      orders: formattedOrders,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        hasMore: offset + limit < totalCount
+      },
+      statistics,
+      metadata: {
+        timestamp: new Date().toISOString(),
+        version: '2.0-prisma'
+      }
+    }
+
+    console.log('✅ Orders data prepared successfully')
+    return NextResponse.json(response)
 
   } catch (error) {
-    console.error('❌ Error updating order (Robust Prisma):', error)
-    
-    if (error instanceof Error && error.message.includes('Record to update not found')) {
-      return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
-      )
-    }
-    
-    return NextResponse.json(
-      { 
-        error: 'Failed to update order',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    )
-  } finally {
-    // Optional: disconnect to free resources
-    // await disconnectPrisma();
+    console.error('❌ Error in GET /api/admin/orders:', error)
+    return NextResponse.json({
+      error: 'Failed to fetch orders',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }
 
-// Delete order (DELETE method) with retry logic
-export async function DELETE(request: NextRequest) {
-  console.log('🗑️ Admin order delete API called (Robust Prisma)')
+export async function PATCH(request: NextRequest) {
+  console.log("🔄 Admin orders PATCH API called")
   
   try {
-    await prisma.$connect();
-    
-    const { searchParams } = new URL(request.url)
-    const orderId = searchParams.get('orderId')
-    
-    if (!orderId) {
-      return NextResponse.json(
-        { error: 'Order ID is required' },
-        { status: 400 }
-      )
+    const session = await auth()
+    if (!session?.user || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Delete order with transaction and retry logic
-    const result = await executeWithRetry(() =>
-      prisma.$transaction(async (tx) => {
-        // First delete order items
-        await tx.orderItem.deleteMany({
-          where: { orderId }
-        })
-        
-        // Delete payment if exists
-        await tx.payment.deleteMany({
-          where: { orderId }
-        })
-        
-        // Finally delete the order
-        const deletedOrder = await tx.order.delete({
-          where: { id: orderId }
-        })
-        
-        return deletedOrder
-      })
-    );
-
-    console.log('✅ Order deleted successfully (Robust Prisma):', { orderId })
-
-    return NextResponse.json({
-      success: true,
-      message: 'Order deleted successfully',
-      orderId
-    })
-
-  } catch (error) {
-    console.error('❌ Error deleting order (Robust Prisma):', error)
+    const body = await request.json()
+    const { orderId, orderStatus, notes } = body
     
-    if (error instanceof Error && error.message.includes('Record to delete does not exist')) {
-      return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
-      )
+    if (!orderId || !orderStatus) {
+      return NextResponse.json({
+        error: 'Order ID and order status are required'
+      }, { status: 400 })
     }
     
-    return NextResponse.json(
-      { 
-        error: 'Failed to delete order',
-        details: error instanceof Error ? error.message : 'Unknown error'
+    console.log('🔄 Updating order:', { orderId, orderStatus, notes })
+    
+    // Update order status using Prisma ORM
+    const updatedOrder = await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        orderStatus: orderStatus as OrderStatus,
+        ...(notes && { notes }),
+        updatedAt: new Date()
       },
-      { status: 500 }
-    )
-  } finally {
-    // Optional: disconnect to free resources
-    // await disconnectPrisma();
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        orderItems: {
+          include: {
+            bundle: {
+              select: {
+                id: true,
+                name: true,
+                price: true
+              }
+            }
+          }
+        },
+        payment: true
+      }
+    })
+    
+    console.log('✅ Order updated successfully')
+    
+    return NextResponse.json({
+      message: 'Order status updated successfully',
+      order: updatedOrder
+    })
+    
+  } catch (error) {
+    console.error('❌ Error in PATCH /api/admin/orders:', error)
+    return NextResponse.json({
+      error: 'Failed to update order',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
+  }
+}
+
+export async function POST(request: NextRequest) {
+  console.log("➕ Admin orders POST API called")
+  
+  try {
+    const session = await auth()
+    if (!session?.user || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { userId, bundleIds, pickupDate, notes } = body
+    
+    if (!userId || !bundleIds || !Array.isArray(bundleIds) || bundleIds.length === 0) {
+      return NextResponse.json({
+        error: 'User ID and bundle IDs are required'
+      }, { status: 400 })
+    }
+    
+    console.log('➕ Creating order:', { userId, bundleIds, pickupDate, notes })
+    
+    // Get bundles to calculate total using Prisma ORM
+    const bundles = await prisma.productBundle.findMany({
+      where: {
+        id: { in: bundleIds },
+        isActive: true
+      }
+    })
+    
+    if (bundles.length !== bundleIds.length) {
+      return NextResponse.json({
+        error: 'One or more bundles are not available'
+      }, { status: 400 })
+    }
+    
+    const totalAmount = bundles.reduce((sum, bundle) => sum + bundle.price, 0)
+    const serviceFee = 25000 // Fixed Rp 25.000 as per schema
+    const subtotalAmount = totalAmount
+    
+    // Create order with items using Prisma ORM
+    const result = await prisma.order.create({
+      data: {
+        userId,
+        orderNumber: `ORD-${Date.now()}`,
+        orderStatus: 'PENDING',
+        paymentStatus: 'PENDING',
+        subtotalAmount,
+        serviceFee,
+        totalAmount: subtotalAmount + serviceFee,
+        pickupDate: pickupDate ? new Date(pickupDate) : null,
+        notes,
+        orderItems: {
+          create: bundles.map(bundle => ({
+            bundleId: bundle.id,
+            quantity: 1,
+            unitPrice: bundle.price,
+            totalPrice: bundle.price
+          }))
+        },
+        payment: {
+          create: {
+            amount: subtotalAmount + serviceFee,
+            method: 'BANK_TRANSFER',
+            status: 'PENDING'
+          }
+        }
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        orderItems: {
+          include: {
+            bundle: {
+              select: {
+                id: true,
+                name: true,
+                price: true
+              }
+            }
+          }
+        },
+        payment: true
+      }
+    })
+    
+    console.log('✅ Order created successfully')
+    
+    return NextResponse.json({
+      message: 'Order created successfully',
+      order: result
+    })
+    
+  } catch (error) {
+    console.error('❌ Error in POST /api/admin/orders:', error)
+    return NextResponse.json({
+      error: 'Failed to create order',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }

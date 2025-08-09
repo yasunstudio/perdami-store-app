@@ -57,10 +57,10 @@ function AdminDashboard() {
         console.log('🔄 Fetching dashboard data...');
         
         // Try fixed admin API first, then fallback to fixed public API
-        let response = await fetch('/api/admin/dashboard-fixed');
+        let response = await fetch('/api/admin/dashboard');
         
         if (!response.ok) {
-          console.warn('Admin dashboard-fixed API failed, trying public fallback...');
+          console.warn('Admin dashboard API failed, trying public fallback...');
           response = await fetch('/api/dashboard-public');
         }
         

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createPrismaClient } from '@/lib/prisma-serverless'
+import { prisma } from "@/lib/prisma"
 
 export async function GET(
   request: NextRequest,
@@ -7,7 +7,6 @@ export async function GET(
 ) {
   try {
     // Create fresh prisma client for serverless environment to avoid prepared statement conflicts
-    const prisma = createPrismaClient()
     
     try {
       const { id } = await params
@@ -70,7 +69,6 @@ export async function GET(
       return NextResponse.json(transformedStore)
     } finally {
       // Clean up prisma client
-      await prisma.$disconnect()
     }
 
   } catch (error) {

@@ -3,8 +3,6 @@ import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { auditLog } from '@/lib/audit'
-import { withDatabaseRetry, createErrorResponse } from '@/lib/database-utils'
-import { ensureDatabaseConnection } from '@/lib/database-connection'
 
 
 // Request validation schemas
@@ -29,9 +27,6 @@ const querySchema = z.object({
 // GET /api/admin/banks - List banks with filtering and pagination
 export async function GET(request: NextRequest) {
   try {
-    // Ensure robust database connection
-    await ensureDatabaseConnection()
-    
     const { searchParams } = new URL(request.url)
     const {
       page,
@@ -47,7 +42,6 @@ export async function GET(request: NextRequest) {
     const skip = (pageNum - 1) * limitNum
 
     // Build where clause
-     
     const where: Record<string, any> = {}
 
     if (search) {
@@ -70,41 +64,42 @@ export async function GET(request: NextRequest) {
     const orderBy: Record<string, any> = {}
     orderBy[sortBy] = sortOrder
 
-    // Execute queries with retry logic
-    const result = await withDatabaseRetry(async () => {
-      const [banks, totalCount] = await Promise.all([
-        prisma.bank.findMany({
-          where,
-          include: {
-            _count: {
-              select: {
-                orders: true
-              }
+    // Execute queries
+    const [banks, totalCount] = await Promise.all([
+      prisma.bank.findMany({
+        where,
+        include: {
+          _count: {
+            select: {
+              orders: true
             }
-          },
-          orderBy,
-          skip,
-          take: limitNum
-        }),
-        prisma.bank.count({ where })
-      ])
-      return { banks, totalCount }
-    })
+          }
+        },
+        orderBy,
+        skip,
+        take: limitNum
+      }),
+      prisma.bank.count({ where })
+    ])
 
-    const totalPages = Math.ceil(result.totalCount / limitNum)
+    const totalPages = Math.ceil(totalCount / limitNum)
 
     return NextResponse.json({
-      banks: result.banks,
+      banks: banks,
       pagination: {
         currentPage: pageNum,
         totalPages,
-        totalCount: result.totalCount,
+        totalCount: totalCount,
         hasNextPage: pageNum < totalPages,
         hasPreviousPage: pageNum > 1
       }
     })
   } catch (error) {
-    return createErrorResponse(error, 'GET /api/admin/banks')
+    console.error('Error in GET /api/admin/banks:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch banks' },
+      { status: 500 }
+    )
   }
 }
 
@@ -124,30 +119,26 @@ export async function POST(request: NextRequest) {
     const validatedData = createBankSchema.parse(body)
 
     // Check if bank code already exists
-    const existingBankCheck = await withDatabaseRetry(async () => {
-      return await prisma.bank.findUnique({
-        where: { code: validatedData.code }
-      })
+    const existingBank = await prisma.bank.findUnique({
+      where: { code: validatedData.code }
     })
 
-    if (existingBankCheck) {
+    if (existingBank) {
       return NextResponse.json(
         { error: 'Bank dengan kode ini sudah ada' },
         { status: 400 }
       )
     }
 
-    const bank = await withDatabaseRetry(async () => {
-      return await prisma.bank.create({
-        data: validatedData,
-        include: {
-          _count: {
-            select: {
-              orders: true
-            }
+    const bank = await prisma.bank.create({
+      data: validatedData,
+      include: {
+        _count: {
+          select: {
+            orders: true
           }
         }
-      })
+      }
     })
 
     // Log activity
@@ -169,6 +160,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    return createErrorResponse(error, 'POST /api/admin/banks')
+    return NextResponse.json(
+      { error: 'Failed to create bank' },
+      { status: 500 }
+    )
   }
 }

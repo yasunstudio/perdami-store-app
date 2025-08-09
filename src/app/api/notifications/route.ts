@@ -1,7 +1,7 @@
 // API for user notifications
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
-import { createPrismaClient } from '@/lib/prisma-serverless'
+import { prisma } from "@/lib/prisma"
 import { notificationService } from '@/lib/notification'
 import { auditLog } from '@/lib/audit'
 
@@ -14,7 +14,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Create fresh prisma client for serverless environment to avoid prepared statement conflicts
-    const prisma = createPrismaClient()
     
     try {
       const { searchParams } = new URL(request.url)
@@ -54,7 +53,6 @@ export async function GET(request: NextRequest) {
       })
     } finally {
       // Clean up prisma client
-      await prisma.$disconnect()
     }
   } catch (error) {
     console.error('Error fetching notifications:', error)
@@ -74,7 +72,6 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Create fresh prisma client for serverless environment to avoid prepared statement conflicts
-    const prisma = createPrismaClient()
     
     try {
       const body = await request.json()
@@ -113,7 +110,6 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ success: true })
     } finally {
       // Clean up prisma client
-      await prisma.$disconnect()
     }
   } catch (error) {
     console.error('Error updating notification:', error)

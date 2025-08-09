@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
-import { createPrismaClient } from '@/lib/prisma-serverless'
+import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
-import { withDatabaseRetry, createErrorResponse } from '@/lib/database-utils'
 
 export async function GET(request: Request) {
   try {
@@ -12,76 +11,67 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get('page') || '1')
     const sort = searchParams.get('sort') || 'newest'
 
-    // Use retry logic for database operations
-    const result = await withDatabaseRetry(async () => {
-      // Create fresh prisma client for serverless environment to avoid prepared statement conflicts
-      const prisma = createPrismaClient()
-      
-      try {
-        // 🚨 BUNDLE-ONLY LOGIC: Role-based filtering for bundles
-        const session = await auth()
-        const where: any = {
-          isActive: true,
-          ...(featured === 'true' && { isFeatured: true }),
-          ...(store && { storeId: store }),
-        }
+    // 🚨 BUNDLE-ONLY LOGIC: Role-based filtering for bundles
+    const session = await auth()
+    const where: any = {
+      isActive: true,
+      ...(featured === 'true' && { isFeatured: true }),
+      ...(store && { storeId: store }),
+    }
 
-        // 🚨 BUNDLE-ONLY LOGIC: Customers can only see bundles marked as showToCustomer
-        if (!session?.user || session.user.role === 'CUSTOMER') {
-          where.showToCustomer = true
-        }
-        // Admins can see all bundles regardless of showToCustomer value
+    // 🚨 BUNDLE-ONLY LOGIC: Customers can only see bundles marked as showToCustomer
+    if (!session?.user || session.user.role === 'CUSTOMER') {
+      where.showToCustomer = true
+    }
+    // Admins can see all bundles regardless of showToCustomer value
 
-        let orderBy = {}
-        switch (sort) {
-          case 'price-low':
-            orderBy = { price: 'asc' }
-            break
-          case 'price-high':
-            orderBy = { price: 'desc' }
-            break
-          case 'name':
-            orderBy = { name: 'asc' }
-            break
-          default:
-            orderBy = { createdAt: 'desc' }
-        }
+    let orderBy = {}
+    switch (sort) {
+      case 'price-low':
+        orderBy = { price: 'asc' }
+        break
+      case 'price-high':
+        orderBy = { price: 'desc' }
+        break
+      case 'name':
+        orderBy = { name: 'asc' }
+        break
+      default:
+        orderBy = { createdAt: 'desc' }
+    }
 
-        const [bundles, total] = await Promise.all([
-          prisma.productBundle.findMany({
-            where,
-            include: {
-              store: {
-                select: {
-                  id: true,
-                  name: true
-                }
-              }
-            },
-            orderBy,
-            take: limit,
-            skip: (page - 1) * limit,
-          }),
-          prisma.productBundle.count({ where })
-        ])
-
-        return { bundles, total };
-      } finally {
-        // Clean up prisma client
-        await prisma.$disconnect()
-      }
-    });
+    const [bundles, total] = await Promise.all([
+      prisma.productBundle.findMany({
+        where,
+        include: {
+          store: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        },
+        orderBy,
+        take: limit,
+        skip: (page - 1) * limit,
+      }),
+      prisma.productBundle.count({ where })
+    ])
 
     return NextResponse.json({
-      bundles: result.bundles,
+      bundles: bundles,
       pagination: {
         page,
         limit,
-        total: result.total,
-        pages: Math.ceil(result.total / limit),
+        total: total,
+        pages: Math.ceil(total / limit),
       }
     })
   } catch (error) {
-    return createErrorResponse(error, 'GET /api/bundles')
+    console.error('Error in GET /api/bundles:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch bundles' },
+      { status: 500 }
+    )
   }
 }

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
-import { ensureDatabaseConnection } from '@/lib/database-connection'
 
 // Validation schemas
 const createBundleSchema = z.object({
@@ -33,9 +32,6 @@ const bundleFiltersSchema = z.object({
 // GET /api/admin/bundles - Get all bundles with pagination and filters
 export async function GET(request: NextRequest) {
   try {
-    // Ensure robust database connection
-    await ensureDatabaseConnection()
-    
     const session = await auth()
     if (!session?.user || !['ADMIN', 'STAFF'].includes(session.user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

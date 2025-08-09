@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createPrismaClient } from '@/lib/prisma-serverless'
-import { withDatabaseRetry, createErrorResponse } from '@/lib/database-utils'
+import { prisma } from "@/lib/prisma"
 
 export async function GET(request: NextRequest) {
   // Extract query parameters outside try-catch so they're accessible in catch block
@@ -12,33 +11,21 @@ export async function GET(request: NextRequest) {
     console.log('GET /api/stores called')
     console.log('Query params:', { limit, status })
     
-    // Use retry logic for database operations
-    const result = await withDatabaseRetry(async () => {
-      // Create fresh prisma client for serverless environment to avoid prepared statement conflicts
-      const prisma = createPrismaClient()
-      
-      try {
-        console.log('Fetching stores from database...')
-        const stores = await prisma.store.findMany({
-          include: {
-            bundles: true
-          }
-        })
-        console.log(`Found ${stores.length} stores`)
-        return stores;
-      } finally {
-        // Clean up prisma client
-        await prisma.$disconnect()
+    console.log('Fetching stores from database...')
+    const stores = await prisma.store.findMany({
+      include: {
+        bundles: true
       }
-    });
+    })
+    console.log(`Found ${stores.length} stores`)
     
     // Filter by status if provided
-    let filteredStores = result
+    let filteredStores = stores
     if (status === 'active') {
-      filteredStores = result.filter(store => store.isActive)
+      filteredStores = stores.filter(store => store.isActive)
       console.log(`Filtered to ${filteredStores.length} active stores`)
     } else if (status === 'inactive') {
-      filteredStores = result.filter(store => !store.isActive)
+      filteredStores = stores.filter(store => !store.isActive)
       console.log(`Filtered to ${filteredStores.length} inactive stores`)
     }
     
@@ -72,6 +59,10 @@ export async function GET(request: NextRequest) {
       total: filteredStores.length
     })
   } catch (error) {
-    return createErrorResponse(error, 'GET /api/stores')
+    console.error('Error in GET /api/stores:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch stores' },
+      { status: 500 }
+    )
   }
 }

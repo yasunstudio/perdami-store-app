@@ -1,4 +1,4 @@
-import { createPrismaClient } from './prisma-serverless'
+import { prisma } from './prisma'
 
 export class SingleBankService {
   /**

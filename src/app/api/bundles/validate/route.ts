@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createPrismaClient } from '@/lib/prisma-serverless'
+import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
 const validateBundlesSchema = z.object({
@@ -18,16 +18,12 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Create fresh prisma client for serverless environment to avoid prepared statement conflicts
-    const prisma = createPrismaClient()
-    
-    try {
-      // Check which bundles exist and are active
-      const validBundles = await prisma.productBundle.findMany({
-        where: {
-          id: { in: bundleIds },
-          isActive: true
-        },
+    // Check which bundles exist and are active
+    const validBundles = await prisma.productBundle.findMany({
+      where: {
+        id: { in: bundleIds },
+        isActive: true
+      },
         select: { id: true }
       })
 
@@ -36,12 +32,8 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        invalidBundles
-      })
-    } finally {
-      // Clean up prisma client
-      await prisma.$disconnect()
-    }
+      invalidBundles
+    })
 
   } catch (error) {
     console.error('Error validating bundles:', error)

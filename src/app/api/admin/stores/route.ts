@@ -3,7 +3,6 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { auditLog } from '@/lib/audit'
 import { z } from 'zod'
-import { ensureDatabaseConnection } from '@/lib/database-connection'
 
 const createStoreSchema = z.object({
   name: z.string().min(1, 'Nama toko wajib diisi'),
@@ -17,9 +16,6 @@ const createStoreSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    // Ensure robust database connection
-    await ensureDatabaseConnection()
-    
     const session = await auth()
     if (!session?.user || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
