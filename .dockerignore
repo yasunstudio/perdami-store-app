@@ -21,7 +21,6 @@ coverage
 prisma/dev.db*
 prisma/migrations
 public/uploads/
-scripts/
 .vscode/
 .idea/
 *.log
