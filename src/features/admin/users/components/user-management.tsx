@@ -10,6 +10,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { 
   Users, 
   UserPlus, 
   Shield, 
@@ -20,7 +28,8 @@ import {
   Crown,
   RefreshCw,
   List,
-  Grid3X3
+  Grid3X3,
+  AlertTriangle
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -70,6 +79,11 @@ export function UserManagement() {
     totalPages: 0
   })
   const [error, setError] = useState<string | null>(null)
+  
+  // Delete confirmation state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [userToDelete, setUserToDelete] = useState<User | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
 
 
@@ -142,8 +156,38 @@ export function UserManagement() {
   }
 
   const handleDeleteUser = (user: User) => {
-    // TODO: Implement delete functionality
-    console.log('Delete user:', user.id)
+    setUserToDelete(user)
+    setDeleteDialogOpen(true)
+  }
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return
+
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/admin/users/${userToDelete.id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to delete user')
+      }
+
+      toast.success(`User ${userToDelete.name} berhasil dihapus`)
+      
+      // Refresh the user list
+      await fetchUsers()
+      
+      // Close dialog and reset state
+      setDeleteDialogOpen(false)
+      setUserToDelete(null)
+    } catch (error) {
+      console.error('Error deleting user:', error)
+      toast.error(error instanceof Error ? error.message : 'Gagal menghapus user')
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   const updateFilters = (newFilters: Partial<UserFilters>) => {
@@ -390,6 +434,41 @@ export function UserManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Konfirmasi Hapus User
+            </DialogTitle>
+            <DialogDescription>
+              Apakah Anda yakin ingin menghapus user <strong>{userToDelete?.name}</strong>?
+              <br />
+              <span className="text-red-600 text-sm">
+                Tindakan ini tidak dapat dibatalkan dan akan menghapus semua data terkait user tersebut.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={isDeleting}
+            >
+              Batal
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmDeleteUser}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Menghapus...' : 'Hapus User'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminPageLayout>
   )
 }
