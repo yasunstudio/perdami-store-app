@@ -125,6 +125,7 @@ export async function GET() {
       recentStores: recentStoresCount,
       storesWithoutBundles: storesWithoutBundles.length,
       topStoresByBundles: topStoresByBundles.slice(0, 5),
+      topStoresByProducts: topStoresByBundles.slice(0, 5), // Add this for component compatibility
       growthRate: Math.round(growthRate * 100) / 100 // Round to 2 decimal places
     })
 

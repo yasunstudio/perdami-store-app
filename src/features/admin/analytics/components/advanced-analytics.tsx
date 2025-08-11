@@ -162,9 +162,9 @@ export function AdvancedAnalytics() {
     
     const transformed = productsData.topSellingProducts.slice(0, 5).map((product: any) => ({
       name: product.name,
-      sales: product._count?.orderItems || 0,
-      revenue: (product.price || 0) * (product._count?.orderItems || 0),
-      category: product.category?.name || 'Lainnya'
+      sales: product.totalOrders || 0, // Changed from _count.orderItems to totalOrders
+      revenue: product.totalRevenue || 0, // Use the calculated totalRevenue
+      category: 'Bundle' // Since these are bundles, not categorized products
     }))
     
     // Debug log
@@ -192,9 +192,9 @@ export function AdvancedAnalytics() {
     
     const transformed = storesData.topStoresByProducts.slice(0, 4).map((store: any) => ({
       name: store.name,
-      products: store._count?.products || 0,
-      sales: store._count?.orderItems || 0,
-      revenue: (store._count?.orderItems || 0) * 50000 // Estimasi revenue per order
+      products: store.totalBundles || 0, // Changed from _count.products to totalBundles
+      sales: store.activeBundles || 0,   // Use activeBundles as sales metric
+      revenue: (store.totalBundles || 0) * 100000 // Estimasi revenue per bundle
     }))
     
     // Debug log
