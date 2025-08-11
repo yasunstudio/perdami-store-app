@@ -507,7 +507,7 @@ export function AdminPickupScanner() {
             <div className="space-y-4">
               <div 
                 id="qr-scanner" 
-                className="w-full max-w-md mx-auto border rounded-lg overflow-hidden"
+                className="w-full max-w-md mx-auto border rounded-lg overflow-hidden dark:border-gray-700 bg-white dark:bg-gray-900"
               />
               <div className="text-center">
                 <Button 
@@ -567,15 +567,15 @@ export function AdminPickupScanner() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium">Order Number</Label>
-                <p className="text-lg font-mono">{orderDetails.orderNumber}</p>
+              <div className="p-3 bg-muted/20 dark:bg-gray-800/20 rounded-md border border-border/20 dark:border-gray-700/20">
+                <Label className="text-sm font-medium text-foreground dark:text-gray-200">Order Number</Label>
+                <p className="text-lg font-mono text-foreground dark:text-gray-100">{orderDetails.orderNumber}</p>
               </div>
-              <div>
-                <Label className="text-sm font-medium">Status</Label>
+              <div className="p-3 bg-muted/20 dark:bg-gray-800/20 rounded-md border border-border/20 dark:border-gray-700/20">
+                <Label className="text-sm font-medium text-foreground dark:text-gray-200">Status</Label>
                 <div className="flex gap-2 mt-1">
-                  <Badge variant="outline">{orderDetails.orderStatus}</Badge>
-                  <Badge variant={orderDetails.pickupStatus === 'PICKED_UP' ? 'default' : 'secondary'}>
+                  <Badge variant="outline" className="dark:border-gray-600 dark:text-gray-300">{orderDetails.orderStatus}</Badge>
+                  <Badge variant={orderDetails.pickupStatus === 'PICKED_UP' ? 'default' : 'secondary'} className="dark:border-gray-600">
                     {orderDetails.pickupStatus}
                   </Badge>
                 </div>
@@ -585,15 +585,15 @@ export function AdminPickupScanner() {
             <Separator />
 
             <div>
-              <Label className="text-sm font-medium flex items-center gap-2">
+              <Label className="text-sm font-medium flex items-center gap-2 text-foreground dark:text-gray-200">
                 <User className="h-4 w-4" />
                 Data Customer
               </Label>
-              <div className="mt-2 space-y-1">
-                <p><strong>Nama:</strong> {orderDetails.customer.name}</p>
-                <p><strong>Email:</strong> {orderDetails.customer.email}</p>
+              <div className="mt-2 space-y-1 p-3 bg-muted/30 dark:bg-gray-800/30 rounded-md border border-border/30 dark:border-gray-700/30">
+                <p className="text-foreground dark:text-gray-200"><strong className="dark:text-gray-100">Nama:</strong> {orderDetails.customer.name}</p>
+                <p className="text-foreground dark:text-gray-200"><strong className="dark:text-gray-100">Email:</strong> {orderDetails.customer.email}</p>
                 {orderDetails.customer.phone && (
-                  <p><strong>Phone:</strong> {orderDetails.customer.phone}</p>
+                  <p className="text-foreground dark:text-gray-200"><strong className="dark:text-gray-100">Phone:</strong> {orderDetails.customer.phone}</p>
                 )}
               </div>
             </div>
@@ -601,24 +601,24 @@ export function AdminPickupScanner() {
             <Separator />
 
             <div>
-              <Label className="text-sm font-medium">Items Pesanan</Label>
+              <Label className="text-sm font-medium text-foreground dark:text-gray-200">Items Pesanan</Label>
               <div className="mt-2 space-y-2">
                 {orderDetails.orderItems.map((item) => (
-                  <div key={item.id} className="flex justify-between items-center p-3 bg-muted rounded-md">
+                  <div key={item.id} className="flex justify-between items-center p-3 bg-muted/50 dark:bg-gray-800/50 rounded-md border border-border/50 dark:border-gray-700/50">
                     <div>
-                      <p className="font-medium">{item.bundle.name}</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="font-medium text-foreground dark:text-gray-100">{item.bundle.name}</p>
+                      <p className="text-sm text-muted-foreground dark:text-gray-400">
                         {item.quantity}x @ Rp {item.unitPrice.toLocaleString('id-ID')}
                       </p>
                     </div>
-                    <p className="font-medium">
+                    <p className="font-medium text-foreground dark:text-gray-100">
                       Rp {item.totalPrice.toLocaleString('id-ID')}
                     </p>
                   </div>
                 ))}
               </div>
-              <div className="mt-3 pt-3 border-t">
-                <div className="flex justify-between items-center font-bold text-lg">
+              <div className="mt-3 pt-3 border-t border-border dark:border-gray-700">
+                <div className="flex justify-between items-center font-bold text-lg text-foreground dark:text-gray-100">
                   <span>Total:</span>
                   <span>Rp {orderDetails.totalAmount.toLocaleString('id-ID')}</span>
                 </div>
