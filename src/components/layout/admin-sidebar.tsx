@@ -45,7 +45,8 @@ import {
   Wrench,
   Phone,
   Clock,
-  AlertCircle
+  AlertCircle,
+  QrCode
 } from 'lucide-react';
 
 // Import new components and utilities
@@ -115,6 +116,12 @@ const navigation: SidebarItem[] = [
     name: 'Manajemen Pesanan',
     href: '/admin/orders',
     icon: ClipboardList,
+    permission: PERMISSIONS.ORDERS_READ
+  },
+  {
+    name: 'Pickup Scanner',
+    href: '/admin/pickup-scanner',
+    icon: QrCode,
     permission: PERMISSIONS.ORDERS_READ
   },
   {

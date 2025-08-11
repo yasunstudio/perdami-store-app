@@ -15,6 +15,7 @@ import { PaymentProofInfo } from '@/components/shared/payment-proof-info'
 import { PaymentCountdown } from '@/components/shared/payment-countdown'
 import { BankSelection } from '@/components/shared/bank-selection'
 import { OrderProgressIndicator } from '@/components/shared/order-progress-indicator'
+import { OrderPickupQR } from '@/components/qr/order-pickup-qr'
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { 
   CheckCircle, 
@@ -1555,6 +1556,14 @@ export default function OrderDetailPage({ orderId, status }: OrderDetailPageProp
                     </div>
                   </>
                 )}
+
+                {/* QR Code for Pickup */}
+                <Separator />
+                <OrderPickupQR 
+                  orderId={order.id}
+                  orderStatus={order.orderStatus}
+                  pickupStatus={order.pickupStatus}
+                />
 
                 <div className="pt-4 space-y-3">
                   <Button className="w-full" asChild>

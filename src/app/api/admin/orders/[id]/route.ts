@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { OrderStatus, PaymentStatus } from "@prisma/client"
+import { generatePickupToken } from "@/lib/qr-code"
 
 export async function GET(
   request: NextRequest,
@@ -198,15 +199,27 @@ export async function PATCH(
       return NextResponse.json({ error: 'Order tidak ditemukan' }, { status: 404 })
     }
 
+    // Prepare update data
+    const updateData: any = {
+      ...(paymentStatus && { paymentStatus: paymentStatus as PaymentStatus }),
+      ...(notes !== undefined && { notes }),
+      updatedAt: new Date()
+    }
+
+    // Handle order status update
+    if (orderStatus) {
+      updateData.orderStatus = orderStatus as OrderStatus;
+      
+      // Auto-generate pickup verification token when order becomes READY
+      if (orderStatus === 'READY' && !existingOrder.pickupVerificationToken) {
+        updateData.pickupVerificationToken = generatePickupToken();
+      }
+    }
+
     // Update order
     const updatedOrder = await prisma.order.update({
       where: { id },
-      data: {
-        ...(orderStatus && { orderStatus: orderStatus as OrderStatus }),
-        ...(paymentStatus && { paymentStatus: paymentStatus as PaymentStatus }),
-        ...(notes !== undefined && { notes }),
-        updatedAt: new Date()
-      },
+      data: updateData,
       include: {
         user: {
           select: {
