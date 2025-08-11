@@ -170,7 +170,7 @@ export class AdminDataService {
       return bundleStats.map(store => ({
         storeName: store.name,
         bundleCount: store._count.bundles,
-        city: store.city
+        location: 'Venue PIT PERDAMI 2025, Bandung' // Static location since all stores are at the venue
       }))
     } catch (error) {
       console.error('Error getting bundle stats by store:', error)
@@ -321,7 +321,7 @@ export class AdminDataService {
           orderItems: {
             select: {
               quantity: true,
-              price: true
+              totalPrice: true
             }
           }
         },
@@ -334,7 +334,7 @@ export class AdminDataService {
 
       return popularBundles.map(bundle => ({
         ...bundle,
-        revenue: bundle.orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+        revenue: bundle.orderItems.reduce((sum: number, item: any) => sum + item.totalPrice, 0)
       }))
     } catch (error) {
       console.error('Error getting popular bundles:', error)

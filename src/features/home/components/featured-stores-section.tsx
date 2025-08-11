@@ -13,12 +13,8 @@ interface FeaturedStore {
   name: string
   description: string | null
   image: string | null
-  address: string | null
-  city: string | null
-  province: string | null
   isActive: boolean
-  categoryCount: number
-  productCount: number
+  bundleCount: number
 }
 
 export function FeaturedStoresSection() {
@@ -130,16 +126,17 @@ export function FeaturedStoresSection() {
                 
                 <CardContent className="pt-0">
                   <div className="space-y-3">
-                    {store.address && (
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
-                        <span className="truncate">{store.address}</span>
-                      </div>
-                    )}
+                    {/* Location - Static venue location */}
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
+                      <span className="truncate">Venue PIT PERDAMI 2025, Bandung</span>
+                    </div>
                     
                     <div className="flex items-center text-sm">
                        <Package className="h-4 w-4 mr-2 text-primary" />
-                       <span className="font-medium">{store.productCount || 0} Produk</span>
+                       <span className="font-medium">
+                         {store.bundleCount ? `${store.bundleCount} Bundle` : 'Belum ada bundle'}
+                       </span>
                      </div>
                     
                     <Button asChild className="w-full mt-4" variant="outline">

@@ -44,9 +44,6 @@ export async function GET(request: NextRequest) {
       name: store.name,
       description: store.description,
       image: store.image,
-      address: store.address,
-      city: store.city,
-      province: store.province,
       isActive: store.isActive,
       bundleCount: store.bundles?.length || 0,
     }))

@@ -16,8 +16,6 @@ interface BundleProductInfoProps {
       id: string
       name: string
       description: string | null
-      address: string | null
-      city: string | null
     }
   }
 }

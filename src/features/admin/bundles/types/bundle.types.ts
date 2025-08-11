@@ -26,8 +26,6 @@ export interface ProductBundle {
     id: string
     name: string
     description?: string | null
-    address?: string | null
-    city?: string | null
   }
   _count?: {
     orderItems: number
