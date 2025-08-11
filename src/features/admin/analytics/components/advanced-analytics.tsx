@@ -44,11 +44,6 @@ interface AnalyticsData {
     sales: number
     revenue: number
   }>
-  categoryData: Array<{
-    name: string
-    count: number
-    percentage: number
-  }>
   summaryStats: {
     totalRevenue: number
     totalOrders: number
@@ -70,22 +65,20 @@ export function AdvancedAnalytics() {
       setLoading(true)
       
       // Fetch real data from multiple API endpoints
-      const [dashboardResponse, productsResponse, storesResponse, categoriesResponse] = await Promise.all([
+      const [dashboardResponse, productsResponse, storesResponse] = await Promise.all([
         fetch('/api/admin/dashboard'),
         fetch('/api/admin/products/stats'),
-        fetch('/api/admin/stores/stats'),
-        fetch('/api/admin/categories/stats')
+        fetch('/api/admin/stores/stats')
       ])
 
-      if (!dashboardResponse.ok || !productsResponse.ok || !storesResponse.ok || !categoriesResponse.ok) {
+      if (!dashboardResponse.ok || !productsResponse.ok || !storesResponse.ok) {
         throw new Error('Failed to fetch analytics data')
       }
 
-      const [dashboardData, productsData, storesData, categoriesData] = await Promise.all([
+      const [dashboardData, productsData, storesData] = await Promise.all([
         dashboardResponse.json(),
         productsResponse.json(),
-        storesResponse.json(),
-        categoriesResponse.json()
+        storesResponse.json()
       ])
 
       // Transform real data into analytics format
@@ -93,7 +86,6 @@ export function AdvancedAnalytics() {
         salesData: generateSalesDataFromOrders(dashboardData.recentOrders),
         productData: transformProductsData(productsData),
         storeData: transformStoresData(storesData),
-        categoryData: transformCategoriesData(categoriesData),
         summaryStats: {
           totalRevenue: dashboardData.recentOrders.reduce((sum: number, order: any) => sum + order.totalAmount, 0),
           totalOrders: dashboardData.stats.totalOrders,
@@ -112,7 +104,6 @@ export function AdvancedAnalytics() {
         salesData: [],
         productData: [],
         storeData: [],
-        categoryData: [],
         summaryStats: {
           totalRevenue: 0,
           totalOrders: 0,
@@ -215,19 +206,6 @@ export function AdvancedAnalytics() {
     return transformed
   }
 
-  // Transform categories stats data
-  const transformCategoriesData = (categoriesData: any) => {
-    if (!categoriesData?.topCategories) return []
-    
-    const total = categoriesData.topCategories.reduce((sum: number, cat: any) => sum + (cat._count?.products || 0), 0)
-    
-    return categoriesData.topCategories.map((category: any) => ({
-      name: category.name,
-      count: category._count?.products || 0,
-      percentage: total > 0 ? Math.round(((category._count?.products || 0) / total) * 100) : 0
-    }))
-  }
-
   if (loading || !data) {
     return (
       <div className="space-y-6">
@@ -323,11 +301,10 @@ export function AdvancedAnalytics() {
 
       {/* Charts */}
       <Tabs defaultValue="sales" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="sales">Penjualan</TabsTrigger>
           <TabsTrigger value="products">Produk</TabsTrigger>
           <TabsTrigger value="stores">Toko</TabsTrigger>
-          <TabsTrigger value="categories">Kategori</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sales" className="space-y-4">
@@ -543,86 +520,6 @@ export function AdvancedAnalytics() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="categories" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Distribusi Kategori</CardTitle>
-                <CardDescription>Pembagian produk berdasarkan kategori</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={400}>
-                  <PieChart>
-                    <Pie
-                      data={data.categoryData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percentage, count }) => `${name}: ${count} (${percentage}%)`}
-                      outerRadius={120}
-                      fill="#8884d8"
-                      dataKey="count"
-                    >
-                      {data.categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value: number, name: string, props: any) => [
-                      `${value} produk (${props.payload.percentage}%)`,
-                      'Jumlah Produk'
-                    ]} />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Detail Kategori</CardTitle>
-                <CardDescription>Informasi lengkap per kategori</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {data.categoryData.map((category, index) => (
-                    <div 
-                      key={index} 
-                      className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div 
-                          className="w-4 h-4 rounded-full" 
-                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                        ></div>
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-white">
-                            {category.name}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {category.percentage}% dari total
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-blue-600">
-                          {category.count}
-                        </p>
-                        <p className="text-xs text-gray-500">produk</p>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {data.categoryData.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                      <p>Belum ada data kategori</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         </TabsContent>
       </Tabs>
     </div>
