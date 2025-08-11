@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, QrCode, Download, Share, AlertCircle } from 'lucide-react';
+import { Loader2, QrCode, Download, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import Image from 'next/image';
 
@@ -65,36 +65,6 @@ export function OrderPickupQR({ orderId, orderStatus, pickupStatus }: OrderPicku
     link.download = `pickup-qr-${qrData.orderNumber}.png`;
     link.click();
     toast.success('QR Code berhasil diunduh');
-  };
-
-  const shareQRCode = async () => {
-    if (!qrData) return;
-
-    if (navigator.share) {
-      try {
-        // Convert data URL to blob for sharing
-        const response = await fetch(qrData.qrCodeDataUrl);
-        const blob = await response.blob();
-        const file = new File([blob], `pickup-qr-${qrData.orderNumber}.png`, { type: 'image/png' });
-
-        await navigator.share({
-          title: `QR Code Pickup - ${qrData.orderNumber}`,
-          text: 'QR Code untuk pickup pesanan',
-          files: [file],
-        });
-      } catch (error) {
-        // Fallback to URL sharing
-        await navigator.share({
-          title: `QR Code Pickup - ${qrData.orderNumber}`,
-          text: 'QR Code untuk pickup pesanan',
-          url: qrData.verificationUrl,
-        });
-      }
-    } else {
-      // Fallback for browsers without Web Share API
-      await navigator.clipboard.writeText(qrData.verificationUrl);
-      toast.success('Link verifikasi berhasil disalin');
-    }
   };
 
   // Auto-generate QR code when order is ready
@@ -223,24 +193,6 @@ export function OrderPickupQR({ orderId, orderStatus, pickupStatus }: OrderPicku
                 <Download className="h-4 w-4" />
                 Unduh
               </Button>
-              <Button
-                onClick={shareQRCode}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <Share className="h-4 w-4" />
-                Bagikan
-              </Button>
-            </div>
-
-            <div className="mt-4 p-3 bg-muted rounded-md">
-              <p className="text-xs text-muted-foreground mb-2">
-                Link verifikasi manual:
-              </p>
-              <code className="text-xs break-all bg-background p-2 rounded border block">
-                {qrData.verificationUrl}
-              </code>
             </div>
           </div>
         )}
