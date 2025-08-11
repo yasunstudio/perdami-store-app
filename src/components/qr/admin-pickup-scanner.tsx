@@ -122,9 +122,15 @@ export function AdminPickupScanner() {
       return text;
     }
     
-    // Check if it might be an order ID
+    // Check if it's an Order ID (format: ORD-xxxxxxxx-xxxxxx)
+    if (/^ORD-[A-Z0-9]+-[A-Z0-9]+$/i.test(text)) {
+      console.log('Order ID detected:', text);
+      return text;
+    }
+    
+    // Check if it might be any other order identifier
     if (text.length > 10 && text.length < 50) {
-      console.log('Possible order ID:', text);
+      console.log('Possible order identifier:', text);
       return text;
     }
     

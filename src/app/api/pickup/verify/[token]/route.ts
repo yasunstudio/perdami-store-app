@@ -10,34 +10,48 @@ export async function GET(
   try {
     const { token } = params;
 
-    // Validate token format
-    if (!isValidPickupToken(token)) {
-      return NextResponse.json(
-        { error: 'Invalid verification token format' },
-        { status: 400 }
-      );
-    }
+    let order;
 
-    // Find order by verification token
-    const order = await prisma.order.findUnique({
-      where: { pickupVerificationToken: token },
-      include: {
-        user: {
-          select: { id: true, name: true, email: true, phone: true }
-        },
-        orderItems: {
-          include: {
-            bundle: {
-              select: { id: true, name: true, image: true }
+    // Check if it's a pickup verification token (32 character nanoid)
+    if (isValidPickupToken(token)) {
+      // Find order by verification token
+      order = await prisma.order.findUnique({
+        where: { pickupVerificationToken: token },
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, phone: true }
+          },
+          orderItems: {
+            include: {
+              bundle: {
+                select: { id: true, name: true, image: true }
+              }
             }
           }
         }
-      }
-    });
+      });
+    } else {
+      // Try to find by orderNumber (Order ID like ORD-29096590-G0EP4A)
+      order = await prisma.order.findUnique({
+        where: { orderNumber: token },
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, phone: true }
+          },
+          orderItems: {
+            include: {
+              bundle: {
+                select: { id: true, name: true, image: true }
+              }
+            }
+          }
+        }
+      });
+    }
 
     if (!order) {
       return NextResponse.json(
-        { error: 'Invalid verification token' },
+        { error: 'Order not found with provided token or order number' },
         { status: 404 }
       );
     }
@@ -99,27 +113,34 @@ export async function POST(
 
     const { token } = params;
 
-    // Validate token format
-    if (!isValidPickupToken(token)) {
-      return NextResponse.json(
-        { error: 'Invalid verification token format' },
-        { status: 400 }
-      );
-    }
+    let order;
 
-    // Find and update order
-    const order = await prisma.order.findUnique({
-      where: { pickupVerificationToken: token },
-      include: {
-        user: {
-          select: { id: true, name: true, email: true, phone: true }
+    // Check if it's a pickup verification token (32 character nanoid)
+    if (isValidPickupToken(token)) {
+      // Find order by verification token
+      order = await prisma.order.findUnique({
+        where: { pickupVerificationToken: token },
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, phone: true }
+          }
         }
-      }
-    });
+      });
+    } else {
+      // Try to find by orderNumber (Order ID like ORD-29096590-G0EP4A)
+      order = await prisma.order.findUnique({
+        where: { orderNumber: token },
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, phone: true }
+          }
+        }
+      });
+    }
 
     if (!order) {
       return NextResponse.json(
-        { error: 'Invalid verification token' },
+        { error: 'Order not found with provided token or order number' },
         { status: 404 }
       );
     }
