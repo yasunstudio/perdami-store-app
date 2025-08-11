@@ -58,6 +58,7 @@ export function AdminPickupScanner() {
         Html5QrcodeScanner = html5QrcodeModule.Html5QrcodeScanner;
         Html5QrcodeScanType = html5QrcodeModule.Html5QrcodeScanType;
         setScannerLoaded(true);
+        console.log('QR Scanner library loaded successfully');
       } catch (error) {
         console.error('Failed to load QR scanner:', error);
         setScannerError('Gagal memuat scanner QR code');
@@ -67,37 +68,25 @@ export function AdminPickupScanner() {
     loadScanner();
   }, []);
 
-  const checkCameraPermission = async (): Promise<boolean> => {
-    try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Browser tidak mendukung akses kamera');
-      }
-
-      // Check camera permission
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
-      });
-      
-      // Stop the stream immediately since we're just checking permission
-      stream.getTracks().forEach(track => track.stop());
-      return true;
-    } catch (error: any) {
-      console.error('Camera permission check failed:', error);
-      
-      if (error.name === 'NotAllowedError') {
-        setScannerError('Akses kamera ditolak. Silakan berikan izin kamera dan coba lagi.');
-      } else if (error.name === 'NotFoundError') {
-        setScannerError('Kamera tidak ditemukan pada device ini.');
-      } else if (error.name === 'NotSupportedError') {
-        setScannerError('Browser tidak mendukung akses kamera.');
-      } else if (error.name === 'NotReadableError') {
-        setScannerError('Kamera sedang digunakan oleh aplikasi lain.');
-      } else {
-        setScannerError('Gagal mengakses kamera: ' + error.message);
-      }
-      
+  const checkCameraSupport = (): boolean => {
+    if (typeof navigator === 'undefined') {
+      console.log('Navigator not available (SSR)');
       return false;
     }
+
+    if (!navigator.mediaDevices) {
+      console.log('MediaDevices not supported');
+      setScannerError('Browser tidak mendukung akses media. Gunakan browser yang lebih baru.');
+      return false;
+    }
+
+    if (!navigator.mediaDevices.getUserMedia) {
+      console.log('getUserMedia not supported');
+      setScannerError('Browser tidak mendukung akses kamera.');
+      return false;
+    }
+
+    return true;
   };
 
   const qrCodeScannerConfig = {
@@ -108,6 +97,9 @@ export function AdminPickupScanner() {
     showZoomSliderIfSupported: true,
     disableFlip: false,
     aspectRatio: 1.0,
+    experimentalFeatures: {
+      useBarCodeDetectorIfSupported: true
+    }
   };
 
   const extractTokenFromText = (text: string): string | null => {
@@ -138,38 +130,50 @@ export function AdminPickupScanner() {
   };
 
   const startScanner = async () => {
+    console.log('Starting scanner...');
+    
     if (!scannerLoaded || !Html5QrcodeScanner) {
+      console.log('Scanner not loaded yet');
       toast.error('Scanner belum siap, coba lagi');
+      return;
+    }
+
+    // Check camera support
+    if (!checkCameraSupport()) {
+      console.log('Camera not supported');
       return;
     }
 
     // Check if we're on HTTPS (required for camera access)
     if (typeof window !== 'undefined' && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+      console.log('HTTPS required for camera access');
       setScannerError('Scanner membutuhkan koneksi HTTPS untuk mengakses kamera');
       toast.error('Halaman harus menggunakan HTTPS untuk mengakses kamera');
-      return;
-    }
-
-    // Check camera permission first
-    const hasPermission = await checkCameraPermission();
-    if (!hasPermission) {
-      toast.error('Tidak dapat mengakses kamera');
       return;
     }
 
     try {
       setIsScanning(true);
       setScannerError(null);
+      console.log('Creating scanner instance...');
       
       // Wait a bit for DOM to be ready
       await new Promise(resolve => setTimeout(resolve, 100));
       
+      // Check if scanner element exists
+      const scannerElement = document.getElementById('qr-scanner');
+      if (!scannerElement) {
+        throw new Error('Scanner element not found');
+      }
+
       scannerRef.current = new Html5QrcodeScanner(
         'qr-scanner',
         qrCodeScannerConfig,
         false
       );
 
+      console.log('Rendering scanner...');
+      
       scannerRef.current.render(
         (decodedText: string) => {
           console.log('QR Code scanned:', decodedText);
@@ -188,6 +192,7 @@ export function AdminPickupScanner() {
         }
       );
       
+      console.log('Scanner started successfully');
       toast.success('Scanner kamera berhasil dimulai');
     } catch (error: any) {
       console.error('Error starting scanner:', error);
@@ -199,6 +204,10 @@ export function AdminPickupScanner() {
         errorMsg = 'Kamera tidak ditemukan pada device ini.';
       } else if (error.message?.includes('in use')) {
         errorMsg = 'Kamera sedang digunakan aplikasi lain.';
+      } else if (error.message?.includes('Scanner element not found')) {
+        errorMsg = 'Element scanner tidak ditemukan. Refresh halaman dan coba lagi.';
+      } else {
+        errorMsg = `Gagal memulai scanner: ${error.message}`;
       }
       
       setScannerError(errorMsg);
@@ -218,6 +227,47 @@ export function AdminPickupScanner() {
     } finally {
       setIsScanning(false);
       setScannerError(null);
+    }
+  };
+
+  const testCameraAccess = async () => {
+    try {
+      console.log('Testing camera access...');
+      
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Browser tidak mendukung akses kamera');
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      
+      console.log('Camera access successful');
+      toast.success('Kamera dapat diakses! Coba mulai scanner sekarang.');
+      
+      // Stop the stream immediately
+      stream.getTracks().forEach(track => track.stop());
+      
+      // Clear any previous errors
+      setScannerError(null);
+    } catch (error: any) {
+      console.error('Camera test failed:', error);
+      
+      let errorMsg = 'Test kamera gagal: ';
+      if (error.name === 'NotAllowedError') {
+        errorMsg += 'Akses kamera ditolak. Berikan izin kamera dan coba lagi.';
+      } else if (error.name === 'NotFoundError') {
+        errorMsg += 'Kamera tidak ditemukan pada device ini.';
+      } else if (error.name === 'NotSupportedError') {
+        errorMsg += 'Browser tidak mendukung akses kamera.';
+      } else if (error.name === 'NotReadableError') {
+        errorMsg += 'Kamera sedang digunakan oleh aplikasi lain.';
+      } else {
+        errorMsg += error.message;
+      }
+      
+      setScannerError(errorMsg);
+      toast.error(errorMsg);
     }
   };
 
@@ -329,10 +379,20 @@ export function AdminPickupScanner() {
 
           {scannerLoaded && !isScanning && !scannerError && (
             <div className="space-y-4">
-              <div className="text-center py-4">
+              <div className="text-center py-4 space-y-3">
                 <Button onClick={startScanner} className="flex items-center gap-2">
                   <Camera className="h-4 w-4" />
                   Mulai Scan QR Code
+                </Button>
+                <div className="text-sm text-muted-foreground">atau</div>
+                <Button 
+                  onClick={testCameraAccess} 
+                  variant="outline" 
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Camera className="h-3 w-3" />
+                  Test Akses Kamera
                 </Button>
               </div>
               
@@ -346,10 +406,26 @@ export function AdminPickupScanner() {
                       <li>Halaman harus menggunakan HTTPS untuk mengakses kamera</li>
                       <li>Posisikan QR code dalam kotak scan</li>
                       <li>Pastikan pencahayaan cukup</li>
+                      <li>Coba "Test Akses Kamera" terlebih dahulu jika ada masalah</li>
                     </ul>
                   </div>
                 </AlertDescription>
               </Alert>
+            </div>
+          )}
+
+          {scannerError && scannerLoaded && (
+            <div className="space-y-4">
+              <div className="text-center py-4">
+                <Button 
+                  onClick={testCameraAccess} 
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Camera className="h-4 w-4" />
+                  Test Akses Kamera
+                </Button>
+              </div>
             </div>
           )}
 
