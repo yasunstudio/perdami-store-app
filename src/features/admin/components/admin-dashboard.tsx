@@ -16,8 +16,6 @@ import {
 } from 'lucide-react';
 import { RecentOrders } from './recent-orders';
 import { ProductOverview } from './product-overview';
-import { NotificationCenter } from '../notifications/components/notification-center';
-import { QuickActionsPanel } from './quick-actions-panel';
 import { DashboardStats as DashboardStatsType, RecentOrder, PopularProduct } from '../types/dashboard.types';
 
 
@@ -221,11 +219,11 @@ function AdminDashboard() {
           </div>
         </section>
 
-        {/* Main Content Grid - Simplified */}
+        {/* Main Content Grid - Two Equal Columns */}
         <section>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Recent Orders - Larger space */}
-            <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Recent Orders */}
+            <div>
               <RecentOrders orders={recentOrders} />
             </div>
             
@@ -233,14 +231,6 @@ function AdminDashboard() {
             <div>
               <ProductOverview products={popularProducts} />
             </div>
-          </div>
-        </section>
-
-        {/* Quick Actions Row */}
-        <section>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <QuickActionsPanel />
-            <NotificationCenter />
           </div>
         </section>
       </div>
