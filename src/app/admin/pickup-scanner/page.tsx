@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import { AdminPageLayout } from '@/components/admin/admin-page-layout';
 import { AdminPickupScanner } from '@/components/qr/admin-pickup-scanner';
 
 interface PickupScannerPageProps {
@@ -16,15 +17,12 @@ export default async function PickupScannerPage({ searchParams }: PickupScannerP
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Pickup Verifikasi</h1>
-        <p className="text-muted-foreground mt-2">
-          Scan QR code customer atau input manual untuk verifikasi pengambilan pesanan
-        </p>
-      </div>
-
+    <AdminPageLayout
+      title="Pickup Scanner"
+      description="Scan QR code customer atau input manual untuk verifikasi pengambilan pesanan"
+      showBackButton={false}
+    >
       <AdminPickupScanner />
-    </div>
+    </AdminPageLayout>
   );
 }

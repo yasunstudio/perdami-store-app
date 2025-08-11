@@ -7,9 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, QrCode, Camera, CameraOff, CheckCircle, User, Package, Calendar } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, QrCode, Camera, CameraOff, CheckCircle, User, Package, InfoIcon, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { Html5QrcodeScanner, Html5QrcodeScanType } from 'html5-qrcode';
+
+// Import html5-qrcode dynamically to avoid SSR issues
+let Html5QrcodeScanner: any = null;
+let Html5QrcodeScanType: any = null;
 
 interface OrderDetails {
   orderId: string;
@@ -42,66 +46,116 @@ export function AdminPickupScanner() {
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
-  const scannerElementRef = useRef<HTMLDivElement>(null);
+  const [scannerLoaded, setScannerLoaded] = useState(false);
+  const [scannerError, setScannerError] = useState<string | null>(null);
+  const scannerRef = useRef<any>(null);
+
+  // Load scanner library on client side
+  useEffect(() => {
+    const loadScanner = async () => {
+      try {
+        const html5QrcodeModule = await import('html5-qrcode');
+        Html5QrcodeScanner = html5QrcodeModule.Html5QrcodeScanner;
+        Html5QrcodeScanType = html5QrcodeModule.Html5QrcodeScanType;
+        setScannerLoaded(true);
+      } catch (error) {
+        console.error('Failed to load QR scanner:', error);
+        setScannerError('Gagal memuat scanner QR code');
+      }
+    };
+
+    loadScanner();
+  }, []);
 
   const qrCodeScannerConfig = {
     fps: 10,
     qrbox: { width: 250, height: 250 },
-    supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
+    supportedScanTypes: Html5QrcodeScanType ? [Html5QrcodeScanType.SCAN_TYPE_CAMERA] : [],
     showTorchButtonIfSupported: true,
     showZoomSliderIfSupported: true,
-  };
-
-  const startScanner = () => {
-    if (!scannerElementRef.current) return;
-
-    setIsScanning(true);
-    
-    scannerRef.current = new Html5QrcodeScanner(
-      'qr-scanner',
-      qrCodeScannerConfig,
-      false
-    );
-
-    scannerRef.current.render(
-      (decodedText: string) => {
-        // Extract token from URL or use the text directly
-        const token = extractTokenFromText(decodedText);
-        if (token) {
-          handleScanSuccess(token);
-        } else {
-          toast.error('QR code tidak valid');
-        }
-      },
-      (errorMessage: string) => {
-        // Only log errors, don't show toast for every scan attempt
-        console.log('QR scan error:', errorMessage);
-      }
-    );
-  };
-
-  const stopScanner = () => {
-    if (scannerRef.current) {
-      scannerRef.current.clear();
-      scannerRef.current = null;
-    }
-    setIsScanning(false);
+    disableFlip: false,
   };
 
   const extractTokenFromText = (text: string): string | null => {
-    // Check if it's a URL
+    console.log('Extracting token from:', text);
+    
+    // Check if it's a URL with pickup/verify path
     if (text.includes('/pickup/verify/')) {
       const urlParts = text.split('/pickup/verify/');
-      return urlParts[1] || null;
+      const token = urlParts[1]?.split('?')[0]?.split('#')[0]; // Remove query params and fragments
+      console.log('Extracted token from URL:', token);
+      return token || null;
     }
     
     // Check if it's already a token (32 character alphanumeric)
     if (/^[A-Za-z0-9_-]{32}$/.test(text)) {
+      console.log('Direct token detected:', text);
       return text;
     }
     
+    // Check if it might be an order ID
+    if (text.length > 10 && text.length < 50) {
+      console.log('Possible order ID:', text);
+      return text;
+    }
+    
+    console.log('No valid token found in:', text);
     return null;
+  };
+
+  const startScanner = async () => {
+    if (!scannerLoaded || !Html5QrcodeScanner) {
+      toast.error('Scanner belum siap, coba lagi');
+      return;
+    }
+
+    try {
+      setIsScanning(true);
+      setScannerError(null);
+      
+      scannerRef.current = new Html5QrcodeScanner(
+        'qr-scanner',
+        qrCodeScannerConfig,
+        false
+      );
+
+      scannerRef.current.render(
+        (decodedText: string) => {
+          console.log('QR Code scanned:', decodedText);
+          const token = extractTokenFromText(decodedText);
+          if (token) {
+            handleScanSuccess(token);
+          } else {
+            toast.error('QR code tidak valid atau format tidak dikenali');
+          }
+        },
+        (errorMessage: string) => {
+          // Only log errors, don't show toast for every scan attempt
+          if (!errorMessage.includes('No QR code found')) {
+            console.log('QR scan error:', errorMessage);
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Error starting scanner:', error);
+      setScannerError('Gagal memulai scanner, pastikan kamera tersedia');
+      setIsScanning(false);
+      toast.error('Gagal memulai scanner kamera');
+    }
+  };
+
+  const stopScanner = () => {
+    try {
+      if (scannerRef.current) {
+        scannerRef.current.clear();
+        scannerRef.current = null;
+      }
+    } catch (error) {
+      console.error('Error stopping scanner:', error);
+    } finally {
+      setIsScanning(false);
+      setScannerError(null);
+    }
   };
 
   const handleScanSuccess = async (token: string) => {
@@ -183,73 +237,91 @@ export function AdminPickupScanner() {
   }, []);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="space-y-6">
+      {/* Scanner Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <QrCode className="h-5 w-5" />
-            Scanner Pickup Verifikasi
+            Scanner QR Code
           </CardTitle>
           <CardDescription>
-            Scan QR code customer atau input manual untuk verifikasi pickup pesanan
+            Scan QR code customer untuk verifikasi pickup pesanan
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Scanner Section */}
-          <div>
-            <Label className="text-base font-medium">Scan QR Code</Label>
-            <div className="mt-2">
-              {!isScanning ? (
-                <Button onClick={startScanner} className="flex items-center gap-2">
-                  <Camera className="h-4 w-4" />
-                  Mulai Scan QR Code
-                </Button>
-              ) : (
-                <div className="space-y-4">
-                  <div 
-                    id="qr-scanner" 
-                    ref={scannerElementRef}
-                    className="w-full max-w-md mx-auto"
-                  />
-                  <Button 
-                    onClick={stopScanner} 
-                    variant="outline"
-                    className="flex items-center gap-2"
-                  >
-                    <CameraOff className="h-4 w-4" />
-                    Berhenti Scan
-                  </Button>
-                </div>
-              )}
+        <CardContent className="space-y-4">
+          {scannerError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{scannerError}</AlertDescription>
+            </Alert>
+          )}
+
+          {!scannerLoaded && !scannerError && (
+            <Alert>
+              <InfoIcon className="h-4 w-4" />
+              <AlertDescription>Memuat scanner QR code...</AlertDescription>
+            </Alert>
+          )}
+
+          {scannerLoaded && !isScanning && (
+            <div className="text-center py-4">
+              <Button onClick={startScanner} className="flex items-center gap-2">
+                <Camera className="h-4 w-4" />
+                Mulai Scan QR Code
+              </Button>
             </div>
-          </div>
+          )}
 
-          <Separator />
+          {isScanning && (
+            <div className="space-y-4">
+              <div 
+                id="qr-scanner" 
+                className="w-full max-w-md mx-auto border rounded-lg overflow-hidden"
+              />
+              <div className="text-center">
+                <Button 
+                  onClick={stopScanner} 
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <CameraOff className="h-4 w-4" />
+                  Berhenti Scan
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-          {/* Manual Input Section */}
-          <div>
-            <Label htmlFor="manual-token" className="text-base font-medium">
-              Input Manual
-            </Label>
-            <div className="mt-2 flex gap-2">
+      {/* Manual Input Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Input Manual</CardTitle>
+          <CardDescription>
+            Masukkan Order ID atau token verifikasi jika QR code tidak dapat dibaca
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2">
+            <div className="flex-1">
               <Input
-                id="manual-token"
                 placeholder="Masukkan Order ID atau token verifikasi"
                 value={manualToken}
                 onChange={(e) => setManualToken(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleManualVerify()}
               />
-              <Button 
-                onClick={handleManualVerify}
-                disabled={isLoading || !manualToken.trim()}
-              >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  'Verifikasi'
-                )}
-              </Button>
             </div>
+            <Button 
+              onClick={handleManualVerify}
+              disabled={isLoading || !manualToken.trim()}
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                'Verifikasi'
+              )}
+            </Button>
           </div>
         </CardContent>
       </Card>
