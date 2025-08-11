@@ -14,7 +14,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Perdami Store - Pre-order Oleh-oleh Khas Bandung",
-  description: "Platform pre-order oleh-oleh khas Bandung untuk peserta PIT PERDAMI 2025. Belanja online, ambil di venue event hari ke-3.",
+  description: "Platform pre-order oleh-oleh khas Bandung untuk peserta PIT PERDAMI 2025. Belanja online, ambil di venue event.",
   keywords: ["oleh-oleh Bandung", "PIT PERDAMI", "pre-order", "souvenir Bandung"],
   authors: [{ name: "Perdami Store Team" }],
   creator: "Perdami Store",

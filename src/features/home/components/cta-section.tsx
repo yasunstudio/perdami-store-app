@@ -42,7 +42,7 @@ export function CTASection() {
             </div>
             
             <p className="text-sm text-muted-foreground mt-6">
-              * Pesanan dapat diambil di {isLoading ? 'Loading...' : settings?.pickupLocation || 'venue PIT PERDAMI 2025'} hari ke-3
+              * Pesanan dapat diambil di {isLoading ? 'Loading...' : settings?.pickupLocation || 'venue PIT PERDAMI 2025'}
             </p>
           </CardContent>
         </Card>

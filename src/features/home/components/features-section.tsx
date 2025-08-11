@@ -17,7 +17,7 @@ export function FeaturesSection() {
     {
       icon: Clock,
       title: "Pickup di Venue",
-      description: `Ambil pesanan langsung di ${isLoading ? 'venue event' : settings?.pickupLocation || 'venue PIT PERDAMI 2025'} hari ke-3`
+      description: `Ambil pesanan langsung di ${isLoading ? 'venue event' : settings?.pickupLocation || 'venue PIT PERDAMI 2025'}`
     },
     {
       icon: Shield,
