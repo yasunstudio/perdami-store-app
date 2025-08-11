@@ -9,7 +9,7 @@ import { formatPrice } from '@/lib/utils'
 interface OrderGridViewProps {
   orders: OrderWithRelations[]
   onView: (order: OrderWithRelations) => void
-  onEdit: (order: OrderWithRelations) => void
+  // onEdit: (order: OrderWithRelations) => void // Disabled - use View Details instead
   onDelete: (order: OrderWithRelations) => void
   getStatusBadge: (status: string) => React.ReactNode
   getPaymentStatusBadge: (status: string) => React.ReactNode
@@ -20,7 +20,7 @@ interface OrderGridViewProps {
 export function OrderGridView({
   orders,
   onView,
-  onEdit,
+  // onEdit, // Disabled - use View Details instead
   onDelete,
   getStatusBadge,
   getPaymentStatusBadge,

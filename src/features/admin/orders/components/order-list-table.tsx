@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Eye, Edit, Trash2 } from 'lucide-react'
+import { MoreHorizontal, Eye, /* Edit, */ Trash2 } from 'lucide-react'
 import { OrderWithRelations } from '../types/order.types'
 import { formatPrice } from '@/lib/utils'
 import { format } from 'date-fns'
@@ -18,7 +18,7 @@ import { id } from 'date-fns/locale'
 interface OrderListTableProps {
   orders: OrderWithRelations[]
   onView: (order: OrderWithRelations) => void
-  onEdit: (order: OrderWithRelations) => void
+  // onEdit: (order: OrderWithRelations) => void // Disabled - use View Details instead
   onDelete: (order: OrderWithRelations) => void
   isDeleting: boolean
   getStatusBadge: (status: string) => React.ReactNode
@@ -28,7 +28,7 @@ interface OrderListTableProps {
 export function OrderListTable({
   orders,
   onView,
-  onEdit,
+  // onEdit, // Disabled - use View Details instead
   onDelete,
   isDeleting,
   getStatusBadge,
@@ -134,10 +134,12 @@ export function OrderListTable({
                         <Eye className="mr-2 h-4 w-4" />
                         Lihat Detail
                       </DropdownMenuItem>
+                      {/* Edit option disabled - use View Details instead
                       <DropdownMenuItem onClick={() => onEdit(order)}>
                         <Edit className="mr-2 h-4 w-4" />
                         Edit
                       </DropdownMenuItem>
+                      */}
                       <DropdownMenuItem 
                         onClick={() => onDelete(order)}
                         className="text-destructive"

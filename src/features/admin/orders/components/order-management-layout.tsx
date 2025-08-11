@@ -493,9 +493,7 @@ export default function OrderManagementLayout({
             setSelectedOrder(order)
             router.push(`/admin/orders/${order.id}`)
           }}
-          onEdit={(order) => {
-            router.push(`/admin/orders/${order.id}/edit`)
-          }}
+          // onEdit disabled - use View Details instead
           onDelete={handleDeleteOrder}
           isDeleting={isDeleting}
           getStatusBadge={getStatusBadge}
@@ -508,9 +506,7 @@ export default function OrderManagementLayout({
             setSelectedOrder(order)
             router.push(`/admin/orders/${order.id}`)
           }}
-          onEdit={(order) => {
-            router.push(`/admin/orders/${order.id}/edit`)
-          }}
+          // onEdit disabled - use View Details instead
           onDelete={handleDeleteOrder}
           getStatusBadge={getStatusBadge}
           getPaymentStatusBadge={getStatusBadge}
