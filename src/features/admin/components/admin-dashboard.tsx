@@ -115,12 +115,11 @@ function AdminDashboard() {
     <AdminPageLayout 
       title="Dashboard" 
       description="Panel administrasi Perdami Store"
-      className="min-h-screen bg-gray-50 dark:bg-gray-900"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+      <div className="space-y-6">
         {/* Stats Cards Section - Simplified */}
         <section className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             <StatsCard
               title="Total Pengguna"
               value={stats.totalUsers.toLocaleString('id-ID')}
@@ -221,7 +220,7 @@ function AdminDashboard() {
 
         {/* Main Content Grid - Two Equal Columns */}
         <section>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Recent Orders */}
             <div>
               <RecentOrders orders={recentOrders} />
