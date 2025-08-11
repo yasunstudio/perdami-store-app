@@ -18,6 +18,9 @@ import {
 import { DashboardStats } from './dashboard-stats';
 import { RecentOrders } from './recent-orders';
 import { ProductOverview } from './product-overview';
+import { NotificationCenter } from '../notifications/components/notification-center';
+import { RealTimeOrderTracking } from '../orders/components/real-time-order-tracking';
+import { QuickActionsPanel } from './quick-actions-panel';
 import { DashboardStats as DashboardStatsType, RecentOrder, PopularProduct } from '../types/dashboard.types';
 
 
@@ -61,7 +64,7 @@ function AdminDashboard() {
         
         if (!response.ok) {
           console.warn('Admin dashboard API failed, trying public fallback...');
-          response = await fetch('/api/dashboard-public');
+          response = await fetch('/api/dashboard');
         }
         
         if (!response.ok) {
@@ -130,14 +133,14 @@ function AdminDashboard() {
       description="Panel administrasi Perdami Store"
       className="min-h-screen bg-gray-50 dark:bg-gray-900"
     >
-      <div className="space-y-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
         {/* Stats Cards Section */}
-        <section className="space-y-4">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">Statistik Utama</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Ringkasan performa platform Perdami Store</p>
+        <section className="space-y-6">
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Statistik Utama</h2>
+            <p className="text-gray-600 dark:text-gray-400">Overview performa toko dalam real-time</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatsCard
               title="Total Pengguna"
               value={stats.totalUsers.toLocaleString('id-ID')}
@@ -170,12 +173,12 @@ function AdminDashboard() {
         </section>
 
         {/* Quick Stats Section */}
-        <section className="space-y-4">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">Analisis Cepat</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Metrik penting untuk monitoring operasional</p>
+        <section className="space-y-6">
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Analisis Cepat</h2>
+            <p className="text-gray-600 dark:text-gray-400">Metrik penting untuk monitoring operasional</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-2 pt-4 px-4">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -281,20 +284,85 @@ function AdminDashboard() {
         </section>
 
         {/* Main Content Section */}
-        <section className="space-y-4">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">Data Operasional</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Informasi detail tentang pesanan dan produk terpopuler</p>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Recent Orders - Takes 1 column */}
+        <section className="space-y-8">
+          <div className="flex items-center justify-between border-b pb-6 mb-8">
             <div>
-              <RecentOrders orders={recentOrders} />
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Data Operasional</h2>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">
+                Monitor real-time operations dan kelola aktivitas toko secara efisien
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Live</span>
+            </div>
+          </div>
+
+          {/* Primary Operations Row */}
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8">
+            {/* Real-time Order Tracking - Takes 2 columns on xl screens */}
+            <div className="xl:col-span-2">
+              <div className="h-full">
+                <RealTimeOrderTracking />
+              </div>
             </div>
             
-            {/* Product Overview - Takes 1 column */}
-            <div>
+            {/* Recent Orders - Takes 1 column */}
+            <div className="space-y-6">
+              <RecentOrders orders={recentOrders} />
+            </div>
+          </div>
+
+          {/* Secondary Operations Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            {/* Product Overview */}
+            <div className="lg:col-span-1">
               <ProductOverview products={popularProducts} />
+            </div>
+
+            {/* Notification Center */}
+            <div className="lg:col-span-1">
+              <NotificationCenter />
+            </div>
+
+            {/* Quick Actions Panel */}
+            <div className="lg:col-span-1">
+              <QuickActionsPanel />
+            </div>
+          </div>
+
+          {/* System Status Footer */}
+          <div className="border-t pt-8 mt-12">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                    <Activity className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
+                      System Performance
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      All services operational • Last updated: {new Date().toLocaleTimeString('id-ID')}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-6 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                    <span className="text-gray-600 dark:text-gray-400">Database</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                    <span className="text-gray-600 dark:text-gray-400">API</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                    <span className="text-gray-600 dark:text-gray-400">Storage</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>

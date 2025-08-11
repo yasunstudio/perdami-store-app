@@ -183,7 +183,7 @@ const navigation: SidebarItem[] = [
       },
       {
         name: 'Informasi Kontak',
-        href: '/admin/contact-info',
+        href: '/admin/contact',
         icon: Phone,
         permission: PERMISSIONS.SETTINGS_READ
       },

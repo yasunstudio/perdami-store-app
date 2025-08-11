@@ -9,7 +9,7 @@ const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   name: z.string().min(2),
-  phone: z.string().optional(),
+  phone: z.string().min(10, 'Nomor telepon minimal 10 digit'),
 })
 
 export async function POST(request: Request) {
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
         email,
         password: hashedPassword,
         name,
-        phone: phone || null,
+        phone,
         role: 'CUSTOMER', // Default role
       },
       select: {

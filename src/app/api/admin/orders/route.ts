@@ -4,160 +4,122 @@ import { auth } from "@/lib/auth"
 import { OrderStatus, PaymentStatus } from "@prisma/client"
 
 export async function GET(request: NextRequest) {
-  console.log("📊 Admin orders API called")
-  
   try {
+    // Authentication check
     const session = await auth()
-    if (!session?.user || session.user.role !== 'ADMIN') {
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
-    
-    // Extract query parameters
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
-    const orderStatus = searchParams.get('orderStatus') as OrderStatus
-    const paymentStatus = searchParams.get('paymentStatus') as PaymentStatus
+    const orderStatus = searchParams.get('orderStatus')
+    const paymentStatus = searchParams.get('paymentStatus')
     const search = searchParams.get('search')
-    
-    console.log('📊 Query params:', { page, limit, orderStatus, paymentStatus, search })
-    
+
     const offset = (page - 1) * limit
-    
+
     // Build where conditions
-    const whereConditions: any = {}
+    const where: any = {}
     
-    if (orderStatus) {
-      whereConditions.orderStatus = orderStatus
+    if (orderStatus && orderStatus !== 'all') {
+      where.orderStatus = orderStatus
     }
     
-    if (paymentStatus) {
-      whereConditions.paymentStatus = paymentStatus
+    if (paymentStatus && paymentStatus !== 'all') {
+      where.paymentStatus = paymentStatus
     }
     
     if (search) {
-      whereConditions.OR = [
-        {
-          user: {
-            name: {
-              contains: search,
-              mode: 'insensitive'
-            }
-          }
-        },
-        {
-          user: {
-            email: {
-              contains: search,
-              mode: 'insensitive'
-            }
-          }
-        },
-        {
-          id: {
-            contains: search,
-            mode: 'insensitive'
-          }
-        },
-        {
-          orderNumber: {
-            contains: search,
-            mode: 'insensitive'
-          }
-        }
+      where.OR = [
+        { orderNumber: { contains: search, mode: 'insensitive' } },
+        { user: { name: { contains: search, mode: 'insensitive' } } },
+        { user: { email: { contains: search, mode: 'insensitive' } } }
       ]
     }
-    
-    console.log('🔍 Where conditions:', JSON.stringify(whereConditions, null, 2))
-    
-    // Get orders with pagination using Prisma ORM
-    const [orders, totalCount] = await Promise.all([
-      prisma.order.findMany({
-        where: whereConditions,
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true
-            }
-          },
-          orderItems: {
-            include: {
-              bundle: {
-                select: {
-                  id: true,
-                  name: true,
-                  price: true,
-                  image: true
-                }
+
+    // Get orders count
+    const totalCount = await prisma.order.count({ where })
+
+    // Get orders
+    const orders = await prisma.order.findMany({
+      where,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        orderItems: {
+          include: {
+            bundle: {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+                image: true
               }
-            }
-          },
-          payment: {
-            select: {
-              id: true,
-              status: true,
-              amount: true,
-              proofUrl: true,
-              createdAt: true,
-              updatedAt: true
-            }
-          },
-          bank: {
-            select: {
-              id: true,
-              name: true,
-              accountNumber: true,
-              accountName: true
             }
           }
         },
-        orderBy: { createdAt: 'desc' },
-        skip: offset,
-        take: limit
-      }),
-      prisma.order.count({ where: whereConditions })
-    ])
+        payment: {
+          select: {
+            id: true,
+            status: true,
+            amount: true,
+            proofUrl: true,
+            createdAt: true,
+            updatedAt: true
+          }
+        },
+        bank: {
+          select: {
+            id: true,
+            name: true,
+            accountNumber: true,
+            accountName: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: offset,
+      take: limit
+    })
 
-    console.log(`📦 Found ${orders.length} orders out of ${totalCount} total`)
-
-    // Get order status statistics using Prisma ORM
+    // Get statistics
     const [
       pendingCount,
       confirmedCount,
       readyCount,
       completedCount,
       cancelledCount,
-      totalRevenue
+      pendingPayments,
+      paidPayments,
+      failedPayments,
+      refundedPayments
     ] = await Promise.all([
       prisma.order.count({ where: { orderStatus: 'PENDING' } }),
       prisma.order.count({ where: { orderStatus: 'CONFIRMED' } }),
       prisma.order.count({ where: { orderStatus: 'READY' } }),
       prisma.order.count({ where: { orderStatus: 'COMPLETED' } }),
       prisma.order.count({ where: { orderStatus: 'CANCELLED' } }),
-      prisma.order.aggregate({
-        where: { orderStatus: 'COMPLETED' },
-        _sum: { totalAmount: true }
-      })
+      prisma.order.count({ where: { paymentStatus: 'PENDING' } }),
+      prisma.order.count({ where: { paymentStatus: 'PAID' } }),
+      prisma.order.count({ where: { paymentStatus: 'FAILED' } }),
+      prisma.order.count({ where: { paymentStatus: 'REFUNDED' } })
     ])
 
-    // Get payment status statistics using Prisma ORM
-    const [
-      pendingPayments,
-      paidPayments,
-      failedPayments,
-      refundedPayments
-    ] = await Promise.all([
-      prisma.payment.count({ where: { status: 'PENDING' } }),
-      prisma.payment.count({ where: { status: 'PAID' } }),
-      prisma.payment.count({ where: { status: 'FAILED' } }),
-      prisma.payment.count({ where: { status: 'REFUNDED' } })
-    ])
+    // Calculate total revenue from paid orders
+    const paidOrders = await prisma.order.aggregate({
+      where: { paymentStatus: 'PAID' },
+      _sum: { totalAmount: true }
+    })
 
-    // Format orders for response
-    const formattedOrders = orders.map(order => ({
+    // Format response
+    const formattedOrders = orders.map((order: any) => ({
       id: order.id,
       orderNumber: order.orderNumber,
       orderStatus: order.orderStatus,
@@ -173,9 +135,10 @@ export async function GET(request: NextRequest) {
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
       user: order.user,
+      customer: order.user, // Add customer alias for frontend compatibility
       bank: order.bank,
       payment: order.payment,
-      items: order.orderItems.map(item => ({
+      items: order.orderItems.map((item: any) => ({
         id: item.id,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
@@ -197,33 +160,44 @@ export async function GET(request: NextRequest) {
         paid: paidPayments,
         failed: failedPayments,
         refunded: refundedPayments
-      },
-      revenue: {
-        total: totalRevenue._sum.totalAmount || 0
       }
     }
+
+    const totalPages = Math.ceil(totalCount / limit)
+    const hasNext = page < totalPages
+    const hasPrev = page > 1
 
     const response = {
       orders: formattedOrders,
       pagination: {
         page,
         limit,
-        totalCount,
-        totalPages: Math.ceil(totalCount / limit),
-        hasMore: offset + limit < totalCount
+        total: totalCount,
+        totalPages,
+        hasNext,
+        hasPrev
       },
-      statistics,
-      metadata: {
-        timestamp: new Date().toISOString(),
-        version: '2.0-prisma'
+      stats: {
+        total: totalCount,
+        pending: pendingCount,
+        confirmed: confirmedCount,
+        ready: readyCount,
+        completed: completedCount,
+        cancelled: cancelledCount,
+        totalRevenue: paidOrders._sum.totalAmount || 0
+      },
+      paymentStats: {
+        pending: pendingPayments,
+        paid: paidPayments,
+        failed: failedPayments,
+        refunded: refundedPayments
       }
     }
 
-    console.log('✅ Orders data prepared successfully')
     return NextResponse.json(response)
 
   } catch (error) {
-    console.error('❌ Error in GET /api/admin/orders:', error)
+    console.error('Error fetching orders:', error)
     return NextResponse.json({
       error: 'Failed to fetch orders',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -231,76 +205,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function PATCH(request: NextRequest) {
-  console.log("🔄 Admin orders PATCH API called")
-  
-  try {
-    const session = await auth()
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const body = await request.json()
-    const { orderId, orderStatus, notes } = body
-    
-    if (!orderId || !orderStatus) {
-      return NextResponse.json({
-        error: 'Order ID and order status are required'
-      }, { status: 400 })
-    }
-    
-    console.log('🔄 Updating order:', { orderId, orderStatus, notes })
-    
-    // Update order status using Prisma ORM
-    const updatedOrder = await prisma.order.update({
-      where: { id: orderId },
-      data: {
-        orderStatus: orderStatus as OrderStatus,
-        ...(notes && { notes }),
-        updatedAt: new Date()
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        },
-        orderItems: {
-          include: {
-            bundle: {
-              select: {
-                id: true,
-                name: true,
-                price: true
-              }
-            }
-          }
-        },
-        payment: true
-      }
-    })
-    
-    console.log('✅ Order updated successfully')
-    
-    return NextResponse.json({
-      message: 'Order status updated successfully',
-      order: updatedOrder
-    })
-    
-  } catch (error) {
-    console.error('❌ Error in PATCH /api/admin/orders:', error)
-    return NextResponse.json({
-      error: 'Failed to update order',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
-  }
-}
-
 export async function POST(request: NextRequest) {
-  console.log("➕ Admin orders POST API called")
-  
   try {
     const session = await auth()
     if (!session?.user || session.user.role !== 'ADMIN') {
@@ -316,9 +221,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
     
-    console.log('➕ Creating order:', { userId, bundleIds, pickupDate, notes })
-    
-    // Get bundles to calculate total using Prisma ORM
+    // Get bundles to calculate total
     const bundles = await prisma.productBundle.findMany({
       where: {
         id: { in: bundleIds },
@@ -333,10 +236,10 @@ export async function POST(request: NextRequest) {
     }
     
     const totalAmount = bundles.reduce((sum, bundle) => sum + bundle.price, 0)
-    const serviceFee = 25000 // Fixed Rp 25.000 as per schema
+    const serviceFee = 25000 // Fixed Rp 25.000
     const subtotalAmount = totalAmount
     
-    // Create order with items using Prisma ORM
+    // Create order with items
     const result = await prisma.order.create({
       data: {
         userId,
@@ -387,17 +290,76 @@ export async function POST(request: NextRequest) {
       }
     })
     
-    console.log('✅ Order created successfully')
-    
     return NextResponse.json({
       message: 'Order created successfully',
       order: result
     })
     
   } catch (error) {
-    console.error('❌ Error in POST /api/admin/orders:', error)
+    console.error('Error creating order:', error)
     return NextResponse.json({
       error: 'Failed to create order',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await auth()
+    if (!session?.user || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { orderId, orderStatus, notes } = body
+    
+    if (!orderId || !orderStatus) {
+      return NextResponse.json({
+        error: 'Order ID and order status are required'
+      }, { status: 400 })
+    }
+    
+    // Update order status
+    const updatedOrder = await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        orderStatus: orderStatus as OrderStatus,
+        ...(notes && { notes }),
+        updatedAt: new Date()
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        orderItems: {
+          include: {
+            bundle: {
+              select: {
+                id: true,
+                name: true,
+                price: true
+              }
+            }
+          }
+        },
+        payment: true
+      }
+    })
+    
+    return NextResponse.json({
+      message: 'Order status updated successfully',
+      order: updatedOrder
+    })
+    
+  } catch (error) {
+    console.error('Error updating order:', error)
+    return NextResponse.json({
+      error: 'Failed to update order',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }

@@ -34,7 +34,7 @@ export function useContactInfo() {
       setIsLoading(true)
       setError(null)
       
-      const response = await fetch('/api/contact-info', {
+      const response = await fetch('/api/contact', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -68,7 +68,7 @@ export function useContactInfo() {
 
   const updateContactInfo = async (updates: Partial<ContactInfo>) => {
     try {
-      const response = await fetch('/api/contact-info', {
+      const response = await fetch('/api/contact', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

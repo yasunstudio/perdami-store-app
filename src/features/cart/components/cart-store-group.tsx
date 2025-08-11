@@ -25,12 +25,14 @@ export function CartStoreGroup({ store, className }: CartStoreGroupProps) {
   }
 
   return (
-    <Card className={`overflow-hidden border border-muted ${className}`}>
-      <CardHeader className="pb-3 bg-muted/30">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <Card className={`overflow-hidden ${className}`}>
+      <CardHeader className="pb-3 bg-muted/30 border-b">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
-            <CardTitle className="text-lg font-bold flex items-center gap-2">
-              <span className="text-xl">🏪</span>
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                <span className="text-sm">🏪</span>
+              </div>
               {store.storeName}
             </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
@@ -42,7 +44,7 @@ export function CartStoreGroup({ store, className }: CartStoreGroupProps) {
             size="sm" 
             onClick={handleClearStore}
             disabled={isLoading}
-            className="text-destructive hover:text-destructive self-start sm:self-center"
+            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-800 self-start sm:self-center h-10 px-4 font-medium"
           >
             <Trash2 className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Hapus Semua</span>
@@ -51,8 +53,8 @@ export function CartStoreGroup({ store, className }: CartStoreGroupProps) {
         </div>
       </CardHeader>
       
-      <CardContent className="pt-0">
-        <div className="space-y-3">
+      <CardContent className="p-4">
+        <div className="space-y-4">
           {store.items.map((item, index) => (
             <div key={`${store.storeId}-${item.id}-${index}`}>
               <CartItemCard item={item} />

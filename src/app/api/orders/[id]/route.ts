@@ -20,6 +20,18 @@ export async function GET(
       )
     }
 
+    // Find the actual user in database by email (session.user.id might be stale)
+    const actualUser = await prisma.user.findUnique({
+      where: { email: session.user.email! }
+    })
+    
+    if (!actualUser) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
     const resolvedParams = await params
     const validatedParams = paramsSchema.parse(resolvedParams)
     const orderId = validatedParams.id
@@ -28,7 +40,7 @@ export async function GET(
     const order = await prisma.order.findFirst({
       where: {
         id: orderId,
-        userId: session.user.id
+        userId: actualUser.id
       },
       include: {
         orderItems: {

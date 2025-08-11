@@ -38,11 +38,14 @@ export async function GET() {
     const topStoresByBundles = storesWithBundles.map(store => ({
       id: store.id,
       name: store.name,
-      address: store.address,
-      city: store.city,
-      totalBundles: store.bundles.length,
-      createdAt: store.createdAt
-    })).sort((a: any, b: any) => b.totalBundles - a.totalBundles)
+      description: store.description,
+      image: store.image,
+      isActive: store.isActive,
+      bundleCount: store.bundles.length,
+      location: 'Venue PIT PERDAMI 2025, Bandung',
+      createdAt: store.createdAt,
+      updatedAt: store.updatedAt
+    })).sort((a: any, b: any) => b.bundleCount - a.bundleCount)
 
     const result = {
       totalStores,

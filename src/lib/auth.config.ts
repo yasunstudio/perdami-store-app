@@ -52,7 +52,9 @@ export const authConfig: NextAuthConfig = {
   },
   pages: {
     signIn: '/auth/login',
+    error: '/auth/login', // Redirect auth errors to login page
   },
+  debug: process.env.NODE_ENV === 'development',
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -142,22 +144,43 @@ export const authConfig: NextAuthConfig = {
       return baseUrl
     },
     async jwt({ token, user }) {
-      // Persist the role and phone in the token right after signin
-      if (user) {
-        token.role = user.role
-        token.phone = user.phone
+      try {
+        console.log('🔑 JWT callback:', { 
+          tokenSub: token.sub, 
+          userId: user?.id, 
+          userEmail: user?.email,
+          tokenEmail: token.email 
+        })
+        // Persist the role and phone in the token right after signin
+        if (user) {
+          token.role = user.role
+          token.phone = user.phone
+        }
+        return token
+      } catch (error) {
+        console.error('🚨 JWT callback error:', error)
+        return token
       }
-      return token
     },
     async session({ session, token }) {
-      // With JWT strategy, use token data
-      if (token) {
-        session.user.id = token.sub as string
-        session.user.role = (token.role as string) || 'CUSTOMER'
-        session.user.phone = token.phone as string || null
+      try {
+        console.log('🎫 Session callback:', { 
+          tokenSub: token.sub, 
+          tokenEmail: token.email,
+          sessionEmail: session.user.email 
+        })
+        // With JWT strategy, use token data
+        if (token) {
+          session.user.id = token.sub as string
+          session.user.role = (token.role as string) || 'CUSTOMER'
+          session.user.phone = token.phone as string || null
+        }
+        
+        return session
+      } catch (error) {
+        console.error('🚨 Session callback error:', error)
+        return session
       }
-      
-      return session
     },
     async signIn({ user, account, profile }) {
       if (user?.id) {

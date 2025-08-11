@@ -97,7 +97,6 @@ export function StoreList({
             <TableRow>
               <TableHead className="w-[300px]">Toko</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Lokasi</TableHead>
               <TableHead>Bundle</TableHead>
               <TableHead>Dibuat</TableHead>
               <TableHead className="w-[70px]">Aksi</TableHead>
@@ -131,18 +130,6 @@ export function StoreList({
                   >
                     {store.isActive ? 'Aktif' : 'Nonaktif'}
                   </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="text-sm">
-                    {store.city && store.province && (
-                      <span>{store.city}, {store.province}</span>
-                    )}
-                    {store.address && (
-                      <div className="text-xs text-muted-foreground line-clamp-1 mt-1">
-                        {store.address}
-                      </div>
-                    )}
-                  </div>
                 </TableCell>
                 <TableCell>
                   <span className="text-sm font-medium">

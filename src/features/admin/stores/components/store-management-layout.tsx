@@ -28,31 +28,26 @@ import {
   Grid3X3,
   List,
   RefreshCw,
-  Store,
-  TrendingUp,
-  AlertTriangle,
   ChevronLeft,
   ChevronRight,
-  Trash2
+  Trash2,
+  AlertTriangle
 } from 'lucide-react'
-import { AdminPageLayout, StatsCard } from '@/components/admin/admin-page-layout'
+import { AdminPageLayout } from '@/components/admin/admin-page-layout'
 import { StoreList } from './store-list'
 import { StoreMobileCard } from './store-mobile-card'
 import { StoreListSkeleton } from './store-list-skeleton'
 import type { 
   StoreListResponse, 
   StoreWithRelations, 
-  StoreFilters,
-  StoreStats
+  StoreFilters
 } from '../types/store.types'
 import { toast } from 'sonner'
 
 export function StoreManagementLayout() {
   const router = useRouter()
   const [stores, setStores] = useState<StoreListResponse | null>(null)
-  const [stats, setStats] = useState<StoreStats | null>(null)
   const [loading, setLoading] = useState(true)
-  const [statsLoading, setStatsLoading] = useState(true)
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table')
 
 
@@ -78,12 +73,8 @@ export function StoreManagementLayout() {
 
   // Fetch initial data
   useEffect(() => {
-    Promise.all([
-      fetchStores(),
-      fetchStats()
-    ]).finally(() => {
+    fetchStores().finally(() => {
       setLoading(false)
-      setStatsLoading(false)
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -118,20 +109,6 @@ export function StoreManagementLayout() {
     }
   }, [filters])
 
-  const fetchStats = useCallback(async () => {
-    try {
-      const response = await fetch('/api/admin/stores/stats')
-      const result = await response.json()
-      if (response.ok) {
-        setStats(result)
-      } else {
-        console.error('Failed to fetch stats:', result.error)
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error)
-    }
-  }, [])
-
   // Handlers
   const handleAddStore = () => {
     router.push('/admin/stores/new')
@@ -162,11 +139,8 @@ export function StoreManagementLayout() {
 
       if (response.ok) {
         toast.success(result.message)
-        // Refresh both stores and stats after deletion
-        await Promise.all([
-          fetchStores(),
-          fetchStats()
-        ])
+        // Refresh stores after deletion
+        await fetchStores()
         setDeleteDialogOpen(false)
         setStoreToDelete(null)
       } else {
@@ -203,11 +177,8 @@ export function StoreManagementLayout() {
 
       if (response.ok) {
         toast.success(`Toko berhasil ${isActive ? 'diaktifkan' : 'dinonaktifkan'}`)
-        // Refresh both stores and stats after status change
-        await Promise.all([
-          fetchStores(),
-          fetchStats()
-        ])
+        // Refresh stores after status change
+        await fetchStores()
       } else {
         toast.error(result.error || 'Gagal mengubah status toko')
         console.error('❌ Toggle failed:', result)
@@ -229,18 +200,15 @@ export function StoreManagementLayout() {
   }
 
   const handleRefresh = async () => {
-    setStatsLoading(true)
+    setLoading(true)
     try {
-      await Promise.all([
-        fetchStores(),
-        fetchStats()
-      ])
+      await fetchStores()
       toast.success('Data berhasil dimuat ulang')
     } catch (error) {
       console.error('Error refreshing data:', error)
       toast.error('Gagal memuat ulang data')
     } finally {
-      setStatsLoading(false)
+      setLoading(false)
     }
   }
 
@@ -266,72 +234,6 @@ export function StoreManagementLayout() {
         actions={actions}
         loading={loading}
       >
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {statsLoading ? (
-          // Loading skeleton for stats cards
-          <>
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border animate-pulse">
-              <div className="flex items-center justify-between mb-2">
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
-                <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
-              </div>
-              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-16 mb-1"></div>
-              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
-            </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border animate-pulse">
-              <div className="flex items-center justify-between mb-2">
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
-                <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
-              </div>
-              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-16 mb-1"></div>
-              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
-            </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border animate-pulse">
-              <div className="flex items-center justify-between mb-2">
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
-                <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
-              </div>
-              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-16 mb-1"></div>
-              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
-            </div>
-          </>
-        ) : (
-          <>
-            <StatsCard
-              title="Total Toko"
-              value={stats?.totalStores?.toString() || "0"}
-              description="Toko terdaftar"
-              icon={<Store className="h-4 w-4" />}
-              trend={{ 
-                value: Math.abs(stats?.growthRate || 0), 
-                isPositive: (stats?.growthRate || 0) >= 0
-              }}
-            />
-            <StatsCard
-              title="Toko Aktif"
-              value={stats?.activeStores?.toString() || "0"}
-              description="Sedang beroperasi"
-              icon={<TrendingUp className="h-4 w-4" />}
-              trend={{ 
-                value: stats?.totalStores ? Math.round((stats.activeStores / stats.totalStores) * 100) : 0, 
-                isPositive: true
-              }}
-            />
-            <StatsCard
-              title="Tanpa Bundle"
-              value={stats?.storesWithoutBundles?.toString() || "0"}
-              description="Perlu perhatian"
-              icon={<AlertTriangle className="h-4 w-4" />}
-              trend={{ 
-                value: stats?.totalStores ? Math.round((stats.storesWithoutBundles / stats.totalStores) * 100) : 0, 
-                isPositive: false
-              }}
-            />
-          </>
-        )}
-      </div>
-
       {/* Main Content Card */}
       <Card>
         <CardHeader className="pb-4">
@@ -342,11 +244,11 @@ export function StoreManagementLayout() {
                 variant="outline"
                 size="sm"
                 onClick={handleRefresh}
-                disabled={statsLoading}
+                disabled={loading}
                 className="h-8"
               >
-                <RefreshCw className={`h-4 w-4 mr-1 ${statsLoading ? 'animate-spin' : ''}`} />
-                {statsLoading ? 'Memuat...' : 'Refresh'}
+                <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
+                {loading ? 'Memuat...' : 'Refresh'}
               </Button>
               <Button onClick={handleAddStore} size="sm" className="h-8">
                 <Plus className="h-4 w-4 mr-1" />

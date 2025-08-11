@@ -82,7 +82,10 @@ export function PaymentCountdown({ order, onRefresh, compact = false }: PaymentC
 
   useEffect(() => {
     // Only show countdown for pending orders with pending payment
-    if (order.orderStatus !== 'PENDING' || order.paymentStatus !== 'PENDING') {
+    // AND no payment proof uploaded yet
+    if (order.orderStatus !== 'PENDING' || 
+        order.paymentStatus !== 'PENDING' ||
+        (order.payment && order.payment.proofUrl)) {
       return
     }
 
@@ -100,9 +103,11 @@ export function PaymentCountdown({ order, onRefresh, compact = false }: PaymentC
     return () => clearInterval(interval)
   }, [order.orderStatus, order.paymentStatus, calculateTimeRemaining])
 
-  // Don't show countdown if order is not pending or payment is not pending
+  // Don't show countdown if order is not pending, payment is not pending, or proof is uploaded
   const paymentStatus = order.payment?.status || order.paymentStatus
-  if (order.orderStatus !== 'PENDING' || paymentStatus !== 'PENDING') {
+  if (order.orderStatus !== 'PENDING' || 
+      paymentStatus !== 'PENDING' ||
+      (order.payment && order.payment.proofUrl)) {
     return null
   }
 

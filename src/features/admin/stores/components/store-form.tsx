@@ -39,9 +39,6 @@ export function StoreForm({
     name: '',
     description: '',
     image: '',
-    address: '',
-    city: 'Bandung',
-    province: 'Jawa Barat',
     isActive: true,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -58,9 +55,6 @@ export function StoreForm({
           name: store.name,
           description: store.description || '',
           image: store.image || '',
-          address: store.address || '',
-          city: store.city || 'Bandung',
-          province: store.province || 'Jawa Barat',
           isActive: store.isActive
         })
       } else {
@@ -68,9 +62,6 @@ export function StoreForm({
           name: '',
           description: '',
           image: '',
-          address: '',
-          city: 'Bandung',
-          province: 'Jawa Barat',
           isActive: true,
         })
       }
@@ -254,11 +245,9 @@ export function StoreForm({
                             <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed mt-1">
                               {formData.description || 'Deskripsi toko akan muncul di sini...'}
                             </p>
-                            {(formData.address || formData.city) && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                📍 {formData.address ? `${formData.address}, ` : ''}{formData.city || 'Kota'}, {formData.province || 'Provinsi'}
-                              </p>
-                            )}
+                            <p className="text-xs text-muted-foreground mt-1">
+                              📍 Venue PIT PERDAMI 2025, Bandung, Jawa Barat
+                            </p>
                           </div>
                           <div className="flex items-center gap-2">
                             <Badge 
@@ -350,46 +339,6 @@ export function StoreForm({
                         <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
                           {formData.description.length}/500
                         </span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label htmlFor="address" className="text-base font-semibold text-foreground">Alamat Toko</Label>
-                      <Input
-                        id="address"
-                        type="text"
-                        placeholder="Masukkan alamat lengkap toko..."
-                        className="text-base h-12 px-4 rounded-xl border-2 border-muted hover:border-primary/50 focus-visible:border-primary transition-all duration-200"
-                        value={formData.address}
-                        onChange={(e) => updateFormData('address', e.target.value)}
-                      />
-                      <p className="text-sm text-muted-foreground">
-                        Alamat lengkap akan membantu pelanggan menemukan lokasi toko Anda
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-3">
-                        <Label htmlFor="city" className="text-base font-semibold text-foreground">Kota</Label>
-                        <Input
-                          id="city"
-                          type="text"
-                          placeholder="Kota..."
-                          className="text-base h-12 px-4 rounded-xl border-2 border-muted hover:border-primary/50 focus-visible:border-primary transition-all duration-200"
-                          value={formData.city}
-                          onChange={(e) => updateFormData('city', e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <Label htmlFor="province" className="text-base font-semibold text-foreground">Provinsi</Label>
-                        <Input
-                          id="province"
-                          type="text"
-                          placeholder="Provinsi..."
-                          className="text-base h-12 px-4 rounded-xl border-2 border-muted hover:border-primary/50 focus-visible:border-primary transition-all duration-200"
-                          value={formData.province}
-                          onChange={(e) => updateFormData('province', e.target.value)}
-                        />
                       </div>
                     </div>
 

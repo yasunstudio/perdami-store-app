@@ -50,7 +50,7 @@ export function StoreCard({ store }: StoreCardProps) {
           {/* Location */}
           <div className="flex items-center text-sm text-muted-foreground">
             <MapPin className="h-4 w-4 mr-2" />
-            {store.city && store.province ? `${store.city}, ${store.province}` : 'Bandung, Jawa Barat'}
+            Venue PIT PERDAMI 2025, Bandung
           </div>
 
           {/* Bundles info */}

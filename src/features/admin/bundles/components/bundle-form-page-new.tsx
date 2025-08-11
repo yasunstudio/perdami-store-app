@@ -121,12 +121,51 @@ export function BundleFormPageNew({ mode, bundleId }: BundleFormPageProps) {
           price: bundle.price,
           storeId: bundle.storeId,
           image: bundle.image || '',
-          contents: Array.isArray(bundle.contents) 
-            ? bundle.contents.map((item, index) => ({
-                ...item,
-                id: `item-${index}-${Date.now()}`
-              }))
-            : [],
+          contents: (() => {
+            // Handle contents from database (could be JSON array or null)
+            if (!bundle.contents) return []
+            
+            try {
+              // If contents is already an array
+              if (Array.isArray(bundle.contents)) {
+                return bundle.contents.map((item, index) => ({
+                  id: `item-${index}-${Date.now()}`,
+                  name: item.name || '',
+                  quantity: item.quantity || 1
+                }))
+              }
+              
+              // If contents is a JSON string, parse it
+              if (typeof bundle.contents === 'string') {
+                const parsed = JSON.parse(bundle.contents)
+                if (Array.isArray(parsed)) {
+                  return parsed.map((item, index) => ({
+                    id: `item-${index}-${Date.now()}`,
+                    name: item.name || '',
+                    quantity: item.quantity || 1
+                  }))
+                }
+              }
+              
+              // If contents is an object, try to convert it
+              if (typeof bundle.contents === 'object' && bundle.contents !== null) {
+                // If it's already in the right format
+                const contentsObj = bundle.contents as any
+                if ('name' in contentsObj && 'quantity' in contentsObj) {
+                  return [{
+                    id: `item-0-${Date.now()}`,
+                    name: contentsObj.name || '',
+                    quantity: contentsObj.quantity || 1
+                  }]
+                }
+              }
+              
+              return []
+            } catch (error) {
+              console.error('Error parsing bundle contents:', error)
+              return []
+            }
+          })(),
           isActive: bundle.isActive,
           isFeatured: bundle.isFeatured,
           showToCustomer: bundle.showToCustomer || false
@@ -197,10 +236,10 @@ export function BundleFormPageNew({ mode, bundleId }: BundleFormPageProps) {
 
     // Validate contents
     formData.contents?.forEach((item, index) => {
-      if (!item.name.trim()) {
+      if (!item.name || !item.name.trim()) {
         newErrors[`contents.${index}.name`] = 'Nama item harus diisi'
       }
-      if (item.quantity <= 0) {
+      if (!item.quantity || item.quantity <= 0) {
         newErrors[`contents.${index}.quantity`] = 'Kuantitas harus lebih dari 0'
       }
     })

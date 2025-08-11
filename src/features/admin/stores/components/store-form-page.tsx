@@ -29,9 +29,6 @@ export function StoreFormPage({ mode, storeId }: StoreFormPageProps) {
     name: '',
     description: '',
     image: '',
-    address: '',
-    city: 'Bandung',
-    province: 'Jawa Barat',
     isActive: true,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -57,9 +54,6 @@ export function StoreFormPage({ mode, storeId }: StoreFormPageProps) {
           name: storeData.name,
           description: storeData.description || '',
           image: storeData.image || '',
-          address: storeData.address || '',
-          city: storeData.city || 'Bandung',
-          province: storeData.province || 'Jawa Barat',
           isActive: storeData.isActive
         })
       } else {
@@ -104,10 +98,7 @@ export function StoreFormPage({ mode, storeId }: StoreFormPageProps) {
       const submitData = {
         ...formData,
         description: formData.description || null,
-        image: formData.image || null,
-        address: formData.address || null,
-        city: formData.city || null,
-        province: formData.province || null
+        image: formData.image || null
       }
 
       const response = await fetch(url, {
@@ -260,53 +251,6 @@ export function StoreFormPage({ mode, storeId }: StoreFormPageProps) {
                   <p className="text-xs text-muted-foreground">
                     {formData.description.length}/500 karakter
                   </p>
-                </div>
-
-                {/* Location Fields */}
-                <div className="space-y-4">
-                  <Label className="text-sm font-medium">Informasi Lokasi</Label>
-                  
-                  {/* Address */}
-                  <div className="space-y-2">
-                    <Label htmlFor="address" className="text-sm font-medium">
-                      Alamat
-                    </Label>
-                    <Textarea 
-                      id="address"
-                      placeholder="Masukkan alamat lengkap toko..."
-                      className="min-h-[80px] resize-none"
-                      value={formData.address}
-                      onChange={(e) => updateFormData('address', e.target.value)}
-                    />
-                  </div>
-
-                  {/* City and Province */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="city" className="text-sm font-medium">
-                        Kota
-                      </Label>
-                      <Input
-                        id="city"
-                        type="text"
-                        placeholder="Masukkan kota"
-                        value={formData.city}
-                        onChange={(e) => updateFormData('city', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="province" className="text-sm font-medium">
-                        Provinsi
-                      </Label>
-                      <Input
-                        id="province"
-                        type="text"
-                        placeholder="Masukkan provinsi"
-                        value={formData.province}
-                        onChange={(e) => updateFormData('province', e.target.value)}
-                      />
-                    </div>
-                  </div>
                 </div>
 
                 <Separator />

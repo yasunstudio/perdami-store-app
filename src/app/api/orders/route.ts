@@ -19,7 +19,8 @@ const createOrderSchema = z.object({
   items: z.array(z.object({
     bundleId: z.string(),
     quantity: z.number().min(1),
-    price: z.number().min(0)
+    unitPrice: z.number().min(0),
+    totalPrice: z.number().min(0)
   }))
 })
 
@@ -34,20 +35,48 @@ function generateOrderNumber(): string {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🛒 Creating new order...')
     const session = await auth()
     
     if (!session?.user) {
+      console.log('❌ Unauthorized request')
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
+    console.log(`✅ Authenticated user: ${session.user.email}`)
+    console.log('🔍 Session user details:', JSON.stringify(session.user, null, 2))
+
+    // Find the actual user in database by email (session.user.id might be stale)
+    const actualUser = await prisma.user.findUnique({
+      where: { email: session.user.email! }
+    })
+    
+    if (!actualUser) {
+      console.log('❌ User not found in database:', session.user.email)
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
+    
+    console.log('✅ Found actual user in database:', {
+      id: actualUser.id,
+      email: actualUser.email,
+      sessionId: session.user.id
+    })
+
     const body = await request.json()
+    console.log('📝 Request body:', JSON.stringify(body, null, 2))
+    
     const validatedData = createOrderSchema.parse(body)
+    console.log('✅ Data validation passed')
 
     // Validate bundles exist and calculate total
     const bundleIds = validatedData.items.map(item => item.bundleId)
+    console.log('🔍 Looking for bundles:', bundleIds)
     const bundles = await prisma.productBundle.findMany({
       where: {
         id: { in: bundleIds },
@@ -58,7 +87,13 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    console.log(`🏪 Found ${bundles.length} bundles in database`)
+    bundles.forEach(bundle => {
+      console.log(`  - ${bundle.name} (${bundle.id}) - Store: ${bundle.store.name}`)
+    })
+
     if (bundles.length !== bundleIds.length) {
+      console.log(`❌ Bundle count mismatch: expected ${bundleIds.length}, found ${bundles.length}`)
       return NextResponse.json(
         { error: 'Beberapa bundle tidak ditemukan atau tidak aktif' },
         { status: 400 }
@@ -73,13 +108,15 @@ export async function POST(request: NextRequest) {
         throw new Error(`Bundle ${item.bundleId} not found`)
       }
       
-      const itemTotal = bundle.price * item.quantity
-      totalAmount += itemTotal
+      const unitPrice = bundle.price
+      const totalPrice = unitPrice * item.quantity
+      totalAmount += totalPrice
       
       return {
         bundleId: item.bundleId,
         quantity: item.quantity,
-        price: bundle.price
+        unitPrice: unitPrice,
+        totalPrice: totalPrice
       }
     })
 
@@ -96,6 +133,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Create order in transaction
+    console.log('💾 Starting database transaction...')
     const result = await prisma.$transaction(async (tx) => {
       // Calculate breakdown with service fee per store
       const subtotalAmount = totalAmount // Current total is actually subtotal
@@ -106,14 +144,19 @@ export async function POST(request: NextRequest) {
         return bundle?.storeId
       }).filter(Boolean))]
       
+      console.log(`🏪 Order involves ${uniqueStores.length} unique stores`)
+      
       const serviceFee = calculateServiceFeePerStore(uniqueStores.length)
       const finalTotalAmount = subtotalAmount + serviceFee
       
+      console.log(`💰 Order totals: subtotal=${subtotalAmount}, serviceFee=${serviceFee}, total=${finalTotalAmount}`)
+      
       // Create main order
+      console.log('📝 Creating order record...')
       const order = await tx.order.create({
         data: {
           orderNumber: generateOrderNumber(),
-          userId: session.user.id!,
+          userId: actualUser.id,
           subtotalAmount,
           serviceFee,
           totalAmount: finalTotalAmount,
@@ -140,7 +183,10 @@ export async function POST(request: NextRequest) {
         }
       })
 
+      console.log(`✅ Order created: ${order.orderNumber} (ID: ${order.id})`)
+
       // Create payment record
+      console.log('💳 Creating payment record...')
       const payment = await tx.payment.create({
         data: {
           orderId: order.id,
@@ -152,15 +198,15 @@ export async function POST(request: NextRequest) {
         }
       })
 
-      // Note: Bundles don't have stock management in the new schema
-      // Stock is managed at the individual product level, not bundle level
+      console.log(`✅ Payment record created: ${payment.id}`)
+      console.log('✅ Transaction completed successfully')
 
       return { order, payment }
     })
 
     // Audit logging for order creation
     try {
-      await auditLog.createOrder(session.user.id!, result.order.id, {
+      await auditLog.createOrder(actualUser.id, result.order.id, {
         orderNumber: result.order.orderNumber,
         totalAmount: result.order.totalAmount,
         paymentMethod: result.payment.method,
@@ -168,7 +214,7 @@ export async function POST(request: NextRequest) {
         items: validatedData.items.map(item => ({
           bundleId: item.bundleId,
           quantity: item.quantity,
-          price: item.price
+          price: item.unitPrice
         }))
       })
     } catch (error) {
@@ -255,10 +301,22 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Find the actual user in database by email
+    const actualUser = await prisma.user.findUnique({
+      where: { email: session.user.email! }
+    })
+    
+    if (!actualUser) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
     const skip = (page - 1) * limit
 
     const where: any = {
-      userId: session.user.id
+      userId: actualUser.id
     }
 
     if (orderStatus) {

@@ -31,11 +31,7 @@ export async function GET(
           select: {
             id: true,
             name: true,
-            description: true,
-            image: true,
-            address: true,
-            city: true,
-            province: true
+            description: true
           }
         }
       }

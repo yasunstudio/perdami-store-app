@@ -60,10 +60,7 @@ export function CartSummary({ cart, className }: CartSummaryProps) {
           
           {/* Service Fee Row */}
           <div className="flex justify-between text-sm">
-            <div className="flex items-center space-x-1">
-              <span>Ongkos Kirim ({storeCount} toko)</span>
-              <span className="text-xs text-muted-foreground">📦</span>
-            </div>
+            <span>Ongkos Kirim ({storeCount} toko)</span>
             <span className="font-medium">{serviceFee > 0 ? formatPrice(serviceFee) : 'Gratis'}</span>
           </div>
           
@@ -88,7 +85,7 @@ export function CartSummary({ cart, className }: CartSummaryProps) {
             <div>
               <p className="text-sm font-medium">Pickup di Venue</p>
               <p className="text-xs text-muted-foreground">
-                {isLoading ? 'Loading...' : settings?.eventName || 'PIT PERDAMI 2025'} • Hari ke-3
+                {isLoading ? 'Loading...' : settings?.eventName || 'PIT PERDAMI 2025'}
               </p>
             </div>
           </div>

@@ -1,6 +1,5 @@
 export { BundleMobileCard } from './bundle-mobile-card'
 export { BundleList } from './bundle-list-table'
-export { BundleDetailPage } from './bundle-detail-page'
 export { BundleFormPageNew } from './bundle-form-page-new'
 export { BundleImageUpload } from './bundle-image-upload'
 export { BundleManagementLayout } from './bundle-management-layout'

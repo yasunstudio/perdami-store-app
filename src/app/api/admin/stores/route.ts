@@ -8,9 +8,6 @@ const createStoreSchema = z.object({
   name: z.string().min(1, 'Nama toko wajib diisi'),
   description: z.string().optional(),
   image: z.string().optional(),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  province: z.string().optional(),
   isActive: z.boolean().default(true)
 })
 

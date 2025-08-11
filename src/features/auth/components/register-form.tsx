@@ -7,12 +7,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, UserPlus, Mail, Lock, User, Eye, EyeOff } from 'lucide-react'
+import { Loader2, UserPlus, Mail, Lock, User, Eye, EyeOff, Phone } from 'lucide-react'
 import { z } from 'zod'
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Nama minimal 2 karakter'),
   email: z.string().email('Email tidak valid'),
+  phone: z.string().min(10, 'Nomor telepon minimal 10 digit').regex(/^[0-9+\-\s]+$/, 'Nomor telepon hanya boleh berisi angka, +, -, dan spasi'),
   password: z.string().min(6, 'Password minimal 6 karakter'),
   confirmPassword: z.string()
 }).refine((data) => data.password === data.confirmPassword, {
@@ -40,13 +41,15 @@ export function RegisterForm({ onSuccess, className }: RegisterFormProps) {
     const formData = new FormData(e.currentTarget)
     const name = formData.get('name') as string
     const email = formData.get('email') as string
+    const phone = formData.get('phone') as string
     const password = formData.get('password') as string
     const confirmPassword = formData.get('confirmPassword') as string
 
     // Validate input
     const validation = registerSchema.safeParse({ 
       name, 
-      email, 
+      email,
+      phone,
       password, 
       confirmPassword 
     })
@@ -66,6 +69,7 @@ export function RegisterForm({ onSuccess, className }: RegisterFormProps) {
         body: JSON.stringify({
           name,
           email,
+          phone,
           password,
         }),
       })
@@ -135,6 +139,22 @@ export function RegisterForm({ onSuccess, className }: RegisterFormProps) {
                   name="email"
                   type="email"
                   placeholder="nama@email.com"
+                  className="pl-9 h-10 text-sm rounded-md focus:border-primary"
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-1">
+              <Label htmlFor="phone" className="text-sm font-medium">Nomor Telepon</Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  placeholder="08123456789"
                   className="pl-9 h-10 text-sm rounded-md focus:border-primary"
                   required
                   disabled={isLoading}

@@ -8,9 +8,6 @@ const updateStoreSchema = z.object({
   name: z.string().min(1, 'Nama toko wajib diisi').optional(),
   description: z.string().optional().nullable(),
   image: z.string().optional().nullable(),
-  address: z.string().optional().nullable(),
-  city: z.string().optional().nullable(),
-  province: z.string().optional().nullable(),
   isActive: z.boolean().optional()
 }).refine(
   (data) => {

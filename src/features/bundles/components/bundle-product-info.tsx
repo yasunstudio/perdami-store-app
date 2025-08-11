@@ -88,19 +88,10 @@ export function BundleProductInfo({ bundle }: BundleProductInfoProps) {
               )}
             </div>
             
-            {(bundle.store.address || bundle.store.city) && (
-              <div className="flex items-start gap-2 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                <MapPin className="h-3 w-3 text-gray-500 dark:text-gray-400 mt-0.5 flex-shrink-0" />
-                <div className="text-xs text-gray-600 dark:text-gray-400">
-                  {bundle.store.address && (
-                    <p>{bundle.store.address}</p>
-                  )}
-                  {bundle.store.city && (
-                    <p className="font-medium">{bundle.store.city}</p>
-                  )}
-                </div>
-              </div>
-            )}
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <MapPin className="h-4 w-4" />
+              <span>Venue PIT PERDAMI 2025</span>
+            </div>
           </div>
         </CardContent>
       </Card>

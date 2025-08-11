@@ -15,8 +15,6 @@ export type BundleWithDetails = Prisma.ProductBundleGetPayload<{
         id: true
         name: true
         description: true
-        address: true
-        city: true
       }
     }
   }
@@ -38,9 +36,7 @@ export class BundleService {
             select: {
               id: true,
               name: true,
-              description: true,
-              address: true,
-              city: true
+              description: true
             }
           }
         }
@@ -100,9 +96,7 @@ export class BundleService {
               select: {
                 id: true,
                 name: true,
-                description: true,
-                address: true,
-                city: true
+                description: true
               }
             }
           },
@@ -171,9 +165,7 @@ export class BundleService {
             select: {
               id: true,
               name: true,
-              description: true,
-              address: true,
-              city: true
+              description: true
             }
           }
         }
@@ -214,9 +206,7 @@ export class BundleService {
             select: {
               id: true,
               name: true,
-              description: true,
-              address: true,
-              city: true
+              description: true
             }
           }
         }

@@ -96,9 +96,6 @@ async function seedStoresAndCategories() {
       name: 'Toko Oleh-oleh Bandung',
       description: 'Toko oleh-oleh khas Bandung terlengkap',
       image: '/images/stores/toko-bandung.jpg',
-      address: 'Jl. Asia Afrika No. 123',
-      city: 'Bandung',
-      province: 'Jawa Barat',
       isActive: true,
     },
   })
@@ -110,9 +107,6 @@ async function seedStoresAndCategories() {
       name: 'Warung Khas Sunda',
       description: 'Makanan dan jajanan khas Sunda',
       image: '/images/stores/warung-sunda.jpg',
-      address: 'Jl. Dago No. 456',
-      city: 'Bandung',
-      province: 'Jawa Barat',
       isActive: true,
     },
   })

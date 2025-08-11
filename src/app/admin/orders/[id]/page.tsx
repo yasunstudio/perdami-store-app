@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation'
 import { AdminPageLayout } from '@/components/admin/admin-page-layout'
 import { OrderInformation } from '@/features/admin/components/order-management/order-information'
 import { OrderItems } from '@/features/admin/components/order-management/order-items'
-import { OrderActions } from '@/features/admin/components/order-management/order-actions'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AlertTriangle, ArrowLeft, Package } from 'lucide-react'
@@ -105,16 +104,31 @@ export default function OrderDetailPage() {
       setLoading(true)
       setError(null)
       
-      const response = await fetch(`/api/admin/orders/${orderId}`)
+      console.log('Fetching order details for ID:', orderId)
+      const response = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      })
+      
+      console.log('Response status:', response.status)
       
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error('Order tidak ditemukan')
         }
+        if (response.status === 401) {
+          throw new Error('Anda tidak memiliki akses ke halaman ini')
+        }
+        const errorText = await response.text()
+        console.error('Response error:', errorText)
         throw new Error('Gagal memuat detail order')
       }
       
       const data = await response.json()
+      console.log('Received order data:', data)
       
       // Set order data directly from API response
       setOrder(data)
@@ -233,44 +247,48 @@ export default function OrderDetailPage() {
     >
       <div className="space-y-6">
         {/* Main Content */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          {/* Left Column - Order Details */}
-          <div className="xl:col-span-2 space-y-6">
-            {/* Order Information */}
-            <OrderInformation 
-              order={order}
-              onOrderUpdate={handleOrderUpdate}
-            />
+        <div className="grid grid-cols-1 gap-6">
+          {/* Order Information */}
+          <OrderInformation 
+            order={{
+              id: order.id,
+              orderNumber: order.orderNumber,
+              subtotalAmount: order.totalAmount - 25000, // Assuming 25k service fee
+              serviceFee: 25000,
+              totalAmount: order.totalAmount,
+              orderStatus: order.orderStatus,
+              paymentStatus: order.paymentStatus,
+              paymentMethod: order.paymentMethod,
+              paymentProof: order.paymentProof,
+              notes: order.notes,
+              createdAt: order.createdAt,
+              updatedAt: order.updatedAt,
+              user: order.user,
+              bank: order.bank
+            }}
+            onOrderUpdate={handleOrderUpdate}
+          />
 
-            {/* Order Items */}
-            <OrderItems 
-              order={{
-                id: order.id,
-                orderNumber: order.orderNumber,
-                createdAt: order.createdAt,
-                orderStatus: order.orderStatus,
-                paymentStatus: order.paymentStatus,
-                payment: order.payment ? {
-                  method: order.payment.method
-                } : undefined,
-                user: {
-                  name: order.user.name,
-                  email: order.user.email,
-                  phone: order.user.phone
-                }
-              }}
-              items={order.items}
-              totalAmount={order.totalAmount}
-            />
-          </div>
-
-          {/* Right Column - Actions & Quick Info */}
-          <div className="space-y-6">
-            <OrderActions 
-              order={order}
-              onOrderUpdate={handleOrderUpdate}
-            />
-          </div>
+          {/* Order Items */}
+          <OrderItems 
+            order={{
+              id: order.id,
+              orderNumber: order.orderNumber,
+              createdAt: order.createdAt,
+              orderStatus: order.orderStatus,
+              paymentStatus: order.paymentStatus,
+              payment: order.payment ? {
+                method: order.payment.method
+              } : undefined,
+              user: {
+                name: order.user.name,
+                email: order.user.email,
+                phone: order.user.phone
+              }
+            }}
+            items={order.items}
+            totalAmount={order.totalAmount}
+          />
         </div>
       </div>
     </AdminPageLayout>

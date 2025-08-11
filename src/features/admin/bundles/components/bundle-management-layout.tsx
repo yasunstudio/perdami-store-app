@@ -27,25 +27,17 @@ import {
   Grid3X3,
   List,
   RefreshCw,
-  Package,
-  TrendingUp,
-  AlertTriangle,
   ChevronLeft,
   ChevronRight,
-  Trash2
+  Trash2,
+  AlertTriangle
 } from 'lucide-react'
-import { AdminPageLayout, StatsCard } from '@/components/admin/admin-page-layout'
+import { AdminPageLayout } from '@/components/admin/admin-page-layout'
 import { BundleList } from './bundle-list-table'
 import { BundleMobileCard } from './bundle-mobile-card'
 import { ProductBundleWithRelations } from '../types/bundle.types'
+import { CreateBundleDialog } from './create-bundle-dialog'
 import { toast } from 'sonner'
-
-interface BundleStats {
-  totalBundles: number
-  activeBundles: number
-  inactiveBundles: number
-  totalItems: number
-}
 
 interface BundleFilters {
   search: string
@@ -71,9 +63,7 @@ interface BundleListResponse {
 export function BundleManagementLayout() {
   const router = useRouter()
   const [bundles, setBundles] = useState<BundleListResponse | null>(null)
-  const [stats, setStats] = useState<BundleStats | null>(null)
   const [loading, setLoading] = useState(true)
-  const [statsLoading, setStatsLoading] = useState(true)
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table')
 
   // Delete confirmation state
@@ -110,12 +100,8 @@ export function BundleManagementLayout() {
 
   // Fetch initial data
   useEffect(() => {
-    Promise.all([
-      fetchBundles(),
-      fetchStats()
-    ]).finally(() => {
+    fetchBundles().finally(() => {
       setLoading(false)
-      setStatsLoading(false)
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -150,30 +136,6 @@ export function BundleManagementLayout() {
     }
   }, [filters])
 
-  const fetchStats = useCallback(async () => {
-    try {
-      const response = await fetch('/api/admin/bundles/stats')
-      const result = await response.json()
-      if (response.ok) {
-        setStats({
-          totalBundles: result.total || 0,
-          activeBundles: result.active || 0,
-          inactiveBundles: result.inactive || 0,
-          totalItems: result.featured || 0 // Using featured as proxy for total items
-        })
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error)
-      // Fallback to default stats
-      setStats({
-        totalBundles: 0,
-        activeBundles: 0,
-        inactiveBundles: 0,
-        totalItems: 0
-      })
-    }
-  }, [])
-
   // Handlers
   const handleAddBundle = () => {
     router.push('/admin/bundles/create')
@@ -181,10 +143,6 @@ export function BundleManagementLayout() {
 
   const handleEditBundle = (bundle: ProductBundleWithRelations) => {
     router.push(`/admin/bundles/${bundle.id}/edit`)
-  }
-
-  const handleViewBundle = (bundle: ProductBundleWithRelations) => {
-    router.push(`/admin/bundles/${bundle.id}`)
   }
 
   const handleDeleteBundle = (bundleId: string) => {
@@ -208,11 +166,8 @@ export function BundleManagementLayout() {
 
       if (response.ok) {
         toast.success(result.message || 'Bundle berhasil dihapus')
-        // Refresh both bundles and stats after deletion
-        await Promise.all([
-          fetchBundles(),
-          fetchStats()
-        ])
+        // Refresh bundles after deletion
+        await fetchBundles()
         setDeleteDialogOpen(false)
         setBundleToDelete(null)
       } else {
@@ -234,7 +189,7 @@ export function BundleManagementLayout() {
   const handleToggleStatus = async (bundleId: string, isActive: boolean) => {
     try {
       const response = await fetch(`/api/admin/bundles/${bundleId}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -243,13 +198,16 @@ export function BundleManagementLayout() {
 
       if (response.ok) {
         toast.success(`Bundle berhasil ${isActive ? 'diaktifkan' : 'dinonaktifkan'}`)
-        await Promise.all([
-          fetchBundles(),
-          fetchStats()
-        ])
+        await fetchBundles()
       } else {
-        const result = await response.json()
-        toast.error(result.error || 'Gagal mengubah status bundle')
+        // Check if response has content before parsing JSON
+        const contentType = response.headers.get('content-type')
+        if (contentType && contentType.includes('application/json')) {
+          const result = await response.json()
+          toast.error(result.error || 'Gagal mengubah status bundle')
+        } else {
+          toast.error(`Gagal mengubah status bundle (${response.status})`)
+        }
       }
     } catch (error) {
       console.error('Error toggling bundle status:', error)
@@ -260,7 +218,7 @@ export function BundleManagementLayout() {
   const handleToggleFeatured = async (bundleId: string, isFeatured: boolean) => {
     try {
       const response = await fetch(`/api/admin/bundles/${bundleId}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -269,13 +227,16 @@ export function BundleManagementLayout() {
 
       if (response.ok) {
         toast.success(`Bundle berhasil ${isFeatured ? 'dijadikan featured' : 'dihapus dari featured'}`)
-        await Promise.all([
-          fetchBundles(),
-          fetchStats()
-        ])
+        await fetchBundles()
       } else {
-        const result = await response.json()
-        toast.error(result.error || 'Gagal mengubah status featured bundle')
+        // Check if response has content before parsing JSON
+        const contentType = response.headers.get('content-type')
+        if (contentType && contentType.includes('application/json')) {
+          const result = await response.json()
+          toast.error(result.error || 'Gagal mengubah status featured bundle')
+        } else {
+          toast.error(`Gagal mengubah status featured bundle (${response.status})`)
+        }
       }
     } catch (error) {
       console.error('Error toggling bundle featured status:', error)
@@ -286,7 +247,7 @@ export function BundleManagementLayout() {
   const handleToggleShowToCustomer = async (bundleId: string, showToCustomer: boolean) => {
     try {
       const response = await fetch(`/api/admin/bundles/${bundleId}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -295,13 +256,16 @@ export function BundleManagementLayout() {
 
       if (response.ok) {
         toast.success(`Bundle berhasil ${showToCustomer ? 'ditampilkan ke customer' : 'disembunyikan dari customer'}`)
-        await Promise.all([
-          fetchBundles(),
-          fetchStats()
-        ])
+        await fetchBundles()
       } else {
-        const result = await response.json()
-        toast.error(result.error || 'Gagal mengubah visibilitas bundle ke customer')
+        // Check if response has content before parsing JSON
+        const contentType = response.headers.get('content-type')
+        if (contentType && contentType.includes('application/json')) {
+          const result = await response.json()
+          toast.error(result.error || 'Gagal mengubah visibilitas bundle ke customer')
+        } else {
+          toast.error(`Gagal mengubah visibilitas bundle ke customer (${response.status})`)
+        }
       }
     } catch (error) {
       console.error('Error toggling bundle visibility to customer:', error)
@@ -318,81 +282,24 @@ export function BundleManagementLayout() {
   }
 
   const handleRefresh = async () => {
-    setStatsLoading(true)
+    setLoading(true)
     try {
-      await Promise.all([
-        fetchBundles(),
-        fetchStats()
-      ])
+      await fetchBundles()
       toast.success('Data berhasil dimuat ulang')
     } catch (error) {
       console.error('Error refreshing data:', error)
       toast.error('Gagal memuat ulang data')
     } finally {
-      setStatsLoading(false)
+      setLoading(false)
     }
   }
 
   return (
     <AdminPageLayout 
-      title="Manajemen Bundle" 
+      title="Manajemen Paket Produk" 
       description="Kelola semua bundle produk dan informasinya"
       loading={loading}
     >
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {statsLoading ? (
-          // Loading skeleton for stats cards
-          <>
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-6 border animate-pulse">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
-                  <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                </div>
-                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-16 mb-1"></div>
-                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
-              </div>
-            ))}
-          </>
-        ) : (
-          <>
-            <StatsCard
-              title="Total Bundle"
-              value={stats?.totalBundles?.toString() || "0"}
-              description="Bundle terdaftar"
-              icon={<Package className="h-4 w-4" />}
-            />
-            <StatsCard
-              title="Bundle Aktif"
-              value={stats?.activeBundles?.toString() || "0"}
-              description="Sedang tersedia"
-              icon={<TrendingUp className="h-4 w-4" />}
-              trend={{ 
-                value: stats?.totalBundles ? Math.round((stats.activeBundles / stats.totalBundles) * 100) : 0, 
-                isPositive: true
-              }}
-            />
-            <StatsCard
-              title="Bundle Nonaktif"
-              value={stats?.inactiveBundles?.toString() || "0"}
-              description="Tidak tersedia"
-              icon={<AlertTriangle className="h-4 w-4" />}
-              trend={{ 
-                value: stats?.totalBundles ? Math.round((stats.inactiveBundles / stats.totalBundles) * 100) : 0, 
-                isPositive: false
-              }}
-            />
-            <StatsCard
-              title="Total Item"
-              value={stats?.totalItems?.toString() || "0"}
-              description="Item dalam bundle"
-              icon={<Package className="h-4 w-4" />}
-            />
-          </>
-        )}
-      </div>
-
       {/* Main Content Card */}
       <Card>
         <CardHeader className="pb-4">
@@ -403,20 +310,13 @@ export function BundleManagementLayout() {
                 variant="outline"
                 size="sm"
                 onClick={handleRefresh}
-                disabled={statsLoading}
+                disabled={loading}
                 className="h-8"
               >
-                <RefreshCw className={`h-4 w-4 mr-1 ${statsLoading ? 'animate-spin' : ''}`} />
-                {statsLoading ? 'Memuat...' : 'Refresh'}
+                <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
+                {loading ? 'Memuat...' : 'Refresh'}
               </Button>
-              <Button
-                size="sm"
-                onClick={() => router.push('/admin/bundles/new')}
-                className="h-8"
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Tambah Bundle
-              </Button>
+              <CreateBundleDialog onBundleCreated={fetchBundles} />
             </div>
           </div>
         </CardHeader>
@@ -474,7 +374,6 @@ export function BundleManagementLayout() {
                 className="px-3"
               >
                 <List className="h-4 w-4" />
-                <span className="ml-1 hidden sm:inline">List (10)</span>
               </Button>
               <Button
                 variant={viewMode === 'grid' ? 'default' : 'ghost'}
@@ -483,7 +382,6 @@ export function BundleManagementLayout() {
                 className="px-3"
               >
                 <Grid3X3 className="h-4 w-4" />
-                <span className="ml-1 hidden sm:inline">Grid (12)</span>
               </Button>
             </div>
           </div>
@@ -496,7 +394,7 @@ export function BundleManagementLayout() {
                   <BundleMobileCard
                     key={bundle.id}
                     bundle={bundle}
-                    onView={() => handleViewBundle(bundle)}
+                    onView={() => handleEditBundle(bundle)}
                     onEdit={() => handleEditBundle(bundle)}
                     onDelete={() => handleDeleteBundle(bundle.id)}
                     onToggleStatus={(bundleId: string, isActive: boolean) => handleToggleStatus(bundleId, isActive)}
@@ -510,7 +408,7 @@ export function BundleManagementLayout() {
                 bundles={bundles?.bundles || []}
                 onEdit={handleEditBundle}
                 onDelete={(bundle: ProductBundleWithRelations) => handleDeleteBundle(bundle.id)}
-                onView={handleViewBundle}
+                onView={handleEditBundle}
                 onToggleStatus={(bundleId: string, isActive: boolean) => handleToggleStatus(bundleId, isActive)}
                 onToggleFeatured={(bundleId: string, isFeatured: boolean) => handleToggleFeatured(bundleId, isFeatured)}
                 onToggleShowToCustomer={(bundleId: string, showToCustomer: boolean) => handleToggleShowToCustomer(bundleId, showToCustomer)}

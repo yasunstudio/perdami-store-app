@@ -14,9 +14,6 @@ interface Store {
   name: string
   description: string | null
   image: string | null
-  address: string | null
-  city: string | null
-  province: string | null
   isActive: boolean
 }
 
@@ -143,14 +140,10 @@ export default function StoreDetail({ storeId }: StoreDetailProps) {
                   )}
                 </div>
 
-                <div className="flex items-center text-gray-600 dark:text-gray-400">
-                  <MapPin className="h-4 w-4 mr-2" />
-                  <span>
-                    {store.address ? `${store.address}, ` : ''}
-                    {store.city ? `${store.city}` : 'Lokasi tidak tersedia'}
-                    {store.province ? `, ${store.province}` : ''}
-                  </span>
-                </div>
+                                  <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <p>Venue PIT PERDAMI 2025, Bandung, Jawa Barat</p>
+                  </div>
 
                 <div className="flex items-center text-gray-600 dark:text-gray-400">
                   <Package className="h-4 w-4 mr-2" />

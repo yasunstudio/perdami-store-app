@@ -211,11 +211,9 @@ export function BundleMobileCard({
                 {bundle.store.name}
               </span>
             </div>
-            {bundle.store.city && (
-              <div className="flex items-center">
-                📍 {bundle.store.city}
-              </div>
-            )}
+            <p className="text-xs text-muted-foreground">
+              📍 Venue PIT PERDAMI 2025
+            </p>
           </div>
         )}
         

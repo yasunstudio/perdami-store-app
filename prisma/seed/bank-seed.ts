@@ -129,10 +129,17 @@ export async function seedAppSettings() {
   }
 
   try {
+    // First, get the first bank ID to use as default
+    const firstBank = await prisma.bank.findFirst({
+      where: { isActive: true },
+      orderBy: { createdAt: 'asc' }
+    })
+
     const appSettings = await prisma.appSettings.upsert({
       where: { id: 'main-settings' },
       update: {
-        singleBankMode: false, // Enable multiple banks
+        singleBankMode: true, // Enable single bank mode
+        defaultBankId: firstBank?.id,
         updatedAt: new Date()
       },
       create: {
@@ -148,8 +155,8 @@ export async function seedAppSettings() {
         copyrightText: '© 2025 Perdami Store. Dibuat khusus untuk PIT PERDAMI 2025.',
         copyrightSubtext: 'Semua hak cipta dilindungi.',
         isMaintenanceMode: false,
-        singleBankMode: false, // Multiple banks enabled
-        defaultBankId: null,
+        singleBankMode: true, // Single bank enabled
+        defaultBankId: firstBank?.id,
         isActive: true
       }
     })
@@ -157,6 +164,7 @@ export async function seedAppSettings() {
     console.log('✅ App settings configured:')
     console.log(`   App Name: ${appSettings.appName}`)
     console.log(`   Single Bank Mode: ${appSettings.singleBankMode ? 'Enabled' : 'Disabled'}`)
+    console.log(`   Default Bank ID: ${appSettings.defaultBankId || 'None'}`)
     console.log(`   Event: ${appSettings.eventName}`)
 
   } catch (error: any) {

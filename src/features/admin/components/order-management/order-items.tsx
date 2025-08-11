@@ -4,11 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Package, ExternalLink, ShoppingCart, Store, Download, Printer, Eye } from 'lucide-react'
+import { Package, ShoppingCart, Store, Download, Printer } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import { toast } from 'sonner'
-import { useState } from 'react'
 import Image from 'next/image'
 
 interface OrderItemsProps {
@@ -46,33 +44,25 @@ interface OrderItemsProps {
 }
 
 export function OrderItems({ order, items, totalAmount }: OrderItemsProps) {
-  const [selectedBundle, setSelectedBundle] = useState<typeof items[0]['bundle'] | null>(null)
-  const [showBundleModal, setShowBundleModal] = useState(false)
-  
-  const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-  const tax = 0 // Assuming no tax for now
-  const shipping = 0 // Assuming no shipping for now
-
-  const handleViewBundle = (bundle: typeof items[0]['bundle']) => {
-    try {
-      // Try to open admin bundle page
-      const newWindow = window.open(`/admin/bundles/${bundle.id}`, '_blank')
-      
-      // Check if the window was blocked or failed to open
-      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-        // Fallback to modal view
-        setSelectedBundle(bundle)
-        setShowBundleModal(true)
-        toast.info('Popup diblokir. Menampilkan detail bundle di modal.')
+  // Group items by store
+  const itemsByStore = items.reduce((acc, item) => {
+    const storeId = item.bundle.store.id
+    if (!acc[storeId]) {
+      acc[storeId] = {
+        store: item.bundle.store,
+        items: []
       }
-    } catch (error) {
-      console.error('Error opening bundle page:', error)
-      // Fallback to modal view
-      setSelectedBundle(bundle)
-      setShowBundleModal(true)
-      toast.error('Tidak dapat membuka halaman bundle. Menampilkan di modal.')
     }
-  }
+    acc[storeId].items.push(item)
+    return acc
+  }, {} as Record<string, { store: { id: string; name: string }, items: typeof items }>)
+
+  const stores = Object.values(itemsByStore)
+  const serviceFeePerStore = 25000 // Fixed service fee per store
+  const totalServiceFee = stores.length * serviceFeePerStore
+  const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+  const tax = 0 // No tax for now
+  const shipping = 0 // No shipping for now
 
   const handlePrintInvoice = () => {
     const printWindow = window.open('', '_blank')
@@ -97,19 +87,8 @@ export function OrderItems({ order, items, totalAmount }: OrderItemsProps) {
     try {
       toast.loading('Menyiapkan PDF...', { id: 'pdf-export' })
       
-      // Create a new window for PDF generation
-      const response = await fetch(`/api/admin/orders/${order.id}/export-pdf`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error('Gagal menggenerate PDF')
-      }
-
-      const htmlContent = await response.text()
+      // Generate HTML content locally
+      const htmlContent = generateInvoiceHTML()
       
       // Open new window with invoice content
       const printWindow = window.open('', '_blank')
@@ -132,7 +111,7 @@ export function OrderItems({ order, items, totalAmount }: OrderItemsProps) {
       toast.success('PDF siap untuk disimpan (pilih "Save as PDF" di dialog print)', { id: 'pdf-export' })
     } catch (error) {
       console.error('Error exporting PDF:', error)
-      toast.error('Gagal mengexport PDF', { id: 'pdf-export' })
+      toast.error('Gagal menyiapkan PDF untuk export', { id: 'pdf-export' })
     }
   }
 
@@ -224,18 +203,10 @@ export function OrderItems({ order, items, totalAmount }: OrderItemsProps) {
               <span>Subtotal:</span>
               <span>${formatPrice(subtotal)}</span>
             </div>
-            ${tax > 0 ? `
-              <div class="summary-row">
-                <span>Pajak:</span>
-                <span>${formatPrice(tax)}</span>
-              </div>
-            ` : ''}
-            ${shipping > 0 ? `
-              <div class="summary-row">
-                <span>Ongkir:</span>
-                <span>${formatPrice(shipping)}</span>
-              </div>
-            ` : ''}
+            <div class="summary-row">
+              <span>Ongkos Kirim (${stores.length} toko):</span>
+              <span>${formatPrice(totalServiceFee)}</span>
+            </div>
             <div class="summary-row total">
               <span>TOTAL:</span>
               <span>${formatPrice(totalAmount)}</span>
@@ -259,201 +230,158 @@ export function OrderItems({ order, items, totalAmount }: OrderItemsProps) {
           Item Pesanan ({items.length} item)
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Order Items List */}
+      <CardContent className="space-y-3">
+        {/* Order Items by Store */}
         <div className="space-y-4">
-          {items.map((item) => (
-            <div key={item.id} className="flex flex-col sm:flex-row gap-4 p-4 bg-muted/50 rounded-lg border border-border">
-              {/* Bundle Image */}
-              <div className="flex-shrink-0">
-                <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-muted">
-                  {item.bundle.image ? (
-                    <Image
-                      src={item.bundle.image}
-                      alt={item.bundle.name}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Package className="h-8 w-8 text-muted-foreground" />
+          {stores.map((storeGroup) => {
+            const storeSubtotal = storeGroup.items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+            
+            return (
+              <Card key={storeGroup.store.id} className="border border-border/50 bg-muted/20">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Store className="h-4 w-4 text-primary" />
+                      <CardTitle className="text-base">{storeGroup.store.name}</CardTitle>
+                      <Badge variant="secondary" className="ml-2 text-xs">
+                        {storeGroup.items.length} item
+                      </Badge>
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {/* Items in this store */}
+                  <div className="space-y-2">
+                    {storeGroup.items.map((item) => (
+                      <div key={item.id} className="flex flex-col sm:flex-row gap-3 p-2 bg-background rounded-lg border border-border/50">
+                        {/* Bundle Image */}
+                        <div className="flex-shrink-0">
+                          <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-muted">
+                            {item.bundle.image ? (
+                              <Image
+                                src={item.bundle.image}
+                                alt={item.bundle.name}
+                                fill
+                                className="object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Package className="h-5 w-5 text-muted-foreground" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
-              {/* Bundle Details */}
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                  <div className="space-y-1">
-                    <h4 className="font-medium text-foreground truncate">
-                      {item.bundle.name}
-                    </h4>
-                    
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Store className="h-3 w-3" />
-                      <span>{item.bundle.store?.name || 'Unknown Store'}</span>
-                    </div>
-                    
-                    <div className="text-sm text-muted-foreground">
-                      {formatPrice(item.bundle.price)} per paket
-                    </div>
+                        {/* Bundle Details */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                            <div className="space-y-1 flex-1">
+                              <h4 className="font-medium text-sm text-foreground">
+                                {item.bundle.name}
+                              </h4>
+                              
+                              <div className="text-xs text-muted-foreground">
+                                {formatPrice(item.bundle.price)} per paket
+                              </div>
+                              
+                              <div className="text-xs text-muted-foreground italic">
+                                Produk dari {item.bundle.store.name}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between mt-2 pt-1 border-t border-border">
+                            <div className="flex items-center gap-2">
+                              <ShoppingCart className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-xs text-muted-foreground">
+                                Jumlah: <span className="font-medium">{item.quantity}</span>
+                              </span>
+                            </div>
+                            
+                            <div className="text-right">
+                              <div className="font-medium text-sm text-foreground">
+                                {formatPrice(item.price * item.quantity)}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {item.quantity} × {formatPrice(item.price)}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-1"
-                      onClick={() => handleViewBundle(item.bundle)}
-                    >
-                      <Eye className="h-3 w-3" />
-                      Lihat
-                    </Button>
-                  </div>
-                </div>
+                  <Separator />
 
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
-                  <div className="flex items-center gap-2">
-                    <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
-                      Jumlah: <span className="font-medium">{item.quantity}</span>
-                    </span>
-                  </div>
-                  
-                  <div className="text-right">
-                    <div className="font-medium text-foreground">
-                      {formatPrice(item.price * item.quantity)}
+                  {/* Store Summary */}
+                  <div className="space-y-1 bg-muted/30 p-2 rounded-lg">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Subtotal {storeGroup.store.name}</span>
+                      <span className="text-foreground">{formatPrice(storeSubtotal)}</span>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {item.quantity} × {formatPrice(item.price)}
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Ongkos Kirim</span>
+                      <span className="text-foreground">{formatPrice(serviceFeePerStore)}</span>
+                    </div>
+                    <Separator className="my-1" />
+                    <div className="flex justify-between font-medium text-sm">
+                      <span>Total {storeGroup.store.name}</span>
+                      <span>{formatPrice(storeSubtotal + serviceFeePerStore)}</span>
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
-          ))}
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
 
         <Separator />
 
-        {/* Order Summary */}
-        <div className="space-y-3">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Subtotal</span>
-            <span className="text-foreground">{formatPrice(subtotal)}</span>
-          </div>
-          
-          {tax > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Pajak</span>
-              <span className="text-foreground">{formatPrice(tax)}</span>
+        {/* Grand Total Summary */}
+        <div className="space-y-2 bg-muted/30 p-3 rounded-lg">
+          <h4 className="font-medium text-sm text-foreground">Ringkasan Total</h4>
+          <div className="space-y-1">
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Subtotal Semua Item</span>
+              <span className="text-foreground">{formatPrice(subtotal)}</span>
             </div>
-          )}
-          
-          {shipping > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Ongkir</span>
-              <span className="text-foreground">{formatPrice(shipping)}</span>
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Ongkos Kirim ({stores.length} toko)</span>
+              <span className="text-foreground">{formatPrice(totalServiceFee)}</span>
             </div>
-          )}
-          
-          <Separator />
-          
-          <div className="flex justify-between text-lg font-bold">
-            <span className="text-foreground">Total</span>
-            <span className="text-foreground">{formatPrice(totalAmount)}</span>
+            
+            <Separator />
+            
+            <div className="flex justify-between text-base font-bold">
+              <span className="text-foreground">Total</span>
+              <span className="text-foreground">{formatPrice(totalAmount)}</span>
+            </div>
           </div>
         </div>
 
         {/* Additional Actions */}
-        <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t border-border">
+        <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-border">
           <Button 
             variant="outline" 
             size="sm" 
-            className="flex items-center gap-2 w-full sm:w-auto"
+            className="flex items-center gap-2 w-full sm:w-auto h-8 text-xs"
             onClick={handlePrintInvoice}
           >
-            <Printer className="h-4 w-4" />
+            <Printer className="h-3 w-3" />
             Print Invoice
           </Button>
           <Button 
             variant="outline" 
             size="sm" 
-            className="flex items-center gap-2 w-full sm:w-auto"
+            className="flex items-center gap-2 w-full sm:w-auto h-8 text-xs"
             onClick={handleExportPDF}
           >
-            <Download className="h-4 w-4" />
+            <Download className="h-3 w-3" />
             Export PDF
           </Button>
         </div>
       </CardContent>
-
-      {/* Bundle Detail Modal */}
-      <Dialog open={showBundleModal} onOpenChange={setShowBundleModal}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Detail Bundle
-            </DialogTitle>
-          </DialogHeader>
-          
-          {selectedBundle && (
-            <div className="space-y-4">
-              {/* Bundle Image */}
-              <div className="relative w-full h-48 rounded-lg overflow-hidden bg-muted">
-                {selectedBundle.image ? (
-                  <Image
-                    src={selectedBundle.image}
-                    alt={selectedBundle.name}
-                    fill
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Package className="h-16 w-16 text-muted-foreground" />
-                  </div>
-                )}
-              </div>
-              
-              {/* Bundle Info */}
-              <div className="space-y-3">
-                <div>
-                  <h3 className="font-semibold text-lg">{selectedBundle.name}</h3>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                    <Store className="h-4 w-4" />
-                    <span>{selectedBundle.store.name}</span>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Harga:</span>
-                  <span className="font-semibold text-lg">{formatPrice(selectedBundle.price)}</span>
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => window.open(`/admin/bundles/${selectedBundle.id}`, '_blank')}
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Buka di Tab Baru
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setShowBundleModal(false)}
-                  >
-                    Tutup
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </Card>
   )
 }

@@ -90,16 +90,12 @@ model Store {
   name        String          @unique
   description String?
   image       String?
-  address     String?
-  city        String?         @default("Bandung")
-  province    String?         @default("Jawa Barat")
   isActive    Boolean         @default(true)
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
   bundles     ProductBundle[]
 
   @@index([isActive])
-  @@index([city])
   @@index([createdAt])
   @@map("stores")
 }

@@ -126,7 +126,8 @@ export default function CheckoutPage() {
       const items = cartItems.map(item => ({
         bundleId: item.bundleId,
         quantity: item.quantity,
-        price: item.price
+        unitPrice: item.price,
+        totalPrice: item.price * item.quantity
       }))
 
       // Pre-validate bundles availability

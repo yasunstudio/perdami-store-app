@@ -95,9 +95,7 @@ export async function GET(request: NextRequest) {
             select: {
               id: true,
               name: true,
-              description: true,
-              address: true,
-              city: true
+              description: true
             }
           },
           _count: {
@@ -180,9 +178,7 @@ export async function POST(request: NextRequest) {
             select: {
               id: true,
               name: true,
-              description: true,
-              address: true,
-              city: true
+              description: true
             }
           }
         }

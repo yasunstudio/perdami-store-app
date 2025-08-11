@@ -108,7 +108,7 @@ export function BundleList({
                   {bundle.store.name}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  {bundle.store.city || 'Lokasi tidak tersedia'}
+                  Venue PIT PERDAMI 2025
                 </div>
               </TableCell>
               <TableCell>

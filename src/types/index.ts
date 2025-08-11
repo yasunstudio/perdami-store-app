@@ -47,6 +47,8 @@ export interface Order {
   orderNumber: string
   userId: string
   bankId: string | null
+  subtotalAmount: number
+  serviceFee: number
   totalAmount: number
   orderStatus: OrderStatus
   paymentStatus: PaymentStatus // For backward compatibility in API responses
@@ -60,6 +62,7 @@ export interface Order {
   createdAt: Date
   updatedAt: Date
   customer: Customer
+  user?: Customer // API compatibility - alias for customer
   items: OrderItem[]
   bank?: {
     id: string

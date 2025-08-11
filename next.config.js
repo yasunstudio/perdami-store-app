@@ -13,7 +13,14 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    domains: ['res.cloudinary.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
   },
   // Updated: Fixed serverComponentsExternalPackages config for Next.js 15
   serverExternalPackages: ['@prisma/client'],

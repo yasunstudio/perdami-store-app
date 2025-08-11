@@ -4,9 +4,6 @@ export interface StoreWithRelations {
   name: string
   description?: string | null
   image?: string | null
-  address?: string | null
-  city?: string | null
-  province?: string | null
   isActive: boolean
   createdAt: Date
   updatedAt: Date
@@ -27,30 +24,10 @@ export interface StoreListResponse {
   }
 }
 
-export interface StoreStats {
-  totalStores: number
-  activeStores: number
-  inactiveStores: number
-  recentStores: number
-  storesWithoutBundles: number
-  topStoresByBundles: Array<{
-    id: string
-    name: string
-    _count: {
-      bundles: number
-    }
-  }>
-  topStoresByOrders: StoreWithRelations[]
-  growthRate: number
-}
-
 export interface StoreFormData {
   name: string
   description?: string
   image?: string
-  address?: string
-  city?: string
-  province?: string
   isActive: boolean
 }
 

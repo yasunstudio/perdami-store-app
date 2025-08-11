@@ -98,15 +98,6 @@ export function StoreMobileCard({
           <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
             {store.description || 'Tidak ada deskripsi'}
           </p>
-          {/* Location Info */}
-          {(store.city || store.address) && (
-            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              📍 {store.city && store.province ? `${store.city}, ${store.province}` : ''}
-              {store.address && (
-                <div className="line-clamp-1">{store.address}</div>
-              )}
-            </div>
-          )}
         </div>
         
         {/* Store Statistics */}

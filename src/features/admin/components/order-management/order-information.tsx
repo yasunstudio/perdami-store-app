@@ -32,6 +32,8 @@ interface OrderInformationProps {
   order: {
     id: string
     orderNumber: string
+    subtotalAmount: number
+    serviceFee: number
     totalAmount: number
     orderStatus: string
     paymentStatus: string
@@ -76,6 +78,7 @@ const paymentStatusOptions = [
 export function OrderInformation({ order, onOrderUpdate }: OrderInformationProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
   const [formData, setFormData] = useState({
     orderStatus: order.orderStatus,
     paymentStatus: order.paymentStatus,
@@ -127,12 +130,113 @@ export function OrderInformation({ order, onOrderUpdate }: OrderInformationProps
     }
   }
 
-  const handleDownloadPaymentProof = () => {
-    if (order.paymentProof) {
-      const link = document.createElement('a')
-      link.href = order.paymentProof
-      link.download = `payment-proof-${order.orderNumber}.jpg`
-      link.click()
+  const handleDownloadPaymentProof = async () => {
+    if (order.paymentProof && !isDownloading) {
+      setIsDownloading(true)
+      try {
+        // Determine file extension from URL or default to jpg
+        let fileExtension = 'jpg'
+        const url = order.paymentProof.toLowerCase()
+        if (url.includes('.png')) fileExtension = 'png'
+        else if (url.includes('.gif')) fileExtension = 'gif'
+        else if (url.includes('.webp')) fileExtension = 'webp'
+        else if (url.includes('.pdf')) fileExtension = 'pdf'
+        else if (url.includes('.jpeg') || url.includes('.jpg')) fileExtension = 'jpg'
+
+        const fileName = `payment-proof-${order.orderNumber}.${fileExtension}`
+
+        // Method 1: Try direct download (for same-origin or CORS-enabled resources)
+        try {
+          const response = await fetch(order.paymentProof, {
+            mode: 'cors',
+            credentials: 'omit'
+          })
+          
+          if (response.ok) {
+            const blob = await response.blob()
+            const downloadUrl = window.URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = downloadUrl
+            link.download = fileName
+            link.style.display = 'none'
+            document.body.appendChild(link)
+            link.click()
+            
+            // Clean up
+            setTimeout(() => {
+              if (document.body.contains(link)) {
+                document.body.removeChild(link)
+              }
+              window.URL.revokeObjectURL(downloadUrl)
+            }, 100)
+            
+            toast.success('Bukti pembayaran berhasil didownload')
+            return
+          }
+        } catch (directError) {
+          console.log('Direct download failed, trying proxy method...', directError)
+        }
+
+        // Method 2: Use proxy API for blob download
+        try {
+          const proxyUrl = `/api/admin/download-proof?url=${encodeURIComponent(order.paymentProof)}`
+          
+          const response = await fetch(proxyUrl)
+          if (response.ok) {
+            const blob = await response.blob()
+            const downloadUrl = window.URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = downloadUrl
+            link.download = fileName
+            link.style.display = 'none'
+            document.body.appendChild(link)
+            link.click()
+            
+            // Clean up
+            setTimeout(() => {
+              if (document.body.contains(link)) {
+                document.body.removeChild(link)
+              }
+              window.URL.revokeObjectURL(downloadUrl)
+            }, 100)
+            
+            toast.success('Bukti pembayaran berhasil didownload')
+            return
+          }
+        } catch (proxyError) {
+          console.log('Proxy blob download failed, trying direct link method...', proxyError)
+        }
+
+        // Method 3: Direct link to download endpoint (let browser handle it)
+        const downloadUrl = `/api/admin/download-image?url=${encodeURIComponent(order.paymentProof)}&filename=${encodeURIComponent(fileName)}`
+        const link = document.createElement('a')
+        link.href = downloadUrl
+        link.download = fileName
+        link.style.display = 'none'
+        document.body.appendChild(link)
+        link.click()
+        
+        // Clean up
+        setTimeout(() => {
+          if (document.body.contains(link)) {
+            document.body.removeChild(link)
+          }
+        }, 100)
+        
+        toast.success('Download dimulai...')
+        
+      } catch (error) {
+        console.error('All download methods failed:', error)
+        
+        toast.error('Gagal mendownload bukti pembayaran. Membuka di tab baru...')
+        
+        // Final fallback: open in new tab
+        setTimeout(() => {
+          window.open(order.paymentProof, '_blank')
+        }, 500)
+      } finally {
+        setIsDownloading(false)
+      }
     }
   }
 
@@ -304,10 +408,20 @@ export function OrderInformation({ order, onOrderUpdate }: OrderInformationProps
                       variant="outline"
                       size="sm"
                       onClick={handleDownloadPaymentProof}
+                      disabled={isDownloading}
                       className="flex items-center gap-2 w-full sm:w-auto"
                     >
-                      <Download className="h-4 w-4" />
-                      Download
+                      {isDownloading ? (
+                        <>
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+                          Downloading...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="h-4 w-4" />
+                          Download
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
