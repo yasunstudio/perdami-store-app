@@ -148,16 +148,10 @@ export function FooterContainer() {
                 ) : stores.length > 0 ? (
                   // Dynamic stores from database
                   stores.map((store) => {
-                    // Convert store name to URL slug
-                    const storeSlug = store.name
-                      .toLowerCase()
-                      .replace(/\s+/g, '-')
-                      .replace(/[^a-z0-9-]/g, '')
-                    
                     return (
                       <Link 
                         key={store.id}
-                        href={`/stores?store=${storeSlug}`} 
+                        href={`/stores/${store.id}`} 
                         className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200"
                       >
                         {store.name}
