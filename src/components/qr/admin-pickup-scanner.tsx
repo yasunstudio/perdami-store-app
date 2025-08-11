@@ -34,6 +34,8 @@ interface OrderDetails {
       image?: string;
     };
   }>;
+  subtotalAmount: number;
+  serviceFee: number;
   totalAmount: number;
   orderStatus: string;
   pickupStatus: string;
@@ -617,8 +619,16 @@ export function AdminPickupScanner() {
                   </div>
                 ))}
               </div>
-              <div className="mt-3 pt-3 border-t border-border dark:border-gray-700">
-                <div className="flex justify-between items-center font-bold text-lg text-foreground dark:text-gray-100">
+              <div className="mt-3 pt-3 border-t border-border dark:border-gray-700 space-y-2">
+                <div className="flex justify-between items-center text-sm text-foreground dark:text-gray-200">
+                  <span>Subtotal:</span>
+                  <span>Rp {orderDetails.subtotalAmount.toLocaleString('id-ID')}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm text-foreground dark:text-gray-200">
+                  <span>Biaya Layanan:</span>
+                  <span>Rp {orderDetails.serviceFee.toLocaleString('id-ID')}</span>
+                </div>
+                <div className="flex justify-between items-center font-bold text-lg text-foreground dark:text-gray-100 pt-2 border-t border-border/50 dark:border-gray-700/50">
                   <span>Total:</span>
                   <span>Rp {orderDetails.totalAmount.toLocaleString('id-ID')}</span>
                 </div>

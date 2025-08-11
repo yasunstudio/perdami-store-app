@@ -66,6 +66,8 @@ export async function GET(
         totalPrice: item.totalPrice,
         bundle: item.bundle,
       })),
+      subtotalAmount: order.subtotalAmount,
+      serviceFee: order.serviceFee,
       totalAmount: order.totalAmount,
       orderStatus: order.orderStatus,
       pickupStatus: order.pickupStatus,
