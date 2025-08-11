@@ -176,11 +176,12 @@ export async function PATCH(
 
     const { id } = await params
     const body = await request.json()
-    const { orderStatus, paymentStatus, notes } = body
+    const { orderStatus, paymentStatus, pickupStatus, notes } = body
 
     // Validate status values
     const validOrderStatuses = ['PENDING', 'CONFIRMED', 'PROCESSING', 'READY', 'COMPLETED', 'CANCELLED']
     const validPaymentStatuses = ['PENDING', 'PAID', 'FAILED', 'REFUNDED']
+    const validPickupStatuses = ['NOT_PICKED_UP', 'PICKED_UP']
 
     if (orderStatus && !validOrderStatuses.includes(orderStatus)) {
       return NextResponse.json({ error: 'Invalid order status' }, { status: 400 })
@@ -188,6 +189,10 @@ export async function PATCH(
 
     if (paymentStatus && !validPaymentStatuses.includes(paymentStatus)) {
       return NextResponse.json({ error: 'Invalid payment status' }, { status: 400 })
+    }
+
+    if (pickupStatus && !validPickupStatuses.includes(pickupStatus)) {
+      return NextResponse.json({ error: 'Invalid pickup status' }, { status: 400 })
     }
 
     // Check if order exists
@@ -202,6 +207,7 @@ export async function PATCH(
     // Prepare update data
     const updateData: any = {
       ...(paymentStatus && { paymentStatus: paymentStatus as PaymentStatus }),
+      ...(pickupStatus && { pickupStatus }),
       ...(notes !== undefined && { notes }),
       updatedAt: new Date()
     }

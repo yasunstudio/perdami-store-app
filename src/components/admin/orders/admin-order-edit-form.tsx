@@ -80,6 +80,20 @@ const PICKUP_STATUSES = [
   { value: 'PICKED_UP', label: 'Picked Up', color: 'bg-green-100 text-green-800' },
 ];
 
+// Helper function to get status badge colors
+const getStatusBadgeColor = (status: string, type: 'order' | 'payment' | 'pickup') => {
+  switch (type) {
+    case 'order':
+      return ORDER_STATUSES.find(s => s.value === status)?.color || 'bg-gray-100 text-gray-800';
+    case 'payment':
+      return PAYMENT_STATUSES.find(s => s.value === status)?.color || 'bg-gray-100 text-gray-800';
+    case 'pickup':
+      return PICKUP_STATUSES.find(s => s.value === status)?.color || 'bg-gray-100 text-gray-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
+
 export function AdminOrderEditForm({ orderId }: AdminOrderEditFormProps) {
   const router = useRouter();
   const [order, setOrder] = useState<OrderData | null>(null);
@@ -139,6 +153,7 @@ export function AdminOrderEditForm({ orderId }: AdminOrderEditFormProps) {
       const updateData: any = {
         orderStatus,
         paymentStatus,
+        pickupStatus,
         notes: notes.trim() || null,
       };
 
@@ -148,7 +163,7 @@ export function AdminOrderEditForm({ orderId }: AdminOrderEditFormProps) {
       }
 
       const response = await fetch(`/api/admin/orders/${orderId}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -247,39 +262,73 @@ export function AdminOrderEditForm({ orderId }: AdminOrderEditFormProps) {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Order Status */}
-                <div className="space-y-2">
-                  <Label htmlFor="orderStatus">Status Pesanan</Label>
-                  <Select value={orderStatus} onValueChange={setOrderStatus}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ORDER_STATUSES.map((status) => (
-                        <SelectItem key={status.value} value={status.value}>
-                          <div className="flex items-center gap-2">
-                            <Badge className={`${status.color} text-xs`}>
-                              {status.label}
-                            </Badge>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                {/* Status Cards - Make them more prominent like view page */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg border">
+                  <div className="space-y-3">
+                    <Label htmlFor="orderStatus" className="text-sm font-medium text-muted-foreground">Status Pesanan</Label>
+                    <Select value={orderStatus} onValueChange={setOrderStatus}>
+                      <SelectTrigger className="h-11">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ORDER_STATUSES.map((status) => (
+                          <SelectItem key={status.value} value={status.value}>
+                            <div className="flex items-center gap-2">
+                              <Badge className={`${status.color} text-xs border-0`}>
+                                {status.label}
+                              </Badge>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="text-xs text-muted-foreground">
+                      Status saat ini: <Badge className={`${ORDER_STATUSES.find(s => s.value === orderStatus)?.color} text-xs border-0 ml-1`}>
+                        {ORDER_STATUSES.find(s => s.value === orderStatus)?.label}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label htmlFor="paymentStatus" className="text-sm font-medium text-muted-foreground">Status Pembayaran</Label>
+                    <Select value={paymentStatus} onValueChange={setPaymentStatus}>
+                      <SelectTrigger className="h-11">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PAYMENT_STATUSES.map((status) => (
+                          <SelectItem key={status.value} value={status.value}>
+                            <div className="flex items-center gap-2">
+                              <Badge className={`${status.color} text-xs border-0`}>
+                                {status.label}
+                              </Badge>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="text-xs text-muted-foreground">
+                      Status saat ini: <Badge className={`${PAYMENT_STATUSES.find(s => s.value === paymentStatus)?.color} text-xs border-0 ml-1`}>
+                        {PAYMENT_STATUSES.find(s => s.value === paymentStatus)?.label}
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Payment Status */}
-                <div className="space-y-2">
-                  <Label htmlFor="paymentStatus">Status Pembayaran</Label>
-                  <Select value={paymentStatus} onValueChange={setPaymentStatus}>
-                    <SelectTrigger>
+                <Separator />
+
+                {/* Additional Status - Pickup Status */}
+                <div className="space-y-3">
+                  <Label htmlFor="pickupStatus" className="text-sm font-medium text-muted-foreground">Status Pickup</Label>
+                  <Select value={pickupStatus} onValueChange={setPickupStatus}>
+                    <SelectTrigger className="h-11">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {PAYMENT_STATUSES.map((status) => (
+                      {PICKUP_STATUSES.map((status) => (
                         <SelectItem key={status.value} value={status.value}>
                           <div className="flex items-center gap-2">
-                            <Badge className={`${status.color} text-xs`}>
+                            <Badge className={`${status.color} text-xs border-0`}>
                               {status.label}
                             </Badge>
                           </div>
@@ -287,7 +336,14 @@ export function AdminOrderEditForm({ orderId }: AdminOrderEditFormProps) {
                       ))}
                     </SelectContent>
                   </Select>
+                  <div className="text-xs text-muted-foreground">
+                    Status saat ini: <Badge className={`${PICKUP_STATUSES.find(s => s.value === pickupStatus)?.color} text-xs border-0 ml-1`}>
+                      {PICKUP_STATUSES.find(s => s.value === pickupStatus)?.label}
+                    </Badge>
+                  </div>
                 </div>
+
+                <Separator />
 
                 {/* Pickup Date */}
                 <div className="space-y-2">
