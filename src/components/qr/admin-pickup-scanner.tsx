@@ -43,6 +43,7 @@ interface OrderDetails {
 export function AdminPickupScanner() {
   const [isScanning, setIsScanning] = useState(false);
   const [manualToken, setManualToken] = useState('');
+  const [verifiedToken, setVerifiedToken] = useState<string | null>(null); // Store verified token
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -290,17 +291,46 @@ export function AdminPickupScanner() {
     setOrderDetails(null);
 
     try {
+      console.log('Verifying token:', token);
       const response = await fetch(`/api/pickup/verify/${token}`);
       
+      console.log('Verify response status:', response.status);
+      console.log('Verify response headers:', response.headers.get('content-type'));
+      
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData;
+        const contentType = response.headers.get('content-type');
+        
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            errorData = await response.json();
+          } catch (jsonError) {
+            console.error('Failed to parse error JSON:', jsonError);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+        } else {
+          const textData = await response.text();
+          console.error('Non-JSON error response:', textData);
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
         throw new Error(errorData.error || 'Gagal memverifikasi token');
       }
 
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const textData = await response.text();
+        console.error('Expected JSON but got:', textData);
+        throw new Error('Server mengembalikan response yang tidak valid');
+      }
+
       const data = await response.json();
+      console.log('Verify success:', data);
       setOrderDetails(data);
+      setVerifiedToken(token); // Store the successfully verified token
       toast.success('Order berhasil diverifikasi');
     } catch (error) {
+      console.error('Verify token error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Gagal memverifikasi';
       toast.error(errorMessage);
     } finally {
@@ -309,28 +339,71 @@ export function AdminPickupScanner() {
   };
 
   const confirmPickup = async () => {
-    if (!orderDetails) return;
+    if (!orderDetails || !verifiedToken) {
+      toast.error('Token verifikasi tidak ditemukan. Silakan verifikasi ulang.');
+      return;
+    }
 
     setIsConfirming(true);
 
     try {
-      const token = extractTokenFromText(manualToken) || manualToken;
-      const response = await fetch(`/api/pickup/verify/${token}`, {
+      console.log('Confirming pickup for token:', verifiedToken);
+      
+      const response = await fetch(`/api/pickup/verify/${verifiedToken}`, {
         method: 'POST',
       });
 
+      console.log('Confirm response status:', response.status);
+      console.log('Confirm response headers:', response.headers.get('content-type'));
+
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData;
+        const contentType = response.headers.get('content-type');
+        
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            errorData = await response.json();
+          } catch (jsonError) {
+            console.error('Failed to parse error JSON:', jsonError);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+        } else {
+          const textData = await response.text();
+          console.error('Non-JSON error response:', textData);
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
         throw new Error(errorData.error || 'Gagal konfirmasi pickup');
       }
 
-      const data = await response.json();
+      const contentType = response.headers.get('content-type');
+      let data;
+      
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          data = await response.json();
+          console.log('Confirm success:', data);
+        } catch (jsonError) {
+          console.error('Failed to parse success JSON:', jsonError);
+          // If JSON parsing fails but response was OK, treat as success
+          console.log('Treating as successful despite JSON parse error');
+          data = { success: true };
+        }
+      } else {
+        // If response is not JSON but OK, treat as success
+        const textData = await response.text();
+        console.log('Non-JSON success response:', textData);
+        data = { success: true };
+      }
+
       toast.success('Pickup berhasil dikonfirmasi!');
       
       // Reset state
       setOrderDetails(null);
       setManualToken('');
+      setVerifiedToken(null);
     } catch (error) {
+      console.error('Confirm pickup error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Gagal konfirmasi pickup';
       toast.error(errorMessage);
     } finally {
@@ -341,6 +414,7 @@ export function AdminPickupScanner() {
   const resetVerification = () => {
     setOrderDetails(null);
     setManualToken('');
+    setVerifiedToken(null);
   };
 
   useEffect(() => {
