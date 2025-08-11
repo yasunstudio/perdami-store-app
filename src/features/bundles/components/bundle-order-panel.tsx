@@ -92,18 +92,18 @@ export function BundleOrderPanel({ bundle }: BundleOrderPanelProps) {
   return (
     <div className="space-y-3">
       {/* Sticky Order Card */}
-      <Card className="border border-gray-200 dark:border-gray-700 sticky top-4">
+      <Card className="border border-gray-200 dark:border-gray-700 lg:sticky lg:top-4">
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg font-bold flex items-center gap-2">
-            <ShoppingCart className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            Pesan Sekarang
+          <CardTitle className="text-base sm:text-lg font-bold flex items-center gap-2">
+            <ShoppingCart className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+            <span className="truncate">Pesan Sekarang</span>
           </CardTitle>
         </CardHeader>
         
         <CardContent className="space-y-4">
           {/* Price Display */}
           <div className="space-y-1">
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 text-right">
+            <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 text-right break-words">
               {formatPrice(bundle.price)}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 text-right">
@@ -118,7 +118,7 @@ export function BundleOrderPanel({ bundle }: BundleOrderPanelProps) {
             <label className="text-sm font-medium text-gray-900 dark:text-white">
               Jumlah:
             </label>
-            <div className="flex items-center justify-center border border-gray-300 dark:border-gray-600 rounded-md w-32 mx-auto">
+            <div className="flex items-center justify-center border border-gray-300 dark:border-gray-600 rounded-md w-28 sm:w-32 mx-auto">
               <Button
                 variant="ghost"
                 size="sm"
@@ -129,7 +129,7 @@ export function BundleOrderPanel({ bundle }: BundleOrderPanelProps) {
                 <Minus className="h-3 w-3" />
               </Button>
               <div className="flex-1 h-8 flex items-center justify-center border-x border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
-                <span className="text-sm font-medium min-w-[24px] text-center">
+                <span className="text-sm font-medium min-w-[20px] text-center">
                   {quantity}
                 </span>
               </div>
@@ -147,9 +147,9 @@ export function BundleOrderPanel({ bundle }: BundleOrderPanelProps) {
           {/* Total Calculator - Only show if quantity > 1 */}
           {quantity > 1 && (
             <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-              <div className="flex justify-between items-center text-base font-bold">
-                <span>Total ({quantity} paket):</span>
-                <span className="text-blue-600 dark:text-blue-400">
+              <div className="flex justify-between items-center text-sm sm:text-base font-bold">
+                <span className="break-words">Total ({quantity} paket):</span>
+                <span className="text-blue-600 dark:text-blue-400 break-words">
                   {formatPrice(totalPrice)}
                 </span>
               </div>
@@ -160,21 +160,21 @@ export function BundleOrderPanel({ bundle }: BundleOrderPanelProps) {
           <Button
             onClick={handleAddToCart}
             disabled={isLoading}
-            className="w-full h-10 text-sm font-semibold"
+            className="w-full h-10 text-xs sm:text-sm font-semibold"
             size="default"
           >
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            {isLoading ? 'Menambahkan...' : 'Tambah ke Keranjang'}
+            <ShoppingCart className="h-4 w-4 mr-2 flex-shrink-0" />
+            <span className="truncate">{isLoading ? 'Menambahkan...' : 'Tambah ke Keranjang'}</span>
           </Button>
 
           {/* Additional Info - Streamlined */}
-          <div className="flex items-center justify-center gap-4 text-xs text-gray-600 dark:text-gray-400">
+          <div className="flex items-center justify-center gap-2 sm:gap-4 text-xs text-gray-600 dark:text-gray-400">
             <div className="flex items-center gap-1">
-              <Package className="h-3 w-3" />
+              <Package className="h-3 w-3 flex-shrink-0" />
               <span>Siap pesan</span>
             </div>
             <div className="flex items-center gap-1">
-              <Truck className="h-3 w-3" />
+              <Truck className="h-3 w-3 flex-shrink-0" />
               <span>Ambil di toko</span>
             </div>
           </div>
