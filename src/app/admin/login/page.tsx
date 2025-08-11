@@ -112,16 +112,18 @@ export default function AdminLoginPage() {
             </Button>
           </form>
           
-          <div className="mt-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-blue-800">
-                <p className="font-medium">Kredensial Default Admin:</p>
-                <p>Email: admin@perdami.com</p>
-                <p>Password: perdami123</p>
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-blue-800">
+                  <p className="font-medium">Development Mode - Default Admin:</p>
+                  <p>Email: admin@perdami.com</p>
+                  <p>Password: perdami123</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>

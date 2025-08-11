@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { signIn, getSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -24,9 +24,45 @@ interface LoginFormProps {
 export function LoginForm({ onSuccess, className }: LoginFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
+
+  // Handle URL parameters for messages
+  useEffect(() => {
+    const urlMessage = searchParams?.get('message')
+    const urlError = searchParams?.get('error')
+
+    if (urlMessage) {
+      switch (urlMessage) {
+        case 'registered':
+          setMessage('Registrasi berhasil! Silakan login dengan akun Anda.')
+          break
+        case 'verified':
+          setMessage('Email berhasil diverifikasi! Silakan login.')
+          break
+        case 'logout':
+          setMessage('Anda telah berhasil logout.')
+          break
+        default:
+          setMessage(decodeURIComponent(urlMessage))
+      }
+    }
+
+    if (urlError) {
+      switch (urlError) {
+        case 'CredentialsSignin':
+          setError('Email atau password yang Anda masukkan tidak valid.')
+          break
+        case 'AccessDenied':
+          setError('Akses ditolak. Anda tidak memiliki izin untuk masuk.')
+          break
+        default:
+          setError('Terjadi kesalahan saat login. Silakan coba lagi.')
+      }
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -61,11 +97,25 @@ export function LoginForm({ onSuccess, className }: LoginFormProps) {
       if (result?.error) {
         console.error('Login error:', result.error)
         
-        // More specific error messages
-        if (result.error === 'CredentialsSignin') {
-          setError('Email atau password salah. Pastikan menggunakan: admin@perdami.com / perdami123')
-        } else {
-          setError(`Login gagal: ${result.error}`)
+        // Professional error messages based on error type
+        switch (result.error) {
+          case 'CredentialsSignin':
+            setError('Email atau password yang Anda masukkan tidak valid. Silakan periksa kembali kredensial Anda.')
+            break
+          case 'EmailNotVerified':
+            setError('Email Anda belum terverifikasi. Silakan periksa email untuk link verifikasi.')
+            break
+          case 'AccountNotLinked':
+            setError('Akun dengan email ini sudah terdaftar dengan metode login yang berbeda.')
+            break
+          case 'AccessDenied':
+            setError('Akses ditolak. Anda tidak memiliki izin untuk masuk ke sistem ini.')
+            break
+          case 'Default':
+            setError('Terjadi kesalahan yang tidak diketahui. Silakan coba lagi.')
+            break
+          default:
+            setError('Terjadi kesalahan saat login. Silakan coba lagi.')
         }
       } else if (result?.ok) {
         console.log('Login successful!')
@@ -120,6 +170,12 @@ export function LoginForm({ onSuccess, className }: LoginFormProps) {
       </CardHeader>
       <CardContent className="space-y-4 px-4 pb-6">
         <form onSubmit={handleSubmit} className="space-y-4">
+          {message && (
+            <Alert>
+              <AlertDescription>{message}</AlertDescription>
+            </Alert>
+          )}
+          
           {error && (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
