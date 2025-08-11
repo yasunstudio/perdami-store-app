@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { AdminPageLayout } from '@/components/admin/admin-page-layout'
 import { OrderInformation } from '@/features/admin/components/order-management/order-information'
 import { OrderItems } from '@/features/admin/components/order-management/order-items'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { AlertTriangle, ArrowLeft, Package } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Package, Edit } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 
@@ -244,6 +245,14 @@ export default function OrderDetailPage() {
       showBackButton={true}
       backUrl="/admin/orders"
       onRefresh={handleOrderUpdate}
+      actions={
+        <Button size="sm" asChild>
+          <Link href={`/admin/orders/${order.id}/edit`}>
+            <Edit className="h-4 w-4 mr-2" />
+            Edit
+          </Link>
+        </Button>
+      }
     >
       <div className="space-y-6">
         {/* Main Content */}

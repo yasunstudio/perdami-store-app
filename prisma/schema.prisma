@@ -145,27 +145,27 @@ model Bank {
 }
 
 model Order {
-  id                   String        @id @default(cuid())
-  orderNumber          String        @unique
-  userId               String
-  bankId               String?
-  subtotalAmount       Float
-  serviceFee           Float         @default(25000)
-  totalAmount          Float
-  orderStatus          OrderStatus   @default(PENDING)
-  paymentStatus        PaymentStatus @default(PENDING)
-  pickupMethod         PickupMethod  @default(VENUE)
-  pickupDate           DateTime?
-  pickupStatus         PickupStatus  @default(NOT_PICKED_UP)
-  pickupVerificationToken String?    @unique
-  paymentProofUrl      String?
-  notes                String?
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
-  orderItems           OrderItem[]
-  bank                 Bank?         @relation(fields: [bankId], references: [id])
-  user                 User          @relation(fields: [userId], references: [id])
-  payment              Payment?
+  id                      String        @id @default(cuid())
+  orderNumber             String        @unique
+  userId                  String
+  bankId                  String?
+  subtotalAmount          Float
+  serviceFee              Float         @default(25000)
+  totalAmount             Float
+  orderStatus             OrderStatus   @default(PENDING)
+  paymentStatus           PaymentStatus @default(PENDING)
+  pickupMethod            PickupMethod  @default(VENUE)
+  pickupDate              DateTime?
+  pickupStatus            PickupStatus  @default(NOT_PICKED_UP)
+  paymentProofUrl         String?
+  notes                   String?
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+  pickupVerificationToken String?       @unique
+  orderItems              OrderItem[]
+  bank                    Bank?         @relation(fields: [bankId], references: [id])
+  user                    User          @relation(fields: [userId], references: [id])
+  payment                 Payment?
 
   @@index([userId])
   @@index([orderNumber])
