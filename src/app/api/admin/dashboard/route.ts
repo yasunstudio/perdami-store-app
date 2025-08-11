@@ -32,7 +32,7 @@ export async function GET() {
       }
     });
 
-    // Get popular bundles with store details
+    // Get popular bundles with store details and calculate actual sales
     const popularBundles = await prisma.productBundle.findMany({
       take: 5,
       where: { showToCustomer: true },
@@ -42,11 +42,21 @@ export async function GET() {
           select: {
             name: true
           }
+        },
+        orderItems: {
+          select: {
+            quantity: true,
+            order: {
+              select: {
+                orderStatus: true
+              }
+            }
+          }
         }
       }
     });
 
-    // Format data for response
+    // Format recent orders
     const formattedOrders = recentOrders.map(order => ({
       id: order.id,
       orderNumber: order.orderNumber,
@@ -59,17 +69,27 @@ export async function GET() {
       createdAt: order.createdAt
     }));
 
-    const formattedBundles = popularBundles.map((bundle, index) => ({
-      id: bundle.id,
-      name: bundle.name,
-      price: parseFloat(bundle.price.toString()),
-      image: bundle.image,
-      storeName: bundle.store?.name || 'Unknown Store',
-      description: bundle.description?.substring(0, 100) || 'No description',
-      totalSold: Math.floor(Math.random() * 50) + 10,
-      revenue: parseFloat(bundle.price.toString()) * (Math.floor(Math.random() * 50) + 10),
-      isFeatured: index < 2
-    }));
+    // Format bundles with actual sales calculation
+    const formattedBundles = popularBundles.map((bundle, index) => {
+      // Calculate total sold from completed orders only
+      const totalSold = bundle.orderItems
+        .filter(item => item.order.orderStatus === 'COMPLETED')
+        .reduce((sum, item) => sum + item.quantity, 0);
+      
+      const actualRevenue = parseFloat(bundle.price.toString()) * totalSold;
+
+      return {
+        id: bundle.id,
+        name: bundle.name,
+        price: parseFloat(bundle.price.toString()),
+        image: bundle.image,
+        storeName: bundle.store?.name || 'Unknown Store',
+        description: bundle.description?.substring(0, 100) || 'No description',
+        totalSold,
+        revenue: actualRevenue,
+        isFeatured: index < 2
+      };
+    });
 
     // Calculate revenue stats
     const totalRevenue = formattedOrders.reduce((sum: number, order: any) => sum + order.totalAmount, 0);
