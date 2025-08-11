@@ -10,13 +10,14 @@ export async function GET() {
     console.log(`✅ Prisma Postgres connected, ${userCount} users found`);
 
     // Get basic stats using Prisma ORM (no more prepared statement issues!)
-    const [totalUsers, totalBundles, totalOrders] = await Promise.all([
+    const [totalUsers, totalBundles, totalOrders, totalStores] = await Promise.all([
       prisma.user.count(),
       prisma.productBundle.count(),
-      prisma.order.count()
+      prisma.order.count(),
+      prisma.store.count()
     ]);
 
-    console.log('📊 Stats retrieved via Prisma ORM:', { totalUsers, totalBundles, totalOrders });
+    console.log('📊 Stats retrieved via Prisma ORM:', { totalUsers, totalBundles, totalOrders, totalStores });
 
     // Get recent orders with user details (Prisma ORM works perfectly now)
     const recentOrders = await prisma.order.findMany({
@@ -34,9 +35,7 @@ export async function GET() {
 
     // Get popular bundles with store details and calculate actual sales
     const popularBundles = await prisma.productBundle.findMany({
-      take: 5,
       where: { showToCustomer: true },
-      orderBy: { price: 'desc' },
       include: {
         store: {
           select: {
@@ -69,7 +68,7 @@ export async function GET() {
       createdAt: order.createdAt
     }));
 
-    // Format bundles with actual sales calculation
+    // Format bundles with actual sales calculation and sort by totalSold
     const formattedBundles = popularBundles.map((bundle, index) => {
       // Calculate total sold from completed orders only
       const totalSold = bundle.orderItems
@@ -87,9 +86,15 @@ export async function GET() {
         description: bundle.description?.substring(0, 100) || 'No description',
         totalSold,
         revenue: actualRevenue,
-        isFeatured: index < 2
+        isFeatured: false // Will be set after sorting
       };
-    });
+    })
+    .sort((a, b) => b.totalSold - a.totalSold) // Sort by totalSold descending
+    .slice(0, 5) // Take top 5
+    .map((bundle, index) => ({
+      ...bundle,
+      isFeatured: index < 2 // Mark first 2 as featured
+    }));
 
     // Calculate revenue stats
     const totalRevenue = formattedOrders.reduce((sum: number, order: any) => sum + order.totalAmount, 0);
@@ -101,7 +106,7 @@ export async function GET() {
         totalUsers,
         totalProducts: totalBundles,
         totalOrders,
-        totalStores: 1,
+        totalStores,
         totalRevenue,
         pendingOrders,
         completedOrders,
@@ -114,7 +119,7 @@ export async function GET() {
       popularProducts: formattedBundles
     };
 
-    console.log(`✅ Dashboard data prepared successfully - ${totalUsers} users, ${totalBundles} bundles, ${totalOrders} orders`);
+    console.log(`✅ Dashboard data prepared successfully - ${totalUsers} users, ${totalBundles} bundles, ${totalOrders} orders, ${totalStores} stores`);
 
     return NextResponse.json(dashboardData);
 
