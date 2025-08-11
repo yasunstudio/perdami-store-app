@@ -175,7 +175,7 @@ export function BundleOrderPanel({ bundle }: BundleOrderPanelProps) {
             </div>
             <div className="flex items-center gap-1">
               <Truck className="h-3 w-3 flex-shrink-0" />
-              <span>Ambil di toko</span>
+              <span>Ambil di Venue</span>
             </div>
           </div>
         </CardContent>
