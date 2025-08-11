@@ -91,14 +91,14 @@ export function StoreList({
     <div className="space-y-4">
       <div className="rounded-md border overflow-hidden">
         <div className="overflow-x-auto">
-          <Table className="w-full min-w-[570px]">
+          <Table className="w-full min-w-[450px]">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[200px]">Toko</TableHead>
-                <TableHead className="w-[100px]">Status</TableHead>
-                <TableHead className="w-[80px]">Bundle</TableHead>
-                <TableHead className="w-[120px]">Dibuat</TableHead>
-                <TableHead className="w-[70px]">Aksi</TableHead>
+                <TableHead className="w-[150px]">Toko</TableHead>
+                <TableHead className="w-[80px]">Status</TableHead>
+                <TableHead className="w-[60px]">Bundle</TableHead>
+                <TableHead className="w-[100px]">Dibuat</TableHead>
+                <TableHead className="w-[60px]">Aksi</TableHead>
               </TableRow>
             </TableHeader>
           <TableBody>
@@ -106,32 +106,29 @@ export function StoreList({
               <TableRow key={store.id}>
                 <TableCell>
                   <div className="flex items-center space-x-2">
-                    <Avatar className="h-8 w-8 flex-shrink-0">
+                    <Avatar className="h-6 w-6 flex-shrink-0">
                       <AvatarImage src={store.image || undefined} alt={store.name} />
                       <AvatarFallback className="text-xs">
                         {store.name.substring(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0 flex-1">
-                      <div className="font-medium text-sm truncate">{store.name}</div>
-                      {store.description && (
-                        <div className="text-xs text-muted-foreground truncate">
-                          {store.description}
-                        </div>
-                      )}
+                      <div className="font-medium text-xs truncate" title={store.name}>
+                        {store.name}
+                      </div>
                     </div>
                   </div>
                 </TableCell>
                 <TableCell>
                   <Badge 
                     variant={store.isActive ? 'default' : 'secondary'}
-                    className={`text-xs ${store.isActive ? 'bg-green-100 text-green-800 hover:bg-green-100' : ''}`}
+                    className={`text-xs px-1 py-0.5 ${store.isActive ? 'bg-green-100 text-green-800 hover:bg-green-100' : ''}`}
                   >
-                    {store.isActive ? 'Aktif' : 'Nonaktif'}
+                    {store.isActive ? 'Aktif' : 'Tidak'}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-center">
-                  <span className="text-sm font-medium">
+                  <span className="text-xs font-medium">
                     {store.bundleCount || store._count?.bundles || 0}
                   </span>
                 </TableCell>
