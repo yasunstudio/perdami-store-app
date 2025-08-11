@@ -52,104 +52,67 @@ export function BundleList({
 
   return (
     <div className="space-y-4">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Bundle</TableHead>
-            <TableHead className="text-center">Items</TableHead>
-            <TableHead>Harga</TableHead>
-            <TableHead>Toko</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Aksi</TableHead>
-          </TableRow>
-        </TableHeader>
+      <div className="rounded-md border overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table className="w-full min-w-[500px]">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[160px]">Bundle</TableHead>
+                <TableHead className="w-[70px] text-center">Items</TableHead>
+                <TableHead className="w-[100px]">Harga</TableHead>
+                <TableHead className="w-[110px]">Toko</TableHead>
+                <TableHead className="w-[120px]">Status</TableHead>
+                <TableHead className="w-[60px]">Aksi</TableHead>
+              </TableRow>
+            </TableHeader>
         <TableBody>
           {bundles.map((bundle) => (
             <TableRow key={bundle.id}>
               <TableCell>
-                <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0 h-10 w-10">
+                <div className="flex items-center gap-2">
+                  <div className="flex-shrink-0 h-6 w-6">
                     <img
-                      className="h-10 w-10 rounded-lg object-cover"
+                      className="h-6 w-6 rounded object-cover"
                       src={bundle.image || '/images/products/placeholder.jpg'}
                       alt={bundle.name}
                     />
                   </div>
-                  <div>
-                    <div className="font-medium">{bundle.name}</div>
-                    {bundle.description && (
-                      <div className="text-sm text-muted-foreground line-clamp-1">
-                        {bundle.description}
-                      </div>
-                    )}
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium text-xs truncate" title={bundle.name}>
+                      {bundle.name}
+                    </div>
                   </div>
                 </div>
               </TableCell>
               <TableCell className="text-center">
-                <div 
-                  className="flex items-center justify-center gap-2 cursor-help" 
-                  title={`Bundle ini berisi ${bundle.contents?.length || 0} produk`}
-                >
-                  <div className="flex items-center justify-center w-8 h-8 bg-blue-50 dark:bg-blue-900/20 rounded-full">
-                    <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <span className="font-medium text-sm">
-                    {bundle.contents?.length || 0}
-                  </span>
+                <span className="font-medium text-xs" title={`Bundle ini berisi ${bundle.contents?.length || 0} produk`}>
+                  {bundle.contents?.length || 0}
+                </span>
+              </TableCell>
+              <TableCell>
+                <div className="font-medium text-xs">
+                  Rp {(bundle.price / 1000).toFixed(0)}K
                 </div>
               </TableCell>
               <TableCell>
-                <div className="font-medium">
-                  Rp {bundle.price.toLocaleString('id-ID')}
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="font-medium text-gray-900 dark:text-gray-100">
+                <div className="font-medium text-xs truncate" title={bundle.store.name}>
                   {bundle.store.name}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Venue PIT PERDAMI 2025
                 </div>
               </TableCell>
               <TableCell>
                 <div className="flex flex-col gap-1">
-                  {/* Primary Status */}
                   <Badge 
                     variant={bundle.isActive ? 'default' : 'secondary'}
-                    className={`text-xs w-fit ${bundle.isActive ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800' : 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800'}`}
+                    className={`text-xs px-1 py-0.5 w-fit ${bundle.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
                   >
-                    {bundle.isActive ? 'Aktif' : 'Nonaktif'}
+                    {bundle.isActive ? 'Aktif' : 'Tidak'}
                   </Badge>
-                  
-                  {/* Secondary Status Badges */}
-                  <div className="flex gap-1 flex-wrap">
-                    {bundle.isFeatured && (
-                      <Badge 
-                        variant="outline"
-                        className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800"
-                        title="Bundle ini ditampilkan sebagai featured"
-                      >
-                        ⭐ Featured
-                      </Badge>
-                    )}
-                    {bundle.showToCustomer ? (
-                      <Badge 
-                        variant="outline"
-                        className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800"
-                        title="Bundle ini terlihat oleh customer"
-                      >
-                        👁️ Visible
-                      </Badge>
-                    ) : (
-                      <Badge 
-                        variant="outline"
-                        className="text-xs bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700"
-                        title="Bundle ini disembunyikan dari customer"
-                      >
-                        🙈 Hidden
-                      </Badge>
-                    )}
-                  </div>
+                  {(bundle.isFeatured || !bundle.showToCustomer) && (
+                    <div className="flex gap-1 text-xs">
+                      {bundle.isFeatured && <span title="Featured">⭐</span>}
+                      {!bundle.showToCustomer && <span title="Hidden">�</span>}
+                    </div>
+                  )}
                 </div>
               </TableCell>
               <TableCell>
@@ -228,6 +191,8 @@ export function BundleList({
           ))}
         </TableBody>
       </Table>
+        </div>
+      </div>
     </div>
   )
 }
