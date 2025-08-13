@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,8 +13,13 @@ import { Loader2, Mail, Phone, MessageCircle, MapPin, Facebook, Instagram, Twitt
 import { useContactInfo, ContactInfo } from '@/hooks/use-contact-info'
 
 export function ContactInfoManager() {
+  const router = useRouter()
   const { contactInfo, isLoading, fetchContactInfo } = useContactInfo()
   const [isUpdating, setIsUpdating] = useState(false)
+
+  const handleEditContact = (contactId: string) => {
+    router.push(`/admin/contact/${contactId}/edit`)
+  }
 
   const getContactsByType = (type: string) => {
     return contactInfo.filter(item => item.type === type)
@@ -55,7 +61,7 @@ export function ContactInfoManager() {
         <span className="text-xs text-muted-foreground">
           Updated: {new Date(contact.updatedAt).toLocaleDateString('id-ID')}
         </span>
-        <Button size="sm" variant="outline">
+        <Button size="sm" variant="outline" onClick={() => handleEditContact(contact.id)}>
           <Edit2 className="h-3 w-3 mr-1" />
           Edit
         </Button>
