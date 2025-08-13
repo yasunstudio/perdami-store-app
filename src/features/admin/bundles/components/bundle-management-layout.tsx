@@ -36,7 +36,6 @@ import { AdminPageLayout } from '@/components/admin/admin-page-layout'
 import { BundleList } from './bundle-list-table'
 import { BundleMobileCard } from './bundle-mobile-card'
 import { ProductBundleWithRelations } from '../types/bundle.types'
-import { CreateBundleDialog } from './create-bundle-dialog'
 import { toast } from 'sonner'
 
 interface BundleFilters {
@@ -138,7 +137,7 @@ export function BundleManagementLayout() {
 
   // Handlers
   const handleAddBundle = () => {
-    router.push('/admin/bundles/create')
+    router.push('/admin/bundles/new')
   }
 
   const handleEditBundle = (bundle: ProductBundleWithRelations) => {
@@ -316,7 +315,14 @@ export function BundleManagementLayout() {
                 <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
                 {loading ? 'Memuat...' : 'Refresh'}
               </Button>
-              <CreateBundleDialog onBundleCreated={fetchBundles} />
+              <Button
+                size="sm"
+                onClick={handleAddBundle}
+                className="h-8"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Tambah Bundle
+              </Button>
             </div>
           </div>
         </CardHeader>
