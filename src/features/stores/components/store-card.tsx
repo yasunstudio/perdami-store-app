@@ -14,13 +14,13 @@ export function StoreCard({ store }: StoreCardProps) {
   return (
     <Card className="group hover:shadow-lg transition-shadow duration-300">
       <CardHeader className="pb-3">
-        <div className="aspect-video bg-muted rounded-lg mb-4 flex items-center justify-center overflow-hidden">
+        <div className="aspect-square bg-muted rounded-lg mb-4 flex items-center justify-center overflow-hidden">
           {store.image ? (
             <Image 
               src={store.image} 
               alt={store.name}
               width={400}
-              height={200}
+              height={400}
               className="w-full h-full object-cover"
             />
           ) : (
