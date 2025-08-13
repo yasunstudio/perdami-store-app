@@ -19,6 +19,7 @@ import {
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu'
 import { MoreHorizontal, Edit, Trash2, Eye, Power, PowerOff, Star, StarOff, Users, UserX, Package, ShoppingBag } from 'lucide-react'
+import { formatPrice } from '@/lib/utils'
 import { ProductBundleWithRelations } from '../types/bundle.types'
 
 interface BundleListTableProps {
@@ -91,7 +92,7 @@ export function BundleList({
               </TableCell>
               <TableCell>
                 <div className="font-medium text-xs">
-                  Rp {(bundle.price / 1000).toFixed(0)}K
+                  {formatPrice(bundle.price)}
                 </div>
               </TableCell>
               <TableCell>
