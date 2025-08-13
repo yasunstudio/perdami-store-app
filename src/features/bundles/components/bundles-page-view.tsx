@@ -24,13 +24,32 @@ interface BundlesResponse {
   }
 }
 
+interface Store {
+  id: string
+  name: string
+}
+
 export function BundlesPageView() {
   const [bundles, setBundles] = useState<BundlesResponse['bundles']>([])
+  const [stores, setStores] = useState<Store[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedStore, setSelectedStore] = useState('all')
   const [sortBy, setSortBy] = useState('newest')
   const [currentPage, setCurrentPage] = useState(1)
   const [pagination, setPagination] = useState<BundlesResponse['pagination'] | null>(null)
+
+  const fetchStores = async () => {
+    try {
+      const response = await fetch('/api/stores?status=active')
+      if (response.ok) {
+        const data = await response.json()
+        setStores(data.data || [])
+      }
+    } catch (error) {
+      console.error('Error fetching stores:', error)
+    }
+  }
 
   const fetchBundles = async () => {
     try {
@@ -40,6 +59,11 @@ export function BundlesPageView() {
         limit: '12',
         sort: sortBy,
       })
+
+      // Add store filter if not 'all'
+      if (selectedStore !== 'all') {
+        params.append('storeId', selectedStore)
+      }
 
       console.log('Fetching bundles with params:', params.toString())
 
@@ -74,13 +98,28 @@ export function BundlesPageView() {
   }
 
   useEffect(() => {
+    fetchStores()
+  }, [])
+
+  useEffect(() => {
     fetchBundles()
-  }, [currentPage, sortBy])
+  }, [currentPage, sortBy, selectedStore])
 
   const filteredBundles = bundles.filter(bundle =>
     bundle.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     bundle.description?.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  // Reset to first page when filters change
+  const handleStoreChange = (value: string) => {
+    setSelectedStore(value)
+    setCurrentPage(1)
+  }
+
+  const handleSortChange = (value: string) => {
+    setSortBy(value)
+    setCurrentPage(1)
+  }
 
   return (
     <div className="py-8 px-4">
@@ -97,7 +136,8 @@ export function BundlesPageView() {
 
         <div className="mt-8 space-y-6">
           {/* Search and Filters */}
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search Input */}
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
               <Input
@@ -108,8 +148,24 @@ export function BundlesPageView() {
               />
             </div>
             
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-full md:w-48">
+            {/* Store Filter */}
+            <Select value={selectedStore} onValueChange={handleStoreChange}>
+              <SelectTrigger className="w-full lg:w-48">
+                <SelectValue placeholder="Pilih Toko" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Toko</SelectItem>
+                {stores.map(store => (
+                  <SelectItem key={store.id} value={store.id}>
+                    {store.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Sort Filter */}
+            <Select value={sortBy} onValueChange={handleSortChange}>
+              <SelectTrigger className="w-full lg:w-48">
                 <Filter className="w-4 h-4 mr-2" />
                 <SelectValue />
               </SelectTrigger>

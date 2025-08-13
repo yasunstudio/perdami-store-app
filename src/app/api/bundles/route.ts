@@ -7,6 +7,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const featured = searchParams.get('featured')
     const store = searchParams.get('store')
+    const storeId = searchParams.get('storeId')
     const limit = parseInt(searchParams.get('limit') || '12')
     const page = parseInt(searchParams.get('page') || '1')
     const sort = searchParams.get('sort') || 'newest'
@@ -17,6 +18,7 @@ export async function GET(request: Request) {
       isActive: true,
       ...(featured === 'true' && { isFeatured: true }),
       ...(store && { storeId: store }),
+      ...(storeId && { storeId: storeId }),
     }
 
     // 🚨 BUNDLE-ONLY LOGIC: Customers can only see bundles marked as showToCustomer
