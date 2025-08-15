@@ -80,24 +80,27 @@ export function BundleFormPageNew({ mode = 'create', bundleId, initialData }: Bu
           const response = await fetch(`/api/admin/bundles/${bundleId}`)
           if (response.ok) {
             const bundleData = await response.json()
+            console.log('Fetched bundle data:', bundleData) // Debug log
             setBundle(bundleData)
             setFormData({
               name: bundleData.name || '',
               description: bundleData.description || '',
-              price: bundleData.price || 0,
+              price: Number(bundleData.price) || 0,
               storeId: bundleData.storeId || '',
               image: bundleData.image || '',
               contents: bundleData.contents ? 
-                bundleData.contents.map((item: any, index: number) => ({
+                (Array.isArray(bundleData.contents) ? bundleData.contents : []).map((item: any, index: number) => ({
                   ...item,
-                  id: `item-${index}`
+                  id: `item-${index}-${Date.now()}`
                 })) : [],
-              isActive: bundleData.isActive || true,
-              isFeatured: bundleData.isFeatured || false,
-              showToCustomer: bundleData.showToCustomer || true,
+              isActive: bundleData.isActive !== undefined ? bundleData.isActive : true,
+              isFeatured: bundleData.isFeatured !== undefined ? bundleData.isFeatured : false,
+              showToCustomer: bundleData.showToCustomer !== undefined ? bundleData.showToCustomer : true,
             })
           } else {
-            toast.error('Gagal mengambil data bundle')
+            const errorData = await response.json()
+            console.error('Error response:', errorData)
+            toast.error(`Gagal mengambil data bundle: ${errorData.message || 'Unknown error'}`)
             router.push('/admin/bundles')
           }
         } catch (error) {
@@ -185,186 +188,299 @@ export function BundleFormPageNew({ mode = 'create', bundleId, initialData }: Bu
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {mode === 'edit' ? 'Edit Bundle' : 'Tambah Bundle Baru'}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {mode === 'edit' && bundleId && !bundle && isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-                <p className="mt-2 text-sm text-gray-600">Memuat data bundle...</p>
-              </div>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-8">
-              {/* Basic Information */}
-              <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50/50">
+      <div className="container mx-auto py-8 px-4">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push('/admin/bundles')}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              ← Kembali
+            </Button>
+          </div>
+          <div className="mt-4">
+            <h1 className="text-3xl font-bold text-gray-900">
+              {mode === 'edit' ? 'Edit Bundle Produk' : 'Tambah Bundle Baru'}
+            </h1>
+            <p className="text-gray-600 mt-2">
+              {mode === 'edit' 
+                ? 'Perbarui informasi bundle produk yang sudah ada' 
+                : 'Buat bundle produk baru untuk toko Anda'
+              }
+            </p>
+          </div>
+        </div>
+
+        {/* Loading State */}
+        {mode === 'edit' && bundleId && !bundle && isLoading ? (
+          <Card className="border-0 shadow-lg">
+            <CardContent className="flex items-center justify-center py-16">
+              <div className="text-center space-y-4">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
                 <div>
-                  <h3 className="text-lg font-medium">Informasi Dasar</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Atur informasi dasar bundle produk
-                  </p>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Nama Bundle *</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
-                      placeholder="Masukkan nama bundle"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="price">Harga *</Label>
-                    <Input
-                      id="price"
-                      type="number"
-                      min="0"
-                      step="1000"
-                      value={formData.price}
-                      onChange={(e) => handleInputChange('price', parseInt(e.target.value) || 0)}
-                      placeholder="Masukkan harga"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="storeId">Toko *</Label>
-                    <Select
-                      value={formData.storeId}
-                      onValueChange={(value) => handleInputChange('storeId', value)}
-                      disabled={isLoadingStores}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={isLoadingStores ? "Memuat..." : "Pilih toko"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {stores.map((store) => (
-                          <SelectItem key={store.id} value={store.id}>
-                            {store.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Deskripsi</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
-                    placeholder="Masukkan deskripsi bundle"
-                    rows={4}
-                  />
+                  <p className="text-lg font-medium text-gray-900">Memuat Data Bundle</p>
+                  <p className="text-sm text-gray-500">Mohon tunggu sebentar...</p>
                 </div>
               </div>
-
-              <Separator />
-
-              {/* Image Upload */}
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium">Gambar Bundle</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Upload gambar untuk bundle produk
-                  </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Basic Information Card */}
+            <Card className="border-0 shadow-lg">
+              <CardHeader className="bg-white border-b border-gray-100">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <span className="text-blue-600 font-semibold text-sm">1</span>
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl text-gray-900">Informasi Dasar</CardTitle>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Atur informasi dasar bundle produk
+                    </p>
+                  </div>
                 </div>
-                
+              </CardHeader>
+              <CardContent className="p-8 bg-white">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                    <div className="space-y-3">
+                      <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+                        Nama Bundle <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        placeholder="Masukkan nama bundle yang menarik"
+                        required
+                        className="h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label htmlFor="price" className="text-sm font-medium text-gray-700">
+                        Harga <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="price"
+                        type="number"
+                        min="0"
+                        step="1000"
+                        value={formData.price}
+                        onChange={(e) => handleInputChange('price', parseInt(e.target.value) || 0)}
+                        placeholder="0"
+                        required
+                        className="h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                      />
+                      <p className="text-xs text-gray-500">
+                        Harga dalam Rupiah (IDR)
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="space-y-3">
+                      <Label htmlFor="storeId" className="text-sm font-medium text-gray-700">
+                        Toko <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={formData.storeId}
+                        onValueChange={(value) => handleInputChange('storeId', value)}
+                        disabled={isLoadingStores}
+                      >
+                        <SelectTrigger className="h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500">
+                          <SelectValue placeholder={isLoadingStores ? "Memuat toko..." : "Pilih toko"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {stores.map((store) => (
+                            <SelectItem key={store.id} value={store.id}>
+                              {store.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8">
+                  <div className="space-y-3">
+                    <Label htmlFor="description" className="text-sm font-medium text-gray-700">
+                      Deskripsi Bundle
+                    </Label>
+                    <Textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
+                      placeholder="Jelaskan keunikan dan manfaat bundle ini..."
+                      rows={4}
+                      className="border-gray-200 focus:border-blue-500 focus:ring-blue-500 resize-none"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Image Upload Card */}
+            <Card className="border-0 shadow-lg">
+              <CardHeader className="bg-white border-b border-gray-100">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <span className="text-green-600 font-semibold text-sm">2</span>
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl text-gray-900">Gambar Bundle</CardTitle>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Upload gambar menarik untuk bundle produk
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-8 bg-white">
                 <BundleImageUpload
                   value={formData.image}
                   onChange={(url) => handleInputChange('image', url)}
                 />
-              </div>
+              </CardContent>
+            </Card>
 
-              <Separator />
-
-              {/* Bundle Contents */}
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium">Isi Bundle</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Atur item-item yang termasuk dalam bundle ini
-                  </p>
+            {/* Bundle Contents Card */}
+            <Card className="border-0 shadow-lg">
+              <CardHeader className="bg-white border-b border-gray-100">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <span className="text-purple-600 font-semibold text-sm">3</span>
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl text-gray-900">Isi Bundle</CardTitle>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Atur item-item yang termasuk dalam bundle ini
+                    </p>
+                  </div>
                 </div>
-                
+              </CardHeader>
+              <CardContent className="p-8 bg-white">
                 <BundleItemsManager
                   items={formData.contents || []}
                   onItemsChange={handleItemsChange}
                 />
-              </div>
+              </CardContent>
+            </Card>
 
-              <Separator />
-
-              {/* Settings */}
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium">Pengaturan</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Konfigurasi visibilitas dan status bundle
-                  </p>
+            {/* Settings Card */}
+            <Card className="border-0 shadow-lg">
+              <CardHeader className="bg-white border-b border-gray-100">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <span className="text-orange-600 font-semibold text-sm">4</span>
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl text-gray-900">Pengaturan Bundle</CardTitle>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Konfigurasi visibilitas dan status bundle
+                    </p>
+                  </div>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="flex items-center space-x-2">
+              </CardHeader>
+              <CardContent className="p-8 bg-white">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div className="flex-1">
+                      <Label htmlFor="isActive" className="text-sm font-medium text-gray-700">
+                        Status Bundle
+                      </Label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Bundle aktif dapat dipesan pelanggan
+                      </p>
+                    </div>
                     <Switch
                       id="isActive"
                       checked={formData.isActive}
                       onCheckedChange={(checked) => handleInputChange('isActive', checked)}
                     />
-                    <Label htmlFor="isActive">Aktif</Label>
                   </div>
 
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div className="flex-1">
+                      <Label htmlFor="isFeatured" className="text-sm font-medium text-gray-700">
+                        Bundle Unggulan
+                      </Label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Tampilkan di halaman utama
+                      </p>
+                    </div>
                     <Switch
                       id="isFeatured"
                       checked={formData.isFeatured}
                       onCheckedChange={(checked) => handleInputChange('isFeatured', checked)}
                     />
-                    <Label htmlFor="isFeatured">Unggulan</Label>
                   </div>
 
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div className="flex-1">
+                      <Label htmlFor="showToCustomer" className="text-sm font-medium text-gray-700">
+                        Tampilkan ke Pelanggan
+                      </Label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Terlihat oleh pelanggan di katalog
+                      </p>
+                    </div>
                     <Switch
                       id="showToCustomer"
                       checked={formData.showToCustomer}
                       onCheckedChange={(checked) => handleInputChange('showToCustomer', checked)}
                     />
-                    <Label htmlFor="showToCustomer">Tampilkan ke Pelanggan</Label>
                   </div>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
 
-              <Separator />
-
-              {/* Actions */}
-              <div className="flex justify-end space-x-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => router.push('/admin/bundles')}
-                  disabled={isLoading}
-                >
-                  Batal
-                </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? 'Menyimpan...' : (mode === 'edit' ? 'Perbarui Bundle' : 'Simpan Bundle')}
-                </Button>
-              </div>
-            </form>
-          )}
-        </CardContent>
-      </Card>
+            {/* Action Buttons */}
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-8 bg-white">
+                <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                  <div className="text-sm text-gray-500">
+                    {mode === 'edit' 
+                      ? 'Perubahan akan disimpan dan diterapkan segera' 
+                      : 'Bundle baru akan dibuat dan dapat langsung digunakan'
+                    }
+                  </div>
+                  <div className="flex space-x-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => router.push('/admin/bundles')}
+                      disabled={isLoading}
+                      className="min-w-[100px]"
+                    >
+                      Batal
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      disabled={isLoading}
+                      className="min-w-[120px] bg-blue-600 hover:bg-blue-700"
+                    >
+                      {isLoading ? (
+                        <div className="flex items-center space-x-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Menyimpan...</span>
+                        </div>
+                      ) : (
+                        mode === 'edit' ? 'Perbarui Bundle' : 'Simpan Bundle'
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </form>
+        )}
+      </div>
     </div>
   )
 }
