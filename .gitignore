@@ -54,3 +54,24 @@ credentials/
 next-env.d.ts
 
 /src/generated/prisma
+
+# Backup prevention markers
+.nocloud
+.notimemachine
+
+# System generated files (prevent Time Machine/iCloud restore)
+**/*@(*)
+
+# Block all test and debug files aggressively  
+test-*
+debug-*
+check-*
+create-*
+fix-*
+setup-*
+**/test-*
+**/debug-*
+**/check-*
+**/create-*
+**/fix-*
+**/setup-*
