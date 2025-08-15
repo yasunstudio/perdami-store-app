@@ -144,6 +144,10 @@ export function BundleManagementLayout() {
     router.push(`/admin/bundles/${bundle.id}/edit`)
   }
 
+  const handleViewBundle = (bundle: ProductBundleWithRelations) => {
+    router.push(`/admin/bundles/${bundle.id}`)
+  }
+
   const handleDeleteBundle = (bundleId: string) => {
     const bundle = bundles?.bundles.find(b => b.id === bundleId)
     if (!bundle) return
@@ -400,7 +404,7 @@ export function BundleManagementLayout() {
                   <BundleMobileCard
                     key={bundle.id}
                     bundle={bundle}
-                    onView={() => handleEditBundle(bundle)}
+                    onView={() => handleViewBundle(bundle)}
                     onEdit={() => handleEditBundle(bundle)}
                     onDelete={() => handleDeleteBundle(bundle.id)}
                     onToggleStatus={(bundleId: string, isActive: boolean) => handleToggleStatus(bundleId, isActive)}
@@ -414,7 +418,7 @@ export function BundleManagementLayout() {
                 bundles={bundles?.bundles || []}
                 onEdit={handleEditBundle}
                 onDelete={(bundle: ProductBundleWithRelations) => handleDeleteBundle(bundle.id)}
-                onView={handleEditBundle}
+                onView={handleViewBundle}
                 onToggleStatus={(bundleId: string, isActive: boolean) => handleToggleStatus(bundleId, isActive)}
                 onToggleFeatured={(bundleId: string, isFeatured: boolean) => handleToggleFeatured(bundleId, isFeatured)}
                 onToggleShowToCustomer={(bundleId: string, showToCustomer: boolean) => handleToggleShowToCustomer(bundleId, showToCustomer)}
