@@ -12,13 +12,15 @@ import { toast } from 'sonner'
 import { ProductBundle } from '@prisma/client'
 
 interface BundleFormPageNewProps {
+  mode?: 'create' | 'edit'
   bundleId?: string
   initialData?: ProductBundle
 }
 
-export function BundleFormPageNew({ bundleId, initialData }: BundleFormPageNewProps) {
+export function BundleFormPageNew({ mode = 'create', bundleId, initialData }: BundleFormPageNewProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [bundle, setBundle] = useState<ProductBundle | null>(initialData || null)
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     description: initialData?.description || '',
@@ -27,16 +29,50 @@ export function BundleFormPageNew({ bundleId, initialData }: BundleFormPageNewPr
     isActive: initialData?.isActive || true,
   })
 
+  // Fetch bundle data if in edit mode and no initial data provided
+  useEffect(() => {
+    const fetchBundle = async () => {
+      if (mode === 'edit' && bundleId && !initialData) {
+        setIsLoading(true)
+        try {
+          const response = await fetch(`/api/admin/bundles/${bundleId}`)
+          if (response.ok) {
+            const bundleData = await response.json()
+            setBundle(bundleData)
+            setFormData({
+              name: bundleData.name || '',
+              description: bundleData.description || '',
+              price: bundleData.price || 0,
+              image: bundleData.image || '',
+              isActive: bundleData.isActive || true,
+            })
+          } else {
+            toast.error('Gagal mengambil data bundle')
+            router.push('/admin/bundles')
+          }
+        } catch (error) {
+          console.error('Error fetching bundle:', error)
+          toast.error('Gagal mengambil data bundle')
+          router.push('/admin/bundles')
+        } finally {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    fetchBundle()
+  }, [mode, bundleId, initialData, router])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
     try {
-      const url = bundleId 
+      const url = mode === 'edit' && bundleId 
         ? `/api/admin/bundles/${bundleId}`
         : '/api/admin/bundles'
       
-      const method = bundleId ? 'PUT' : 'POST'
+      const method = mode === 'edit' ? 'PUT' : 'POST'
 
       const response = await fetch(url, {
         method,
@@ -50,7 +86,7 @@ export function BundleFormPageNew({ bundleId, initialData }: BundleFormPageNewPr
         throw new Error('Failed to save bundle')
       }
 
-      toast.success(bundleId ? 'Bundle berhasil diperbarui' : 'Bundle berhasil dibuat')
+      toast.success(mode === 'edit' ? 'Bundle berhasil diperbarui' : 'Bundle berhasil dibuat')
       router.push('/admin/bundles')
     } catch (error) {
       console.error('Error saving bundle:', error)
@@ -72,11 +108,19 @@ export function BundleFormPageNew({ bundleId, initialData }: BundleFormPageNewPr
       <Card>
         <CardHeader>
           <CardTitle>
-            {bundleId ? 'Edit Bundle' : 'Tambah Bundle Baru'}
+            {mode === 'edit' ? 'Edit Bundle' : 'Tambah Bundle Baru'}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {mode === 'edit' && bundleId && !bundle && isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                <p className="mt-2 text-sm text-gray-600">Memuat data bundle...</p>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="name">Nama Bundle</Label>
@@ -147,6 +191,7 @@ export function BundleFormPageNew({ bundleId, initialData }: BundleFormPageNewPr
               </Button>
             </div>
           </form>
+          )}
         </CardContent>
       </Card>
     </div>
