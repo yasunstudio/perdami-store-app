@@ -1,0 +1,36 @@
+{
+  "github.copilot.enable": {
+    "*": false,
+    "plaintext": false,
+    "markdown": false,
+    "scminput": false,
+    "yaml": false,
+    "shellscript": false
+  },
+  "github.copilot.editor.enableAutoCompletions": false,
+  "github.copilot.advanced": {
+    "inlineSuggestCount": 0,
+    "listCount": 0
+  },
+  "files.exclude": {
+    "**/*test-*": true,
+    "**/*debug-*": true,
+    "**/check-*": true,
+    "**/create-*": true,
+    "**/fix-*": true,
+    "**/setup-*": true,
+    "DEPLOYMENT*.md": true,
+    "DEVELOPMENT.md": true,
+    "VERCEL*.md": true,
+    "deploy.sh": true,
+    "**/@(*)": true
+  },
+  "search.exclude": {
+    "**/*test-*": true,
+    "**/*debug-*": true,
+    "**/check-*": true,
+    "**/create-*": true,
+    "**/fix-*": true,
+    "**/setup-*": true
+  }
+}

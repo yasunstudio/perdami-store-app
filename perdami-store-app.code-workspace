@@ -1,0 +1,36 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "github.copilot.enable": {
+      "*": false,
+      "markdown": false,
+      "plaintext": false,
+      "shellscript": false
+    },
+    "github.copilot.editor.enableAutoCompletions": false,
+    "files.watcherExclude": {
+      "**/*test-*": true,
+      "**/*debug-*": true,
+      "**/check-*": true,
+      "**/create-*": true,
+      "**/fix-*": true,
+      "**/setup-*": true,
+      "DEPLOYMENT*.md": true,
+      "README.md": true,
+      "deploy.sh": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "prisma.prisma",
+      "bradlc.vscode-tailwindcss"
+    ],
+    "unwantedRecommendations": [
+      "ms-vscode.vscode-json"
+    ]
+  }
+}
