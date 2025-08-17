@@ -7,7 +7,8 @@ import { z } from 'zod'
 const createBundleSchema = z.object({
   name: z.string().min(1, 'Nama paket harus diisi'),
   description: z.string().optional(),
-  price: z.number().positive('Harga harus lebih dari 0'),
+  costPrice: z.number().positive('Harga modal harus lebih dari 0'),
+  sellingPrice: z.number().positive('Harga jual harus lebih dari 0'),
   image: z.string().optional(),
   contents: z.array(z.object({
     name: z.string(),
@@ -23,7 +24,7 @@ const bundleFiltersSchema = z.object({
   search: z.string().optional(),
   storeId: z.string().optional(),
   status: z.enum(['active', 'inactive', 'all']).default('all'),
-  sortBy: z.enum(['name', 'price', 'createdAt']).default('createdAt'),
+  sortBy: z.enum(['name', 'sellingPrice', 'costPrice', 'createdAt']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
   page: z.coerce.number().positive().default(1),
   limit: z.coerce.number().positive().max(100).default(10)
@@ -67,8 +68,11 @@ export async function GET(request: NextRequest) {
       case 'name':
         orderBy = { name: sortOrder }
         break
-      case 'price':
-        orderBy = { price: sortOrder }
+      case 'sellingPrice':
+        orderBy = { sellingPrice: sortOrder }
+        break
+      case 'costPrice':
+        orderBy = { costPrice: sortOrder }
         break
       default:
         orderBy = { createdAt: sortOrder }
@@ -83,7 +87,8 @@ export async function GET(request: NextRequest) {
           name: true,
           description: true,
           image: true,
-          price: true,
+          costPrice: true,
+          sellingPrice: true,
           contents: true, // Explicitly include contents field
           isActive: true,
           isFeatured: true,
@@ -165,7 +170,8 @@ export async function POST(request: NextRequest) {
         data: {
           name: validatedData.name,
           description: validatedData.description,
-          price: validatedData.price,
+          costPrice: validatedData.costPrice,
+          sellingPrice: validatedData.sellingPrice,
           image: validatedData.image,
           contents: validatedData.contents,
           isActive: validatedData.isActive,
