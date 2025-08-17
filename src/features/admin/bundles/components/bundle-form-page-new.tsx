@@ -410,7 +410,7 @@ export function BundleFormPageNew({ mode, bundleId }: BundleFormPageProps) {
                       id="costPrice"
                       type="number"
                       min="0"
-                      step="1000"
+                      step="100"
                       value={formData.costPrice}
                       onChange={(e) => {
                         setFormData(prev => ({ ...prev, costPrice: parseFloat(e.target.value) || 0 }))
@@ -433,7 +433,7 @@ export function BundleFormPageNew({ mode, bundleId }: BundleFormPageProps) {
                       id="sellingPrice"
                       type="number"
                       min="0"
-                      step="1000"
+                      step="100"
                       value={formData.sellingPrice}
                       onChange={(e) => {
                         setFormData(prev => ({ ...prev, sellingPrice: parseFloat(e.target.value) || 0 }))
