@@ -6,7 +6,8 @@ import { z } from 'zod'
 const updateBundleSchema = z.object({
   name: z.string().min(1, 'Nama paket harus diisi').optional(),
   description: z.string().optional().nullable(),
-  price: z.number().positive('Harga harus lebih dari 0').optional(),
+  costPrice: z.number().positive('Harga modal harus lebih dari 0').optional(),
+  sellingPrice: z.number().positive('Harga jual harus lebih dari 0').optional(),
   image: z.string().optional().nullable(),
   contents: z.array(z.object({
     name: z.string(),
