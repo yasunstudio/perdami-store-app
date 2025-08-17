@@ -30,7 +30,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  Download
 } from 'lucide-react'
 import { AdminPageLayout } from '@/components/admin/admin-page-layout'
 import { BundleList } from './bundle-list-table'
@@ -69,6 +70,9 @@ export function BundleManagementLayout() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [bundleToDelete, setBundleToDelete] = useState<ProductBundleWithRelations | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  
+  // Export state
+  const [isExporting, setIsExporting] = useState(false)
 
   // Filter state
   const [filters, setFilters] = useState<BundleFilters>({
@@ -297,6 +301,48 @@ export function BundleManagementLayout() {
     }
   }
 
+  const handleExportToExcel = async () => {
+    setIsExporting(true)
+    try {
+      // Create params for export (all data, not paginated)
+      const exportParams = new URLSearchParams()
+      exportParams.append('export', 'true')
+      if (filters.search) exportParams.append('search', filters.search)
+      if (filters.status !== 'all') exportParams.append('status', filters.status)
+      if (filters.sortBy) exportParams.append('sortBy', filters.sortBy)
+      if (filters.sortOrder) exportParams.append('sortOrder', filters.sortOrder)
+
+      const response = await fetch(`/api/admin/bundles/export?${exportParams}`)
+      
+      if (!response.ok) {
+        throw new Error('Gagal mengekspor data')
+      }
+
+      // Get the blob and create download link
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
+      link.download = `bundles-export-${timestamp}.xlsx`
+      
+      // Trigger download
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+      toast.success('Data berhasil diekspor ke Excel')
+    } catch (error) {
+      console.error('Error exporting data:', error)
+      toast.error('Gagal mengekspor data')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   return (
     <AdminPageLayout 
       title="Manajemen Paket Produk" 
@@ -317,7 +363,17 @@ export function BundleManagementLayout() {
                 className="h-8"
               >
                 <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
-                {loading ? 'Memuat...' : 'Refresh'}
+                <span className="hidden sm:inline">{loading ? 'Memuat...' : 'Refresh'}</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportToExcel}
+                disabled={isExporting || loading}
+                className="h-8"
+              >
+                <Download className={`h-4 w-4 mr-1 ${isExporting ? 'animate-pulse' : ''}`} />
+                <span className="hidden sm:inline">{isExporting ? 'Export...' : 'Export'}</span>
               </Button>
               <Button
                 size="sm"
@@ -325,7 +381,8 @@ export function BundleManagementLayout() {
                 className="h-8"
               >
                 <Plus className="h-4 w-4 mr-1" />
-                Tambah Bundle
+                <span className="hidden sm:inline">Tambah</span>
+                <span className="sm:hidden">+</span>
               </Button>
             </div>
           </div>
