@@ -87,7 +87,7 @@ export function AdvancedAnalytics() {
         productData: transformProductsData(productsData),
         storeData: transformStoresData(storesData),
         summaryStats: {
-          totalRevenue: dashboardData.recentOrders.reduce((sum: number, order: any) => sum + order.totalAmount, 0),
+          totalRevenue: dashboardData.stats.totalRevenue, // Use the corrected totalRevenue from dashboard stats
           totalOrders: dashboardData.stats.totalOrders,
           totalProducts: dashboardData.stats.totalProducts,
           totalCustomers: dashboardData.stats.totalUsers,

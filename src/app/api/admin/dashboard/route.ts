@@ -120,16 +120,33 @@ export async function GET() {
     const orderGrowthRate = calculateGrowthRate(thisMonthOrders, lastMonthOrders);
     const storeGrowthRate = calculateGrowthRate(thisMonthStores, lastMonthStores);
 
-    // Calculate revenue stats
-    const totalRevenue = formattedOrders.reduce((sum: number, order: any) => sum + order.totalAmount, 0);
-    const pendingOrders = formattedOrders.filter((order: any) => order.status === 'PENDING').length;
-    const completedOrders = formattedOrders.filter((order: any) => order.status === 'COMPLETED').length;
+    // Calculate revenue stats - only from COMPLETED orders
+    const allCompletedOrders = await prisma.order.findMany({
+      where: { 
+        orderStatus: 'COMPLETED' 
+      },
+      select: {
+        totalAmount: true,
+        orderStatus: true
+      }
+    });
+
+    const totalRevenue = allCompletedOrders.reduce((sum, order) => sum + parseFloat(order.totalAmount.toString()), 0);
+    
+    // Get order status counts for dashboard stats
+    const [pendingOrdersCount, completedOrdersCount, cancelledOrdersCount] = await Promise.all([
+      prisma.order.count({ where: { orderStatus: 'PENDING' } }),
+      prisma.order.count({ where: { orderStatus: 'COMPLETED' } }),
+      prisma.order.count({ where: { orderStatus: 'CANCELLED' } })
+    ]);
 
     console.log(`📊 Growth Analysis - Current vs Previous Month:`);
     console.log(`Users: ${thisMonthUsers} vs ${lastMonthUsers} = ${userGrowthRate.toFixed(1)}%`);
     console.log(`Orders: ${thisMonthOrders} vs ${lastMonthOrders} = ${orderGrowthRate.toFixed(1)}%`);
     console.log(`Products: ${thisMonthBundles} vs ${lastMonthBundles} = ${productGrowthRate.toFixed(1)}%`);
     console.log(`Stores: ${thisMonthStores} vs ${lastMonthStores} = ${storeGrowthRate.toFixed(1)}%`);
+    console.log(`💰 Revenue Analysis: Total Revenue from ${allCompletedOrders.length} completed orders = ${totalRevenue}`);
+    console.log(`📊 Order Status: Pending=${pendingOrdersCount}, Completed=${completedOrdersCount}, Cancelled=${cancelledOrdersCount}`);
 
     const dashboardData = {
       stats: {
@@ -138,8 +155,9 @@ export async function GET() {
         totalOrders,
         totalStores,
         totalRevenue,
-        pendingOrders,
-        completedOrders,
+        pendingOrders: pendingOrdersCount,
+        completedOrders: completedOrdersCount,
+        cancelledOrders: cancelledOrdersCount,
         userGrowthRate: Math.round(userGrowthRate * 10) / 10, // Round to 1 decimal
         productGrowthRate: Math.round(productGrowthRate * 10) / 10,
         orderGrowthRate: Math.round(orderGrowthRate * 10) / 10,
