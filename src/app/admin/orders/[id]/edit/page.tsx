@@ -28,6 +28,7 @@ export default function AdminOrderEditPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    console.log('🚀 AdminOrderEditPage useEffect - orderId:', orderId)
     if (orderId) {
       fetchOrderBasicInfo()
     } else {
@@ -41,7 +42,7 @@ export default function AdminOrderEditPage() {
       setLoading(true)
       setError(null)
       
-      console.log('Fetching order details for edit page, ID:', orderId)
+      console.log('📡 Fetching order details for edit page, ID:', orderId)
       
       const response = await fetch(`/api/admin/orders/${orderId}`, {
         method: 'GET',
@@ -51,7 +52,7 @@ export default function AdminOrderEditPage() {
         credentials: 'include'
       })
       
-      console.log('Response status:', response.status)
+      console.log('📡 Response status:', response.status)
       
       if (!response.ok) {
         if (response.status === 404) {
@@ -65,15 +66,15 @@ export default function AdminOrderEditPage() {
         }
         
         const errorText = await response.text()
-        console.error('Response error:', errorText)
+        console.error('📡 Response error:', errorText)
         throw new Error(`Gagal memuat detail order (${response.status})`)
       }
       
       const data = await response.json()
-      console.log('Received order data for edit:', data)
+      console.log('📡 Received order data for edit:', data)
       setOrder(data)
     } catch (error) {
-      console.error('Error fetching order for edit:', error)
+      console.error('❌ Error fetching order for edit:', error)
       setError(error instanceof Error ? error.message : 'Terjadi kesalahan saat memuat order')
     } finally {
       setLoading(false)
@@ -87,6 +88,7 @@ export default function AdminOrderEditPage() {
 
   // Early return for invalid orderId
   if (!orderId || typeof orderId !== 'string') {
+    console.log('❌ Invalid orderId:', orderId)
     return (
       <AdminPageLayout 
         title="Error"
@@ -109,6 +111,7 @@ export default function AdminOrderEditPage() {
   }
 
   if (loading) {
+    console.log('⏳ Loading order for edit...')
     return (
       <AdminPageLayout 
         title="Memuat Order..."
@@ -133,6 +136,7 @@ export default function AdminOrderEditPage() {
   }
 
   if (error) {
+    console.log('❌ Error state:', error)
     return (
       <AdminPageLayout 
         title="Error"
@@ -148,6 +152,9 @@ export default function AdminOrderEditPage() {
             <Button onClick={fetchOrderBasicInfo} variant="outline">
               Coba Lagi
             </Button>
+            <Button onClick={() => router.push('/admin/orders')} variant="outline">
+              Kembali ke Daftar Order
+            </Button>
           </div>
         </div>
       </AdminPageLayout>
@@ -155,6 +162,7 @@ export default function AdminOrderEditPage() {
   }
 
   if (!order) {
+    console.log('❌ No order data found')
     return (
       <AdminPageLayout 
         title="Order Tidak Ditemukan"
@@ -166,11 +174,17 @@ export default function AdminOrderEditPage() {
           <AlertTriangle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-foreground mb-2">Order Tidak Ditemukan</h2>
           <p className="text-muted-foreground mb-6">Order dengan ID tersebut tidak ditemukan.</p>
+          <div className="flex justify-center gap-4">
+            <Button onClick={() => router.push('/admin/orders')} variant="outline">
+              Kembali ke Daftar Order
+            </Button>
+          </div>
         </div>
       </AdminPageLayout>
     )
   }
 
+  console.log('✅ Rendering edit form for order:', order.orderNumber)
   return (
     <AdminPageLayout 
       title={`Edit Order #${order.orderNumber}`}
