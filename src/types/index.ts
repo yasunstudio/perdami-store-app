@@ -21,7 +21,7 @@ export interface OrderItem {
   bundle: {
     id: string
     name: string
-    price: number
+    sellingPrice: number
     image: string | null
     store: {
       id: string
@@ -120,7 +120,7 @@ export interface CartItem {
   productId?: string
   bundleId?: string
   name: string
-  price: number
+  price: number // This will store sellingPrice for display
   quantity: number
   image?: string
   storeId: string

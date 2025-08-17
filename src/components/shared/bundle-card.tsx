@@ -67,7 +67,7 @@ export function BundleCard({ bundle }: BundleCardProps) {
         bundleId: bundle.id,
         productId: bundle.id, // For backward compatibility
         name: bundle.name,
-        price: bundle.price,
+        price: bundle.sellingPrice,
         image: bundle.image || undefined,
         storeId,
         storeName,
@@ -126,7 +126,7 @@ export function BundleCard({ bundle }: BundleCardProps) {
           </p>
           <div className="flex items-center gap-2">
             <span className="text-lg font-bold text-green-600 dark:text-green-400">
-              {formatPrice(bundle.price)}
+              {formatPrice(bundle.sellingPrice)}
             </span>
             {/* Remove original price line-through since we don't have individual prices */}
           </div>

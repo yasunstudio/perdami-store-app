@@ -14,7 +14,8 @@ interface BundleOrderPanelProps {
   bundle: {
     id: string
     name: string
-    price: number
+    costPrice: number
+    sellingPrice: number
     image: string | null
     contents?: any
     store: {
@@ -69,7 +70,7 @@ export function BundleOrderPanel({ bundle }: BundleOrderPanelProps) {
         bundleId: bundle.id,
         productId: bundle.id,
         name: bundle.name,
-        price: bundle.price,
+        price: bundle.sellingPrice,
         image: bundle.image || undefined,
         storeId,
         storeName,
@@ -87,7 +88,7 @@ export function BundleOrderPanel({ bundle }: BundleOrderPanelProps) {
     }
   }
 
-  const totalPrice = bundle.price * quantity
+  const totalPrice = bundle.sellingPrice * quantity
 
   return (
     <div className="space-y-3">
@@ -104,7 +105,7 @@ export function BundleOrderPanel({ bundle }: BundleOrderPanelProps) {
           {/* Price Display */}
           <div className="space-y-1">
             <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 text-right break-words">
-              {formatPrice(bundle.price)}
+              {formatPrice(bundle.sellingPrice)}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 text-right">
               Per paket ({contents.length} item)

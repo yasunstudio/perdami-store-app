@@ -105,7 +105,8 @@ model ProductBundle {
   name           String
   description    String?
   image          String?
-  price          Float
+  costPrice      Float       @default(0) // Purchase price from store/supplier  
+  sellingPrice   Float       @default(0) // Selling price to customer
   contents       Json?
   isActive       Boolean     @default(true)
   isFeatured     Boolean     @default(false)
@@ -122,7 +123,8 @@ model ProductBundle {
   @@index([showToCustomer])
   @@index([createdAt])
   @@index([isFeatured])
-  @@index([price])
+  @@index([sellingPrice])
+  @@index([costPrice])
   @@map("product_bundles")
 }
 
