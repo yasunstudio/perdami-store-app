@@ -57,6 +57,7 @@ interface OrderData {
 
 interface AdminOrderEditFormProps {
   orderId: string;
+  onOrderUpdate?: () => void;
 }
 
 const ORDER_STATUSES = [
@@ -94,7 +95,7 @@ const getStatusBadgeColor = (status: string, type: 'order' | 'payment' | 'pickup
   }
 };
 
-export function AdminOrderEditForm({ orderId }: AdminOrderEditFormProps) {
+export function AdminOrderEditForm({ orderId, onOrderUpdate }: AdminOrderEditFormProps) {
   const router = useRouter();
   const [order, setOrder] = useState<OrderData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -176,7 +177,13 @@ export function AdminOrderEditForm({ orderId }: AdminOrderEditFormProps) {
       }
 
       toast.success('Pesanan berhasil diupdate');
-      router.push(`/admin/orders/${orderId}`);
+      
+      // Call the callback to refresh data or navigate back
+      if (onOrderUpdate) {
+        onOrderUpdate();
+      } else {
+        router.push(`/admin/orders/${orderId}`);
+      }
       
     } catch (error) {
       console.error('Error updating order:', error);
@@ -224,236 +231,191 @@ export function AdminOrderEditForm({ orderId }: AdminOrderEditFormProps) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="sm" asChild>
-          <Link href={`/admin/orders/${orderId}`}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Kembali
-          </Link>
-        </Button>
-        <div>
-          <h2 className="text-xl font-semibold">{order.orderNumber}</h2>
-          <p className="text-sm text-muted-foreground">
-            Dibuat pada {new Date(order.createdAt).toLocaleDateString('id-ID', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </p>
-        </div>
-      </div>
+    <div className="space-y-6">
+      {/* Main Content - Same layout as detail page */}
+      <div className="grid grid-cols-1 gap-6">
+        {/* Order Information Card - Edit Version */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Edit Informasi Pesanan
+            </CardTitle>
+            <CardDescription>
+              Update status dan informasi pesanan #{order.orderNumber}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left Column - Order Status */}
+                <div className="space-y-6">
+                  <div className="p-4 bg-muted/30 rounded-lg border">
+                    <h4 className="text-sm font-medium text-muted-foreground mb-4">Status Pesanan</h4>
+                    <div className="space-y-4">
+                      <div className="space-y-3">
+                        <Label htmlFor="orderStatus" className="text-sm font-medium">Status Order</Label>
+                        <Select value={orderStatus} onValueChange={setOrderStatus}>
+                          <SelectTrigger className="h-11">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ORDER_STATUSES.map((status) => (
+                              <SelectItem key={status.value} value={status.value}>
+                                <div className="flex items-center gap-2">
+                                  <Badge className={`${status.color} text-xs border-0`}>
+                                    {status.label}
+                                  </Badge>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Edit Form */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Edit Pesanan
-              </CardTitle>
-              <CardDescription>
-                Update status dan informasi pesanan
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Status Cards - Make them more prominent like view page */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg border">
-                  <div className="space-y-3">
-                    <Label htmlFor="orderStatus" className="text-sm font-medium text-muted-foreground">Status Pesanan</Label>
-                    <Select value={orderStatus} onValueChange={setOrderStatus}>
-                      <SelectTrigger className="h-11">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ORDER_STATUSES.map((status) => (
-                          <SelectItem key={status.value} value={status.value}>
-                            <div className="flex items-center gap-2">
-                              <Badge className={`${status.color} text-xs border-0`}>
-                                {status.label}
-                              </Badge>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <div className="text-xs text-muted-foreground">
-                      Status saat ini: <Badge className={`${ORDER_STATUSES.find(s => s.value === orderStatus)?.color} text-xs border-0 ml-1`}>
-                        {ORDER_STATUSES.find(s => s.value === orderStatus)?.label}
-                      </Badge>
-                    </div>
-                  </div>
+                      <div className="space-y-3">
+                        <Label htmlFor="paymentStatus" className="text-sm font-medium">Status Pembayaran</Label>
+                        <Select value={paymentStatus} onValueChange={setPaymentStatus}>
+                          <SelectTrigger className="h-11">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PAYMENT_STATUSES.map((status) => (
+                              <SelectItem key={status.value} value={status.value}>
+                                <div className="flex items-center gap-2">
+                                  <Badge className={`${status.color} text-xs border-0`}>
+                                    {status.label}
+                                  </Badge>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                  <div className="space-y-3">
-                    <Label htmlFor="paymentStatus" className="text-sm font-medium text-muted-foreground">Status Pembayaran</Label>
-                    <Select value={paymentStatus} onValueChange={setPaymentStatus}>
-                      <SelectTrigger className="h-11">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PAYMENT_STATUSES.map((status) => (
-                          <SelectItem key={status.value} value={status.value}>
-                            <div className="flex items-center gap-2">
-                              <Badge className={`${status.color} text-xs border-0`}>
-                                {status.label}
-                              </Badge>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <div className="text-xs text-muted-foreground">
-                      Status saat ini: <Badge className={`${PAYMENT_STATUSES.find(s => s.value === paymentStatus)?.color} text-xs border-0 ml-1`}>
-                        {PAYMENT_STATUSES.find(s => s.value === paymentStatus)?.label}
-                      </Badge>
+                      <div className="space-y-3">
+                        <Label htmlFor="pickupStatus" className="text-sm font-medium">Status Pickup</Label>
+                        <Select value={pickupStatus} onValueChange={setPickupStatus}>
+                          <SelectTrigger className="h-11">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PICKUP_STATUSES.map((status) => (
+                              <SelectItem key={status.value} value={status.value}>
+                                <div className="flex items-center gap-2">
+                                  <Badge className={`${status.color} text-xs border-0`}>
+                                    {status.label}
+                                  </Badge>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <Separator />
+                {/* Right Column - Additional Info */}
+                <div className="space-y-6">
+                  <div className="p-4 bg-muted/30 rounded-lg border">
+                    <h4 className="text-sm font-medium text-muted-foreground mb-4">Informasi Tambahan</h4>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="pickupDate">Tanggal Pickup</Label>
+                        <Input
+                          type="date"
+                          value={pickupDate}
+                          onChange={(e) => setPickupDate(e.target.value)}
+                        />
+                      </div>
 
-                {/* Additional Status - Pickup Status */}
-                <div className="space-y-3">
-                  <Label htmlFor="pickupStatus" className="text-sm font-medium text-muted-foreground">Status Pickup</Label>
-                  <Select value={pickupStatus} onValueChange={setPickupStatus}>
-                    <SelectTrigger className="h-11">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PICKUP_STATUSES.map((status) => (
-                        <SelectItem key={status.value} value={status.value}>
-                          <div className="flex items-center gap-2">
-                            <Badge className={`${status.color} text-xs border-0`}>
-                              {status.label}
-                            </Badge>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <div className="text-xs text-muted-foreground">
-                    Status saat ini: <Badge className={`${PICKUP_STATUSES.find(s => s.value === pickupStatus)?.color} text-xs border-0 ml-1`}>
-                      {PICKUP_STATUSES.find(s => s.value === pickupStatus)?.label}
-                    </Badge>
+                      <div className="space-y-2">
+                        <Label htmlFor="notes">Catatan Admin</Label>
+                        <Textarea
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
+                          placeholder="Tambahkan catatan untuk pesanan ini..."
+                          rows={4}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
+              </div>
 
-                <Separator />
+              <Separator />
 
-                {/* Pickup Date */}
-                <div className="space-y-2">
-                  <Label htmlFor="pickupDate">Tanggal Pickup (Opsional)</Label>
-                  <Input
-                    type="date"
-                    value={pickupDate}
-                    onChange={(e) => setPickupDate(e.target.value)}
-                  />
+              {/* Submit Buttons */}
+              <div className="flex gap-3">
+                <Button type="submit" disabled={isSaving}>
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Menyimpan...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Simpan Perubahan
+                    </>
+                  )}
+                </Button>
+                <Button variant="outline" asChild>
+                  <Link href={`/admin/orders/${orderId}`}>Batal</Link>
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Order Items - Same as detail page but read-only */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Item Pesanan
+            </CardTitle>
+            <CardDescription>
+              Daftar item dalam pesanan ini
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {order.orderItems.map((item) => (
+                <div key={item.id} className="flex items-center gap-4 p-4 border rounded-lg">
+                  {item.bundle.image && (
+                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted">
+                      <img 
+                        src={item.bundle.image} 
+                        alt={item.bundle.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <h4 className="font-medium">{item.bundle.name}</h4>
+                    <p className="text-sm text-muted-foreground">{item.bundle.store.name}</p>
+                    <div className="flex items-center gap-4 mt-2">
+                      <span className="text-sm">Qty: {item.quantity}</span>
+                      <span className="text-sm">@ Rp {item.unitPrice.toLocaleString('id-ID')}</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium">Rp {item.totalPrice.toLocaleString('id-ID')}</p>
+                  </div>
                 </div>
-
-                {/* Notes */}
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Catatan Admin</Label>
-                  <Textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Tambahkan catatan untuk pesanan ini..."
-                    rows={4}
-                  />
-                </div>
-
-                {/* Submit Button */}
-                <div className="flex gap-3 pt-4">
-                  <Button type="submit" disabled={isSaving} className="flex-1">
-                    {isSaving ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Menyimpan...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Simpan Perubahan
-                      </>
-                    )}
-                  </Button>
-                  <Button variant="outline" asChild>
-                    <Link href={`/admin/orders/${orderId}`}>Batal</Link>
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Order Summary */}
-        <div className="space-y-6">
-          {/* Customer Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <User className="h-4 w-4" />
-                Informasi Customer
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <p className="text-sm font-medium">{order.user.name}</p>
-                <p className="text-sm text-muted-foreground">{order.user.email}</p>
-                {order.user.phone && (
-                  <p className="text-sm text-muted-foreground">{order.user.phone}</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Current Status */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Status Saat Ini</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Pesanan:</span>
-                <Badge className={getStatusBadgeColor(order.orderStatus, 'order')}>
-                  {ORDER_STATUSES.find(s => s.value === order.orderStatus)?.label}
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Pembayaran:</span>
-                <Badge className={getStatusBadgeColor(order.paymentStatus, 'payment')}>
-                  {PAYMENT_STATUSES.find(s => s.value === order.paymentStatus)?.label}
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Pickup:</span>
-                <Badge className={getStatusBadgeColor(order.pickupStatus, 'pickup')}>
-                  {PICKUP_STATUSES.find(s => s.value === order.pickupStatus)?.label}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Order Total */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <CreditCard className="h-4 w-4" />
-                Total Pesanan
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+              ))}
+              
+              <Separator />
+              
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-sm">Subtotal:</span>
                   <span className="text-sm">Rp {order.subtotalAmount.toLocaleString('id-ID')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm">Ongkos Kirim:</span>
+                  <span className="text-sm">Biaya Layanan:</span>
                   <span className="text-sm">Rp {order.serviceFee.toLocaleString('id-ID')}</span>
                 </div>
                 <Separator />
@@ -462,9 +424,49 @@ export function AdminOrderEditForm({ orderId }: AdminOrderEditFormProps) {
                   <span>Rp {order.totalAmount.toLocaleString('id-ID')}</span>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Customer Information - Read only */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Informasi Customer
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Nama</Label>
+                <p className="font-medium">{order.user.name}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Email</Label>
+                <p className="font-medium">{order.user.email}</p>
+              </div>
+              {order.user.phone && (
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Telepon</Label>
+                  <p className="font-medium">{order.user.phone}</p>
+                </div>
+              )}
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Dibuat</Label>
+                <p className="font-medium">
+                  {new Date(order.createdAt).toLocaleDateString('id-ID', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

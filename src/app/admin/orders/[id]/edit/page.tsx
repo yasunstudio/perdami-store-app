@@ -1,32 +1,153 @@
-import { auth } from '@/lib/auth';
-import { redirect } from 'next/navigation';
-import { AdminOrderEditForm } from '@/components/admin/orders/admin-order-edit-form';
+'use client'
 
-interface AdminOrderEditPageProps {
-  params: Promise<{
-    id: string;
-  }>;
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
+import { AdminPageLayout } from '@/components/admin/admin-page-layout'
+import { AdminOrderEditForm } from '@/components/admin/orders/admin-order-edit-form'
+import { Card } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import { AlertTriangle, Edit } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
+
+interface OrderData {
+  id: string
+  orderNumber: string
+  user: {
+    name: string | null
+  }
 }
 
-export default async function AdminOrderEditPage({ params }: AdminOrderEditPageProps) {
-  const session = await auth();
+export default function AdminOrderEditPage() {
+  const router = useRouter()
+  const params = useParams()
+  const orderId = params.id as string
+  const [order, setOrder] = useState<OrderData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  if (!session?.user || session.user.role !== 'ADMIN') {
-    redirect('/admin/login');
+  useEffect(() => {
+    if (orderId) {
+      fetchOrderBasicInfo()
+    }
+  }, [orderId])
+
+  const fetchOrderBasicInfo = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const response = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      })
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Order tidak ditemukan')
+        }
+        if (response.status === 401) {
+          throw new Error('Anda tidak memiliki akses ke halaman ini')
+        }
+        throw new Error('Gagal memuat detail order')
+      }
+      
+      const data = await response.json()
+      setOrder(data)
+    } catch (error) {
+      console.error('Error fetching order:', error)
+      setError(error instanceof Error ? error.message : 'Terjadi kesalahan')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const { id } = await params;
+  const handleOrderUpdate = () => {
+    toast.success('Order berhasil diperbarui')
+    router.push(`/admin/orders/${orderId}`)
+  }
+
+  if (loading) {
+    return (
+      <AdminPageLayout 
+        title="Memuat Order..."
+        description="Sedang memuat detail order"
+        showBackButton={true}
+        backUrl="/admin/orders"
+      >
+        <div className="space-y-6">
+          <Card className="p-6">
+            <div className="space-y-4">
+              <Skeleton className="h-6 w-40" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            </div>
+          </Card>
+        </div>
+      </AdminPageLayout>
+    )
+  }
+
+  if (error) {
+    return (
+      <AdminPageLayout 
+        title="Error"
+        description="Terjadi kesalahan saat memuat order"
+        showBackButton={true}
+        backUrl="/admin/orders"
+      >
+        <div className="text-center py-12">
+          <AlertTriangle className="h-16 w-16 text-red-500 dark:text-red-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-foreground mb-2">Terjadi Kesalahan</h2>
+          <p className="text-muted-foreground mb-6">{error}</p>
+          <div className="flex justify-center gap-4">
+            <Button onClick={fetchOrderBasicInfo} variant="outline">
+              Coba Lagi
+            </Button>
+          </div>
+        </div>
+      </AdminPageLayout>
+    )
+  }
+
+  if (!order) {
+    return (
+      <AdminPageLayout 
+        title="Order Tidak Ditemukan"
+        description="Order dengan ID tersebut tidak ditemukan"
+        showBackButton={true}
+        backUrl="/admin/orders"
+      >
+        <div className="text-center py-12">
+          <AlertTriangle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-foreground mb-2">Order Tidak Ditemukan</h2>
+          <p className="text-muted-foreground mb-6">Order dengan ID tersebut tidak ditemukan.</p>
+        </div>
+      </AdminPageLayout>
+    )
+  }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Edit Pesanan</h1>
-        <p className="text-muted-foreground mt-2">
-          Edit informasi dan status pesanan
-        </p>
-      </div>
-
-      <AdminOrderEditForm orderId={id} />
-    </div>
-  );
+    <AdminPageLayout 
+      title={`Edit Order #${order.orderNumber}`}
+      description={`Edit informasi dan status order dari ${order.user.name || 'Pengguna'}`}
+      showBackButton={true}
+      backUrl={`/admin/orders/${order.id}`}
+      actions={
+        <Button size="sm" variant="outline" onClick={() => router.push(`/admin/orders/${orderId}`)}>
+          <Edit className="h-4 w-4 mr-2" />
+          Lihat Detail
+        </Button>
+      }
+    >
+      <AdminOrderEditForm orderId={orderId} onOrderUpdate={handleOrderUpdate} />
+    </AdminPageLayout>
+  )
 }
