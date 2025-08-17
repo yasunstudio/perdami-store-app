@@ -33,6 +33,7 @@ function AdminDashboard() {
     pendingOrders: 0,
     completedOrders: 0,
     cancelledOrders: 0,
+    todayOrders: 0,
     userGrowthRate: 0,
     productGrowthRate: 0,
     orderGrowthRate: 0,
@@ -78,6 +79,7 @@ function AdminDashboard() {
           pendingOrders: data.stats.pendingOrders || 0,
           completedOrders: data.stats.completedOrders || 0,
           cancelledOrders: data.stats.cancelledOrders || 0,
+          todayOrders: data.stats.todayOrders || 0,
           userGrowthRate: data.stats.userGrowthRate || 0,
           productGrowthRate: data.stats.productGrowthRate || 0,
           orderGrowthRate: data.stats.orderGrowthRate || 0,
@@ -100,6 +102,7 @@ function AdminDashboard() {
           pendingOrders: 0,
           completedOrders: 0,
           cancelledOrders: 0,
+          todayOrders: 0,
           userGrowthRate: 0,
           productGrowthRate: 0,
           orderGrowthRate: 0,
@@ -149,7 +152,7 @@ function AdminDashboard() {
             <StatsCard
               title="Total Pesanan"
               value={stats.totalOrders}
-              description="Pesanan bulan ini"
+              description="Pesanan aktif (tidak dibatalkan)"
               icon={<ShoppingCart className="h-5 w-5" />}
               trend={{ value: stats.orderGrowthRate || 0, isPositive: (stats.orderGrowthRate || 0) > 0 }}
             />
@@ -200,18 +203,13 @@ function AdminDashboard() {
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Order Hari Ini</p>
                     <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                      {recentOrders.filter(order => {
-                        const today = new Date().toDateString();
-                        return new Date(order.createdAt).toDateString() === today;
-                      }).length}
+                      {stats.todayOrders}
                     </p>
                   </div>
                   <Activity className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                 </div>
               </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-md transition-shadow">
+            </Card>            <Card className="hover:shadow-md transition-shadow">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>

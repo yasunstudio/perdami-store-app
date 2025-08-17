@@ -2,12 +2,13 @@
 export interface DashboardStats {
   totalUsers: number
   totalProducts: number  // Mapped from totalBundles in API
-  totalOrders: number
+  totalOrders: number    // Exclude cancelled orders for consistency
   totalStores: number
   totalRevenue: number
   pendingOrders: number
   completedOrders: number
   cancelledOrders: number
+  todayOrders: number    // Today's orders (exclude cancelled)
   userGrowthRate?: number
   productGrowthRate?: number
   orderGrowthRate?: number

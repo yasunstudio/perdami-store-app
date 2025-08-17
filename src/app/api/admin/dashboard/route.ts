@@ -10,14 +10,14 @@ export async function GET() {
     console.log(`✅ Prisma Postgres connected, ${userCount} users found`);
 
     // Get basic stats using Prisma ORM (no more prepared statement issues!)
-    const [totalUsers, totalBundles, totalOrders, totalStores] = await Promise.all([
+    const [totalUsers, totalBundles, totalOrdersAll, totalStores] = await Promise.all([
       prisma.user.count(),
       prisma.productBundle.count(),
-      prisma.order.count(),
+      prisma.order.count({ where: { orderStatus: { not: 'CANCELLED' } } }), // Exclude cancelled orders
       prisma.store.count()
     ]);
 
-    console.log('📊 Stats retrieved via Prisma ORM:', { totalUsers, totalBundles, totalOrders, totalStores });
+    console.log('📊 Stats retrieved via Prisma ORM:', { totalUsers, totalBundles, totalOrders: totalOrdersAll, totalStores });
 
     // Get recent orders with user details (Prisma ORM works perfectly now)
     const recentOrders = await prisma.order.findMany({
@@ -133,11 +133,20 @@ export async function GET() {
 
     const totalRevenue = allCompletedOrders.reduce((sum, order) => sum + parseFloat(order.totalAmount.toString()), 0);
     
-    // Get order status counts for dashboard stats
-    const [pendingOrdersCount, completedOrdersCount, cancelledOrdersCount] = await Promise.all([
+    // Get order status counts for dashboard stats - CONSISTENT LOGIC
+    const [pendingOrdersCount, completedOrdersCount, cancelledOrdersCount, todayOrdersCount] = await Promise.all([
       prisma.order.count({ where: { orderStatus: 'PENDING' } }),
       prisma.order.count({ where: { orderStatus: 'COMPLETED' } }),
-      prisma.order.count({ where: { orderStatus: 'CANCELLED' } })
+      prisma.order.count({ where: { orderStatus: 'CANCELLED' } }),
+      // Today's orders (exclude cancelled) - consistent with total orders logic
+      prisma.order.count({ 
+        where: { 
+          createdAt: { 
+            gte: new Date(new Date().setHours(0, 0, 0, 0)) // Start of today
+          },
+          orderStatus: { not: 'CANCELLED' }
+        } 
+      })
     ]);
 
     console.log(`📊 Growth Analysis - Current vs Previous Month:`);
@@ -147,17 +156,19 @@ export async function GET() {
     console.log(`Stores: ${thisMonthStores} vs ${lastMonthStores} = ${storeGrowthRate.toFixed(1)}%`);
     console.log(`💰 Revenue Analysis: Total Revenue from ${allCompletedOrders.length} completed orders = ${totalRevenue}`);
     console.log(`📊 Order Status: Pending=${pendingOrdersCount}, Completed=${completedOrdersCount}, Cancelled=${cancelledOrdersCount}`);
+    console.log(`📅 Today's Orders (exclude cancelled): ${todayOrdersCount}`);
 
     const dashboardData = {
       stats: {
         totalUsers,
         totalProducts: totalBundles,
-        totalOrders,
+        totalOrders: totalOrdersAll, // Exclude cancelled orders - CONSISTENT
         totalStores,
         totalRevenue,
         pendingOrders: pendingOrdersCount,
         completedOrders: completedOrdersCount,
         cancelledOrders: cancelledOrdersCount,
+        todayOrders: todayOrdersCount, // New field for today's orders
         userGrowthRate: Math.round(userGrowthRate * 10) / 10, // Round to 1 decimal
         productGrowthRate: Math.round(productGrowthRate * 10) / 10,
         orderGrowthRate: Math.round(orderGrowthRate * 10) / 10,
@@ -167,7 +178,7 @@ export async function GET() {
       popularProducts: formattedBundles
     };
 
-    console.log(`✅ Dashboard data prepared successfully - ${totalUsers} users, ${totalBundles} bundles, ${totalOrders} orders, ${totalStores} stores`);
+    console.log(`✅ Dashboard data prepared successfully - ${totalUsers} users, ${totalBundles} bundles, ${totalOrdersAll} orders (exclude cancelled), ${totalStores} stores`);
 
     return NextResponse.json(dashboardData);
 
