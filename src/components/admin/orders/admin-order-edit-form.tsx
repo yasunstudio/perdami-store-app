@@ -398,11 +398,11 @@ export function AdminOrderEditForm({ orderId, onOrderUpdate }: AdminOrderEditFor
                     <p className="text-sm text-muted-foreground">{item.bundle.store.name}</p>
                     <div className="flex items-center gap-4 mt-2">
                       <span className="text-sm">Qty: {item.quantity}</span>
-                      <span className="text-sm">@ Rp {item.unitPrice.toLocaleString('id-ID')}</span>
+                      <span className="text-sm">@ Rp {(item.unitPrice || 0).toLocaleString('id-ID')}</span>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium">Rp {item.totalPrice.toLocaleString('id-ID')}</p>
+                    <p className="font-medium">Rp {(item.totalPrice || 0).toLocaleString('id-ID')}</p>
                   </div>
                 </div>
               ))}
@@ -412,16 +412,16 @@ export function AdminOrderEditForm({ orderId, onOrderUpdate }: AdminOrderEditFor
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-sm">Subtotal:</span>
-                  <span className="text-sm">Rp {order.subtotalAmount.toLocaleString('id-ID')}</span>
+                  <span className="text-sm">Rp {(order.subtotalAmount || 0).toLocaleString('id-ID')}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Biaya Layanan:</span>
-                  <span className="text-sm">Rp {order.serviceFee.toLocaleString('id-ID')}</span>
+                  <span className="text-sm">Rp {(order.serviceFee || 0).toLocaleString('id-ID')}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-medium">
                   <span>Total:</span>
-                  <span>Rp {order.totalAmount.toLocaleString('id-ID')}</span>
+                  <span>Rp {(order.totalAmount || 0).toLocaleString('id-ID')}</span>
                 </div>
               </div>
             </div>
