@@ -58,9 +58,15 @@ export async function GET(request: NextRequest) {
       const marginPercent = bundle.costPrice > 0 ? 
         ((profit / bundle.costPrice) * 100).toFixed(1) : '0.0';
 
+      // Format contents/items data
+      const itemsData = bundle.contents && Array.isArray(bundle.contents) 
+        ? bundle.contents.map((item: any) => `${item.name} (${item.quantity}x)`).join(', ')
+        : 'Tidak ada item';
+
       return {
         'No': index + 1,
         'Nama Bundle': bundle.name,
+        'Items': itemsData,
         'Toko': bundle.store.name,
         'Harga Modal (Rp)': bundle.costPrice,
         'Harga Jual (Rp)': bundle.sellingPrice,
@@ -83,6 +89,7 @@ export async function GET(request: NextRequest) {
     const columnWidths = [
       { wch: 5 },   // No
       { wch: 30 },  // Nama Bundle
+      { wch: 50 },  // Items
       { wch: 20 },  // Toko
       { wch: 15 },  // Harga Modal
       { wch: 15 },  // Harga Jual
