@@ -79,21 +79,6 @@ export function PickupDateSelector({ selectedDate, onDateSelect, className }: Pi
             </span>
           </Button>
         ))}
-        
-        {selectedDate && (
-          <div className="bg-primary/10 dark:bg-primary/20 rounded-lg p-3 mt-4">
-            <div className="flex items-center gap-2 text-sm">
-              <Calendar className="h-4 w-4" />
-              <span className="font-medium">Tanggal pickup terpilih:</span>
-            </div>
-            <p className="text-sm mt-1">
-              {pickupDates.find(d => d.date === selectedDate)?.label}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Anda dapat mengambil pesanan kapan saja antara jam 09:00 - 17:00 WIB
-            </p>
-          </div>
-        )}
       </CardContent>
     </Card>
   )
