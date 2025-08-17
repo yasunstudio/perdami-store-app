@@ -96,30 +96,39 @@ export function Header() {
           </div>
 
           {/* Mobile Navigation */}
-          <div className="flex md:hidden items-center space-x-2">
-            {/* Theme Toggle - Mobile Admin Style */}
+          <div className="flex md:hidden items-center space-x-1">
+            {/* Theme Toggle - Mobile */}
             {mounted && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                className="h-10 w-10 p-0 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                title={theme === 'dark' ? 'Mode terang' : 'Mode gelap'}
               >
                 {theme === 'dark' ? (
-                  <Sun className="h-[1.2rem] w-[1.2rem] text-amber-500" />
+                  <Sun className="h-5 w-5 text-amber-500" />
                 ) : (
-                  <Moon className="h-[1.2rem] w-[1.2rem] text-blue-600" />
+                  <Moon className="h-5 w-5 text-blue-600" />
                 )}
               </Button>
             )}
+            
+            {/* Notification Bell - Mobile */}
+            <NotificationBell className="hover:bg-gray-100 dark:hover:bg-gray-800 h-10 w-10" />
+            
             {/* Mobile Cart */}
-            <Button variant="ghost" size="sm" asChild className="relative hover:bg-gray-100 dark:hover:bg-gray-800">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              asChild 
+              className="relative h-10 w-10 p-0 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+            >
               <Link href="/cart">
                 <ShoppingCart className="h-5 w-5" />
                 {cart.itemCount > 0 && (
-                  <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs">
-                    {cart.itemCount}
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-primary text-primary-foreground border-2 border-background">
+                    {cart.itemCount > 9 ? '9+' : cart.itemCount}
                   </Badge>
                 )}
               </Link>
@@ -128,18 +137,33 @@ export function Header() {
             {/* Mobile Menu */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-10 w-10 p-0 hover:bg-gray-100 dark:hover:bg-gray-800">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-10 w-10 p-0 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200 active:scale-95"
+                >
                   <Menu className="h-5 w-5" />
                   <span className="sr-only">Buka menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[320px] sm:w-[380px] p-0 flex flex-col">
-                {/* Header dengan gradient */}
-                <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-6 border-b flex-shrink-0">
+              <SheetContent side="right" className="w-[340px] sm:w-[400px] p-0 flex flex-col">
+                {/* Header dengan gradient yang lebih profesional */}
+                <div className="bg-gradient-to-br from-primary/5 via-primary/10 to-secondary/5 p-6 border-b backdrop-blur-sm flex-shrink-0">
                   <SheetHeader>
-                    <div className="flex items-center space-x-3">
-                      <Package className="h-6 w-6 text-primary" />
-                      <SheetTitle className="text-lg font-bold">{settings?.appName || 'Dharma Wanita Perdami'}</SheetTitle>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+                          <Package className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <SheetTitle className="text-lg font-bold text-left">
+                            {settings?.appName || 'Dharma Wanita Perdami'}
+                          </SheetTitle>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Selamat datang di toko online kami
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </SheetHeader>
                 </div>
@@ -147,58 +171,73 @@ export function Header() {
                 {/* Scrollable Content */}
                 <div className="flex-1 flex flex-col overflow-hidden">
                   {/* Navigation Links */}
-                  <nav className="flex-1 px-6 py-6 space-y-2 overflow-y-auto">
+                  <nav className="px-6 py-6 space-y-3 border-b">
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+                      Menu Navigasi
+                    </h3>
                     {navigationLinks.map(({ href, icon: Icon, label }) => (
                       <Link
                         key={href}
                         href={href}
                         onClick={() => setMobileMenuOpen(false)}
-                        className="flex items-center space-x-4 px-4 py-3 text-base font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-all duration-200 group"
+                        className="flex items-center space-x-4 px-4 py-3 text-base font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-xl transition-all duration-200 group border border-transparent hover:border-primary/10"
                       >
-                        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-muted/50 group-hover:bg-primary/10 transition-colors">
-                          <Icon className="h-4 w-4 group-hover:text-primary transition-colors" />
+                        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-primary/10 to-secondary/10 group-hover:from-primary/20 group-hover:to-secondary/20 transition-all duration-200">
+                          <Icon className="h-5 w-5 text-primary group-hover:scale-110 transition-transform duration-200" />
                         </div>
-                        <span className="group-hover:translate-x-1 transition-transform duration-200">{label}</span>
+                        <span className="group-hover:translate-x-1 transition-transform duration-200 font-medium">
+                          {label}
+                        </span>
                       </Link>
                     ))}
                   </nav>
 
-                  {/* Cart Summary untuk Mobile - Fixed */}
-                  <div className="px-6 py-4 border-t bg-muted/20 flex-shrink-0 space-y-3">
-                    {/* Cart Summary */}
+                  {/* Cart Summary - Improved */}
+                  <div className="px-6 py-6 border-b bg-muted/20">
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+                      Keranjang Belanja
+                    </h3>
                     <Link
                       href="/cart"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center justify-between p-4 bg-background rounded-lg border hover:border-primary/20 transition-colors group"
+                      className="flex items-center justify-between p-4 bg-background rounded-xl border hover:border-primary/20 transition-all duration-200 group hover:shadow-sm"
                     >
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-4">
                         <div className="relative">
-                          <ShoppingCart className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950 dark:to-red-950">
+                            <ShoppingCart className="h-6 w-6 text-orange-600 dark:text-orange-400 group-hover:scale-110 transition-transform duration-200" />
+                          </div>
                           {cart.itemCount > 0 && (
-                            <Badge className="absolute -top-2 -right-2 h-4 w-4 flex items-center justify-center p-0 text-xs">
+                            <Badge className="absolute -top-2 -right-2 h-6 w-6 flex items-center justify-center p-0 text-xs bg-primary text-primary-foreground">
                               {cart.itemCount}
                             </Badge>
                           )}
                         </div>
                         <div>
-                          <p className="text-sm font-medium">Keranjang Belanja</p>
+                          <p className="text-sm font-semibold">Keranjang Belanja</p>
                           <p className="text-xs text-muted-foreground">
-                            {cart.itemCount > 0 ? `${cart.itemCount} item` : 'Kosong'}
+                            {cart.itemCount > 0 ? `${cart.itemCount} item tersimpan` : 'Belum ada item'}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
                         {cart.total > 0 && (
-                          <p className="text-sm font-bold text-primary">
-                            {formatPrice(cart.total)}
-                          </p>
+                          <div>
+                            <p className="text-sm font-bold text-primary">
+                              {formatPrice(cart.total)}
+                            </p>
+                            <p className="text-xs text-muted-foreground">Total</p>
+                          </div>
                         )}
                       </div>
                     </Link>
                   </div>
 
-                  {/* User Section - Fixed */}
-                  <div className="px-6 py-4 border-t flex-shrink-0">
+                  {/* User Section - Enhanced */}
+                  <div className="px-6 py-6 flex-shrink-0 bg-muted/10">
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+                      Akun Pengguna
+                    </h3>
                     <MobileUserMenu onClose={() => setMobileMenuOpen(false)} />
                   </div>
                 </div>

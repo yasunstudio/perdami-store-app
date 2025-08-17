@@ -4,6 +4,7 @@ import { SessionProvider } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { Header } from './header';
 import { FooterContainer } from './footer-container';
+import { MobileBottomNav } from './mobile-bottom-nav';
 import { Toaster } from '@/components/ui/sonner';
 
 interface MainLayoutProps {
@@ -30,10 +31,11 @@ export function MainLayout({ children }: MainLayoutProps) {
     <SessionProvider>
       <div className="relative flex min-h-screen flex-col">
         <Header />
-        <main className="flex-1">
+        <main className="flex-1 pb-16 md:pb-0">
           {children}
         </main>
         <FooterContainer />
+        <MobileBottomNav />
       </div>
       <Toaster 
         richColors 
