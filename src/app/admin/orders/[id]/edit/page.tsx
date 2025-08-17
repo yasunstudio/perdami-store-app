@@ -13,10 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
-import { AlertTriangle, Save, X, User, Mail, Phone, CreditCard, Calendar, Package, Eye } from 'lucide-react'
+import { AlertTriangle, Save, X, User, Mail, Phone, CreditCard, Calendar, Building, Eye, Edit } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
+import { formatPrice } from '@/lib/utils'
 
 interface OrderData {
   id: string
@@ -30,6 +31,9 @@ interface OrderData {
   totalAmount: number
   pickupDate?: string
   createdAt: string
+  updatedAt: string
+  paymentMethod: string
+  paymentProof?: string
   user: {
     id: string
     name: string
@@ -59,26 +63,20 @@ interface OrderData {
   }
 }
 
-const ORDER_STATUSES = [
-  { value: 'PENDING', label: 'Menunggu', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
-  { value: 'CONFIRMED', label: 'Dikonfirmasi', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' },
-  { value: 'PROCESSING', label: 'Diproses', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' },
-  { value: 'READY', label: 'Siap', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' },
-  { value: 'COMPLETED', label: 'Selesai', color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200' },
-  { value: 'CANCELLED', label: 'Dibatalkan', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' }
+const orderStatusOptions = [
+  { value: 'PENDING', label: 'Menunggu' },
+  { value: 'CONFIRMED', label: 'Dikonfirmasi' },
+  { value: 'PROCESSING', label: 'Diproses' },
+  { value: 'READY', label: 'Siap' },
+  { value: 'COMPLETED', label: 'Selesai' },
+  { value: 'CANCELLED', label: 'Dibatalkan' }
 ]
 
-const PAYMENT_STATUSES = [
-  { value: 'PENDING', label: 'Menunggu', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
-  { value: 'PAID', label: 'Dibayar', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' },
-  { value: 'FAILED', label: 'Gagal', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' },
-  { value: 'REFUNDED', label: 'Dikembalikan', color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200' }
-]
-
-const PICKUP_STATUSES = [
-  { value: 'PENDING', label: 'Menunggu', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
-  { value: 'READY', label: 'Siap Diambil', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' },
-  { value: 'COMPLETED', label: 'Sudah Diambil', color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200' }
+const paymentStatusOptions = [
+  { value: 'PENDING', label: 'Menunggu' },
+  { value: 'PAID', label: 'Dibayar' },
+  { value: 'FAILED', label: 'Gagal' },
+  { value: 'REFUNDED', label: 'Dikembalikan' }
 ]
 
 export default function AdminOrderEditPage() {
@@ -89,12 +87,11 @@ export default function AdminOrderEditPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isEditing, setIsEditing] = useState(true) // Always in edit mode
   
   const [formData, setFormData] = useState({
     orderStatus: '',
     paymentStatus: '',
-    pickupStatus: '',
-    pickupDate: '',
     notes: ''
   })
 
@@ -149,8 +146,6 @@ export default function AdminOrderEditPage() {
       setFormData({
         orderStatus: data.orderStatus || 'PENDING',
         paymentStatus: data.paymentStatus || 'PENDING',
-        pickupStatus: data.pickupStatus || 'PENDING',
-        pickupDate: data.pickupDate ? new Date(data.pickupDate).toISOString().split('T')[0] : '',
         notes: data.notes || ''
       })
     } catch (error) {
@@ -165,19 +160,13 @@ export default function AdminOrderEditPage() {
     try {
       setSaving(true)
       
-      const response = await fetch(`/api/admin/orders/${orderId}/status`, {
+      const response = await fetch(`/api/admin/orders/${orderId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({
-          orderStatus: formData.orderStatus,
-          paymentStatus: formData.paymentStatus,
-          pickupStatus: formData.pickupStatus,
-          pickupDate: formData.pickupDate || null,
-          notes: formData.notes
-        })
+        body: JSON.stringify(formData)
       })
       
       if (!response.ok) {
@@ -196,6 +185,12 @@ export default function AdminOrderEditPage() {
 
   const handleCancel = () => {
     router.push(`/admin/orders/${orderId}`)
+  }
+
+  const handleViewPaymentProof = () => {
+    if (order?.paymentProof) {
+      window.open(order.paymentProof, '_blank')
+    }
   }
 
   // Early return for invalid orderId
@@ -231,7 +226,7 @@ export default function AdminOrderEditPage() {
         showBackButton={true}
         backUrl="/admin/orders"
       >
-        <div className="space-y-6">
+        <div className="space-y-6">          
           <div className="grid grid-cols-1 gap-6">
             <Card className="p-6">
               <div className="space-y-4">
@@ -267,20 +262,16 @@ export default function AdminOrderEditPage() {
         description="Terjadi kesalahan saat memuat order"
         showBackButton={true}
         backUrl="/admin/orders"
-      >
-        <div className="text-center py-12">
-          <AlertTriangle className="h-16 w-16 text-red-500 dark:text-red-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-foreground mb-2">Terjadi Kesalahan</h2>
-          <p className="text-muted-foreground mb-6">{error}</p>
-          <div className="flex justify-center gap-4">
-            <Button onClick={fetchOrderDetails} variant="outline">
-              Coba Lagi
-            </Button>
-            <Button onClick={() => router.push('/admin/orders')} variant="outline">
-              Kembali ke Daftar Order
-            </Button>
+      >          <div className="text-center py-12">
+            <AlertTriangle className="h-16 w-16 text-red-500 dark:text-red-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-foreground mb-2">Terjadi Kesalahan</h2>
+            <p className="text-muted-foreground mb-6">{error}</p>
+            <div className="flex justify-center gap-4">
+              <Button onClick={fetchOrderDetails} variant="outline">
+                Coba Lagi
+              </Button>
+            </div>
           </div>
-        </div>
       </AdminPageLayout>
     )
   }
@@ -298,11 +289,6 @@ export default function AdminOrderEditPage() {
           <AlertTriangle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-foreground mb-2">Order Tidak Ditemukan</h2>
           <p className="text-muted-foreground mb-6">Order dengan ID tersebut tidak ditemukan.</p>
-          <div className="flex justify-center gap-4">
-            <Button onClick={() => router.push('/admin/orders')} variant="outline">
-              Kembali ke Daftar Order
-            </Button>
-          </div>
         </div>
       </AdminPageLayout>
     )
@@ -325,146 +311,197 @@ export default function AdminOrderEditPage() {
       <div className="space-y-6">
         {/* Main Content - Same layout as detail page */}
         <div className="grid grid-cols-1 gap-6">
-          {/* Order Information Card */}
-          <Card>
+          {/* Customer Information - Same as detail page */}
+          <Card className="border-border/50 bg-card">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-card-foreground">
                 <User className="h-5 w-5" />
-                Informasi Order
+                Informasi Pelanggan
               </CardTitle>
-              <CardDescription>
-                Edit status dan informasi order
-              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Customer Information */}
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground mb-3">Informasi Pelanggan</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-muted-foreground">Nama Lengkap</Label>
+                  <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Nama</p>
-                      <p className="font-medium">{order.user.name}</p>
-                    </div>
+                    <span className="text-sm text-foreground">{order.user.name || 'Nama tidak tersedia'}</span>
                   </div>
-                  
-                  <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-muted-foreground">Email</Label>
+                  <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Email</p>
-                      <p className="font-medium">{order.user.email}</p>
+                    <span className="text-sm text-foreground">{order.user.email}</span>
+                  </div>
+                </div>
+              </div>
+
+              {order.user.phone && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-muted-foreground">Nomor Telepon</Label>
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-foreground">{order.user.phone}</span>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Order Status Management - Edit Mode Always */}
+          <Card className="border-border/50 bg-card">
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <CardTitle className="flex items-center gap-2 text-card-foreground">
+                  <CreditCard className="h-5 w-5" />
+                  Edit Order
+                </CardTitle>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="flex items-center gap-2 w-full sm:w-auto"
+                  >
+                    <Save className="h-4 w-4" />
+                    {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleCancel}
+                    className="flex items-center gap-2 w-full sm:w-auto"
+                  >
+                    <X className="h-4 w-4" />
+                    Batal
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Existing Order Information Display */}
+              <div className="space-y-4 p-4 bg-muted/20 rounded-lg">
+                <h4 className="text-sm font-medium text-muted-foreground">Informasi Order Saat Ini</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Status Order</Label>
+                    <Badge variant="outline" className="w-fit">
+                      {orderStatusOptions.find(opt => opt.value === order.orderStatus)?.label || order.orderStatus}
+                    </Badge>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Status Pembayaran</Label>
+                    <Badge variant="outline" className="w-fit">
+                      {paymentStatusOptions.find(opt => opt.value === order.paymentStatus)?.label || order.paymentStatus}
+                    </Badge>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Total Pembayaran</Label>
+                    <div className="text-lg font-bold text-foreground">
+                      {formatPrice(order.totalAmount)}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Metode Pembayaran</Label>
+                    <div className="text-sm text-foreground">
+                      {order.paymentMethod === 'BANK_TRANSFER' ? 'Transfer Bank' : order.paymentMethod}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Tanggal Order</Label>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-foreground">
+                        {format(new Date(order.createdAt), 'dd MMMM yyyy, HH:mm', { locale: id })}
+                      </span>
                     </div>
                   </div>
                   
-                  {order.user.phone && (
-                    <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Telepon</p>
-                        <p className="font-medium">{order.user.phone}</p>
-                      </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Terakhir Update</Label>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-foreground">
+                        {format(new Date(order.updatedAt), 'dd MMMM yyyy, HH:mm', { locale: id })}
+                      </span>
                     </div>
-                  )}
+                  </div>
                 </div>
+
+                {order.bank && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Bank Tujuan</Label>
+                    <div className="flex items-center gap-2">
+                      <Building className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-foreground">
+                        {order.bank.name} - {order.bank.accountNumber} ({order.bank.accountName})
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {order.paymentProof && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Bukti Pembayaran</Label>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleViewPaymentProof}
+                        className="flex items-center gap-2 w-full sm:w-auto"
+                      >
+                        <Eye className="h-4 w-4" />
+                        Lihat Bukti
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <Separator />
 
-              {/* Order Details */}
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground mb-3">Detail Order</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                    <CreditCard className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total</p>
-                      <p className="font-medium">Rp {(order.totalAmount || 0).toLocaleString('id-ID')}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Tanggal Order</p>
-                      <p className="font-medium">
-                        {format(new Date(order.createdAt), 'dd MMM yyyy HH:mm', { locale: id })}
-                      </p>
-                    </div>
-                  </div>
-
-                  {order.bank && (
-                    <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                      <CreditCard className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Bank</p>
-                        <p className="font-medium">{order.bank.name}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Edit Status Form */}
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground mb-4">Edit Status</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Edit Form */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-muted-foreground">Edit Status Order</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="orderStatus">Status Order</Label>
-                    <Select value={formData.orderStatus} onValueChange={(value) => setFormData(prev => ({ ...prev, orderStatus: value }))}>
+                    <Select
+                      value={formData.orderStatus}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, orderStatus: value }))}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {ORDER_STATUSES.map((status) => (
-                          <SelectItem key={status.value} value={status.value}>
-                            <div className="flex items-center gap-2">
-                              <Badge className={`${status.color} text-xs border-0`}>
-                                {status.label}
-                              </Badge>
-                            </div>
+                        {orderStatusOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-
+                  
                   <div className="space-y-2">
                     <Label htmlFor="paymentStatus">Status Pembayaran</Label>
-                    <Select value={formData.paymentStatus} onValueChange={(value) => setFormData(prev => ({ ...prev, paymentStatus: value }))}>
+                    <Select
+                      value={formData.paymentStatus}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, paymentStatus: value }))}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {PAYMENT_STATUSES.map((status) => (
-                          <SelectItem key={status.value} value={status.value}>
-                            <div className="flex items-center gap-2">
-                              <Badge className={`${status.color} text-xs border-0`}>
-                                {status.label}
-                              </Badge>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="pickupStatus">Status Pickup</Label>
-                    <Select value={formData.pickupStatus} onValueChange={(value) => setFormData(prev => ({ ...prev, pickupStatus: value }))}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PICKUP_STATUSES.map((status) => (
-                          <SelectItem key={status.value} value={status.value}>
-                            <div className="flex items-center gap-2">
-                              <Badge className={`${status.color} text-xs border-0`}>
-                                {status.label}
-                              </Badge>
-                            </div>
+                        {paymentStatusOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -472,47 +509,34 @@ export default function AdminOrderEditPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="pickupDate">Tanggal Pickup</Label>
-                    <Input
-                      type="date"
-                      value={formData.pickupDate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, pickupDate: e.target.value }))}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">Catatan Admin</Label>
-                    <Textarea
-                      value={formData.notes}
-                      onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                      placeholder="Tambahkan catatan untuk pesanan ini..."
-                      rows={3}
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Catatan Admin</Label>
+                  <Textarea
+                    id="notes"
+                    value={formData.notes}
+                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                    placeholder="Tambahkan catatan untuk order ini..."
+                    rows={4}
+                  />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Order Items Card */}
-          <Card>
+          {/* Order Items - Same as detail page */}
+          <Card className="border-border/50 bg-card">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Item Order
+              <CardTitle className="flex items-center gap-2 text-card-foreground">
+                <CreditCard className="h-5 w-5" />
+                Detail Pesanan
               </CardTitle>
-              <CardDescription>
-                Daftar item dalam pesanan ini
-              </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="space-y-4">
                 {order.orderItems.map((item) => (
-                  <div key={item.id} className="flex items-center gap-4 p-4 border rounded-lg">
+                  <div key={item.id} className="flex items-center gap-4 p-4 border rounded-lg border-border bg-card">
                     {item.bundle.image && (
-                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted">
+                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                         <img 
                           src={item.bundle.image} 
                           alt={item.bundle.name}
@@ -520,16 +544,19 @@ export default function AdminOrderEditPage() {
                         />
                       </div>
                     )}
-                    <div className="flex-1">
-                      <h4 className="font-medium">{item.bundle.name}</h4>
-                      <p className="text-sm text-muted-foreground">{item.bundle.store.name}</p>
-                      <div className="flex items-center gap-4 mt-2">
-                        <span className="text-sm">Qty: {item.quantity}</span>
-                        <span className="text-sm">@ Rp {(item.unitPrice || 0).toLocaleString('id-ID')}</span>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-card-foreground truncate">{item.bundle.name}</h4>
+                      <div className="flex items-center gap-2 mt-1">
+                        <CreditCard className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">{item.bundle.store.name}</span>
+                      </div>
+                      <div className="flex items-center gap-4 mt-2 text-sm">
+                        <span className="text-muted-foreground">Qty: {item.quantity}</span>
+                        <span className="text-muted-foreground">@ {formatPrice(item.unitPrice || 0)}</span>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium">Rp {(item.totalPrice || 0).toLocaleString('id-ID')}</p>
+                    <div className="text-right flex-shrink-0">
+                      <p className="font-medium text-card-foreground">{formatPrice(item.totalPrice || 0)}</p>
                     </div>
                   </div>
                 ))}
@@ -537,35 +564,23 @@ export default function AdminOrderEditPage() {
                 <Separator />
                 
                 <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm">Subtotal:</span>
-                    <span className="text-sm">Rp {(order.subtotalAmount || 0).toLocaleString('id-ID')}</span>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Subtotal:</span>
+                    <span className="text-foreground">{formatPrice(order.subtotalAmount || 0)}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Biaya Layanan:</span>
-                    <span className="text-sm">Rp {(order.serviceFee || 0).toLocaleString('id-ID')}</span>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Biaya Layanan:</span>
+                    <span className="text-foreground">{formatPrice(order.serviceFee || 0)}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between font-medium">
-                    <span>Total:</span>
-                    <span>Rp {(order.totalAmount || 0).toLocaleString('id-ID')}</span>
+                    <span className="text-foreground">Total:</span>
+                    <span className="text-foreground">{formatPrice(order.totalAmount || 0)}</span>
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
-
-          {/* Action Buttons */}
-          <div className="flex gap-3">
-            <Button onClick={handleSave} disabled={saving}>
-              <Save className="h-4 w-4 mr-2" />
-              {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
-            </Button>
-            <Button variant="outline" onClick={handleCancel}>
-              <X className="h-4 w-4 mr-2" />
-              Batal
-            </Button>
-          </div>
         </div>
       </div>
     </AdminPageLayout>
