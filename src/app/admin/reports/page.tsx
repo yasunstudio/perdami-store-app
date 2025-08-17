@@ -107,7 +107,7 @@ export default function ReportsAdminPage() {
           ['Nama Bundle', 'Harga', 'Toko', 'Total Orders', 'Total Revenue', 'Status'],
           ...productsData.topSellingProducts.map((bundle: any) => [
             bundle.name,
-            `Rp ${bundle.price.toLocaleString('id-ID')}`,
+            `Rp ${(bundle.price || bundle.sellingPrice || 0).toLocaleString('id-ID')}`,
             bundle.storeName,
             bundle.totalOrders,
             `Rp ${bundle.totalRevenue.toLocaleString('id-ID')}`,

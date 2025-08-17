@@ -54,8 +54,22 @@ export function BundleMobileCard({
           {/* Bundle Info */}
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <p className="text-muted-foreground">Harga</p>
-              <p className="font-medium">{formatPrice(bundle.price)}</p>
+              <p className="text-muted-foreground">Harga Jual</p>
+              <p className="font-medium text-green-600">{formatPrice(bundle.sellingPrice)}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Harga Modal</p>
+              <p className="font-medium text-orange-600">{formatPrice(bundle.costPrice)}</p>
+            </div>
+          </div>
+
+          {/* Profit Info */}
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-muted-foreground">Profit</p>
+              <p className="font-medium text-blue-600">
+                {formatPrice(bundle.sellingPrice - bundle.costPrice)}
+              </p>
             </div>
             <div>
               <p className="text-muted-foreground">Items</p>

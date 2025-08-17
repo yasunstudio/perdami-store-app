@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
         throw new Error(`Bundle ${item.bundleId} not found`)
       }
       
-      const unitPrice = bundle.price
+      const unitPrice = bundle.sellingPrice
       const totalPrice = unitPrice * item.quantity
       totalAmount += totalPrice
       

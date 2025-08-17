@@ -75,12 +75,12 @@ export async function GET() {
         .filter(item => item.order.orderStatus === 'COMPLETED')
         .reduce((sum, item) => sum + item.quantity, 0);
       
-      const actualRevenue = parseFloat(bundle.price.toString()) * totalSold;
+      const actualRevenue = parseFloat(bundle.sellingPrice.toString()) * totalSold;
 
       return {
         id: bundle.id,
         name: bundle.name,
-        price: parseFloat(bundle.price.toString()),
+        price: parseFloat(bundle.sellingPrice.toString()),
         image: bundle.image,
         storeName: bundle.store?.name || 'Unknown Store',
         description: bundle.description?.substring(0, 100) || 'No description',

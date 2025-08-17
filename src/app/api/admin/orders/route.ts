@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
               select: {
                 id: true,
                 name: true,
-                price: true,
+                sellingPrice: true,
                 image: true
               }
             }
@@ -235,7 +235,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
     
-    const totalAmount = bundles.reduce((sum, bundle) => sum + bundle.price, 0)
+    const totalAmount = bundles.reduce((sum, bundle) => sum + bundle.sellingPrice, 0)
     const serviceFee = 25000 // Fixed Rp 25.000
     const subtotalAmount = totalAmount
     
@@ -255,8 +255,8 @@ export async function POST(request: NextRequest) {
           create: bundles.map(bundle => ({
             bundleId: bundle.id,
             quantity: 1,
-            unitPrice: bundle.price,
-            totalPrice: bundle.price
+            unitPrice: bundle.sellingPrice,
+            totalPrice: bundle.sellingPrice
           }))
         },
         payment: {
@@ -281,7 +281,7 @@ export async function POST(request: NextRequest) {
               select: {
                 id: true,
                 name: true,
-                price: true
+                sellingPrice: true
               }
             }
           }
@@ -342,7 +342,7 @@ export async function PATCH(request: NextRequest) {
               select: {
                 id: true,
                 name: true,
-                price: true
+                sellingPrice: true
               }
             }
           }

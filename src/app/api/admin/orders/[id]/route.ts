@@ -40,7 +40,7 @@ export async function GET(
               select: {
                 id: true,
                 name: true,
-                price: true,
+                sellingPrice: true,
                 image: true,
                 storeId: true,
                 store: {
@@ -118,7 +118,7 @@ export async function GET(
         bundle: {
           id: item.bundle.id,
           name: item.bundle.name,
-          price: item.bundle.price,
+          price: item.bundle.sellingPrice,
           image: item.bundle.image,
           storeId: item.bundle.storeId,
           store: item.bundle.store
@@ -133,7 +133,7 @@ export async function GET(
         bundle: {
           id: item.bundle.id,
           name: item.bundle.name,
-          price: item.bundle.price,
+          price: item.bundle.sellingPrice,
           image: item.bundle.image,
           store: item.bundle.store
         }
@@ -241,7 +241,7 @@ export async function PATCH(
               select: {
                 id: true,
                 name: true,
-                price: true,
+                sellingPrice: true,
                 image: true,
                 storeId: true,
                 store: {

@@ -252,7 +252,7 @@ export class AdminDataService {
         id: bundle.id,
         name: bundle.name,
         storeName: bundle.store.name,
-        price: bundle.price,
+        price: bundle.sellingPrice, // Use selling price for display
         orderCount: bundle._count.orderItems,
         isActive: bundle.isActive,
         isFeatured: bundle.isFeatured

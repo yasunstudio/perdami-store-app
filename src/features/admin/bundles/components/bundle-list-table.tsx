@@ -91,8 +91,13 @@ export function BundleList({
                 </span>
               </TableCell>
               <TableCell>
-                <div className="font-medium text-xs">
-                  {formatPrice(bundle.price)}
+                <div className="space-y-1">
+                  <div className="font-medium text-xs text-green-600">
+                    {formatPrice(bundle.sellingPrice)}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">
+                    Modal: {formatPrice(bundle.costPrice)}
+                  </div>
                 </div>
               </TableCell>
               <TableCell>
