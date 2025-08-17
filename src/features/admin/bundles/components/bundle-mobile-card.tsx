@@ -10,9 +10,21 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Edit, Trash2, Eye, Power, PowerOff, Star, StarOff, Users, UserX } from 'lucide-react'
+import { MoreHorizontal, Edit, Trash2, Eye, Power, PowerOff, Star, StarOff, Users, UserX, EyeOff } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import type { ProductBundleWithRelations } from '../types/bundle.types'
+
+// Helper function to format date
+const formatDate = (date: Date | string) => {
+  const d = new Date(date)
+  return d.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
 
 interface BundleMobileCardProps {
   bundle: ProductBundleWithRelations
@@ -64,11 +76,20 @@ export function BundleMobileCard({
           </div>
 
           {/* Profit Info */}
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-3 gap-4 text-sm">
             <div>
               <p className="text-muted-foreground">Profit</p>
               <p className="font-medium text-blue-600">
                 {formatPrice(bundle.sellingPrice - bundle.costPrice)}
+              </p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Margin</p>
+              <p className="font-medium text-purple-600">
+                {bundle.costPrice > 0 ? 
+                  `${(((bundle.sellingPrice - bundle.costPrice) / bundle.costPrice) * 100).toFixed(1)}%` 
+                  : '0%'
+                }
               </p>
             </div>
             <div>
@@ -77,10 +98,16 @@ export function BundleMobileCard({
             </div>
           </div>
 
-          {/* Store */}
-          <div>
-            <p className="text-sm text-muted-foreground">Toko</p>
-            <p className="font-medium">{bundle.store?.name}</p>
+          {/* Store and Date */}
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-muted-foreground">Toko</p>
+              <p className="font-medium">{bundle.store?.name}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Terakhir Update</p>
+              <p className="font-medium text-xs">{formatDate(bundle.updatedAt)}</p>
+            </div>
           </div>
 
           {/* Description */}
@@ -104,8 +131,8 @@ export function BundleMobileCard({
             )}
             {!bundle.showToCustomer && (
               <Badge variant="outline" className="gap-1">
-                <Eye className="h-3 w-3" />
-                Hidden
+                <EyeOff className="h-3 w-3" />
+                Disembunyikan
               </Badge>
             )}
           </div>

@@ -18,9 +18,27 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Edit, Trash2, Eye, Power, PowerOff, Star, StarOff, Users, UserX, Package, ShoppingBag } from 'lucide-react'
+import { MoreHorizontal, Edit, Trash2, Eye, Power, PowerOff, Star, StarOff, Users, UserX, Package, ShoppingBag, EyeOff } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import { ProductBundleWithRelations } from '../types/bundle.types'
+
+// Helper function to format date
+const formatDate = (date: Date | string) => {
+  const d = new Date(date)
+  return d.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  })
+}
+
+const formatTime = (date: Date | string) => {
+  const d = new Date(date)
+  return d.toLocaleTimeString('id-ID', {
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
 
 interface BundleListTableProps {
   bundles: ProductBundleWithRelations[]
@@ -58,11 +76,12 @@ export function BundleList({
           <Table className="w-full min-w-[500px]">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[160px]">Bundle</TableHead>
+                <TableHead className="w-[180px]">Bundle</TableHead>
                 <TableHead className="w-[70px] text-center">Items</TableHead>
-                <TableHead className="w-[100px]">Harga</TableHead>
+                <TableHead className="w-[140px]">Harga & Profit</TableHead>
                 <TableHead className="w-[110px]">Toko</TableHead>
                 <TableHead className="w-[120px]">Status</TableHead>
+                <TableHead className="w-[100px]">Terakhir Update</TableHead>
                 <TableHead className="w-[60px]">Aksi</TableHead>
               </TableRow>
             </TableHeader>
@@ -93,10 +112,19 @@ export function BundleList({
               <TableCell>
                 <div className="space-y-1">
                   <div className="font-medium text-xs text-green-600">
-                    {formatPrice(bundle.sellingPrice)}
+                    Jual: {formatPrice(bundle.sellingPrice)}
+                  </div>
+                  <div className="text-[10px] text-orange-600">
+                    Modal: {formatPrice(bundle.costPrice)}
+                  </div>
+                  <div className="text-[10px] text-blue-600 font-medium">
+                    Profit: {formatPrice(bundle.sellingPrice - bundle.costPrice)}
                   </div>
                   <div className="text-[10px] text-muted-foreground">
-                    Modal: {formatPrice(bundle.costPrice)}
+                    Margin: {bundle.costPrice > 0 ? 
+                      `${(((bundle.sellingPrice - bundle.costPrice) / bundle.costPrice) * 100).toFixed(1)}%` 
+                      : '0%'
+                    }
                   </div>
                 </div>
               </TableCell>
@@ -115,10 +143,28 @@ export function BundleList({
                   </Badge>
                   {(bundle.isFeatured || !bundle.showToCustomer) && (
                     <div className="flex gap-1 text-xs">
-                      {bundle.isFeatured && <span title="Featured">⭐</span>}
-                      {!bundle.showToCustomer && <span title="Hidden">�</span>}
+                      {bundle.isFeatured && (
+                        <div title="Featured">
+                          <Star className="h-3 w-3 text-yellow-500" />
+                        </div>
+                      )}
+                      {!bundle.showToCustomer && (
+                        <div title="Disembunyikan dari customer">
+                          <EyeOff className="h-3 w-3 text-gray-500" />
+                        </div>
+                      )}
                     </div>
                   )}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="space-y-1">
+                  <div className="text-xs font-medium">
+                    {formatDate(bundle.updatedAt)}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {formatTime(bundle.updatedAt)}
+                  </div>
                 </div>
               </TableCell>
               <TableCell>
