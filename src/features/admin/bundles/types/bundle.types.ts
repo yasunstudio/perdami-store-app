@@ -14,7 +14,8 @@ export interface ProductBundle {
   name: string
   description?: string | null
   image?: string | null
-  price: number
+  costPrice: number
+  sellingPrice: number
   contents?: BundleContentItem[] | null
   isActive: boolean
   isFeatured: boolean
@@ -38,7 +39,8 @@ export interface ProductBundleWithRelations extends ProductBundle {}
 export interface BundleFormData {
   name: string
   description?: string
-  price: number
+  costPrice: number
+  sellingPrice: number
   storeId: string
   image?: string
   contents?: BundleContentItemWithId[]

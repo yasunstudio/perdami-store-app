@@ -46,7 +46,8 @@ export function BundleFormPageNew({ mode, bundleId }: BundleFormPageProps) {
   const [formData, setFormData] = useState<BundleFormData>({
     name: '',
     description: '',
-    price: 0,
+    costPrice: 0,
+    sellingPrice: 0,
     storeId: '',
     image: '',
     contents: [],
@@ -117,7 +118,8 @@ export function BundleFormPageNew({ mode, bundleId }: BundleFormPageProps) {
         setFormData({
           name: bundle.name,
           description: bundle.description || '',
-          price: bundle.price,
+          costPrice: bundle.costPrice,
+          sellingPrice: bundle.sellingPrice,
           storeId: bundle.storeId,
           image: bundle.image || '',
           contents: Array.isArray(bundle.contents) 
@@ -184,8 +186,16 @@ export function BundleFormPageNew({ mode, bundleId }: BundleFormPageProps) {
       newErrors.storeId = 'Toko harus dipilih'
     }
 
-    if (formData.price <= 0) {
-      newErrors.price = 'Harga harus lebih dari 0'
+    if (formData.costPrice <= 0) {
+      newErrors.costPrice = 'Harga modal harus lebih dari 0'
+    }
+
+    if (formData.sellingPrice <= 0) {
+      newErrors.sellingPrice = 'Harga jual harus lebih dari 0'
+    }
+
+    if (formData.sellingPrice <= formData.costPrice) {
+      newErrors.sellingPrice = 'Harga jual harus lebih tinggi dari harga modal'
     }
 
     if (!formData.contents || formData.contents.length === 0) {
@@ -389,28 +399,80 @@ export function BundleFormPageNew({ mode, bundleId }: BundleFormPageProps) {
                   </p>
                 </div>
 
-                {/* Price */}
-                <div className="space-y-2">
-                  <Label htmlFor="price" className="text-sm font-medium">
-                    Harga Paket <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.price}
-                    onChange={(e) => {
-                      setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))
-                      if (errors.price) {
-                        setErrors(prev => ({ ...prev, price: '' }))
-                      }
-                    }}
-                    placeholder="0"
-                    className={errors.price ? 'border-red-500' : ''}
-                  />
-                  {errors.price && <p className="text-sm text-red-600">{errors.price}</p>}
+                {/* Pricing */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Cost Price */}
+                  <div className="space-y-2">
+                    <Label htmlFor="costPrice" className="text-sm font-medium">
+                      Harga Modal <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="costPrice"
+                      type="number"
+                      min="0"
+                      step="1000"
+                      value={formData.costPrice}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, costPrice: parseFloat(e.target.value) || 0 }))
+                        if (errors.costPrice) {
+                          setErrors(prev => ({ ...prev, costPrice: '' }))
+                        }
+                      }}
+                      placeholder="0"
+                      className={errors.costPrice ? 'border-red-500' : ''}
+                    />
+                    {errors.costPrice && <p className="text-sm text-red-600">{errors.costPrice}</p>}
+                  </div>
+
+                  {/* Selling Price */}
+                  <div className="space-y-2">
+                    <Label htmlFor="sellingPrice" className="text-sm font-medium">
+                      Harga Jual <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="sellingPrice"
+                      type="number"
+                      min="0"
+                      step="1000"
+                      value={formData.sellingPrice}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, sellingPrice: parseFloat(e.target.value) || 0 }))
+                        if (errors.sellingPrice) {
+                          setErrors(prev => ({ ...prev, sellingPrice: '' }))
+                        }
+                      }}
+                      placeholder="0"
+                      className={errors.sellingPrice ? 'border-red-500' : ''}
+                    />
+                    {errors.sellingPrice && <p className="text-sm text-red-600">{errors.sellingPrice}</p>}
+                  </div>
                 </div>
+
+                {/* Profit Margin Display */}
+                {formData.costPrice > 0 && formData.sellingPrice > 0 && (
+                  <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Profit</p>
+                        <p className="font-bold text-green-600">
+                          {formatPrice(formData.sellingPrice - formData.costPrice)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Margin</p>
+                        <p className="font-bold text-green-600">
+                          {(((formData.sellingPrice - formData.costPrice) / formData.costPrice) * 100).toFixed(1)}%
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Markup</p>
+                        <p className="font-bold text-green-600">
+                          {((formData.sellingPrice / formData.costPrice) * 100).toFixed(0)}%
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

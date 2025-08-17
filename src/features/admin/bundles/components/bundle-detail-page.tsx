@@ -155,12 +155,28 @@ export function BundleDetailPage({ bundleId }: BundleDetailPageProps) {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Harga</p>
-                    <p className="text-2xl font-bold text-primary">{formatPrice(bundle.price)}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Harga Jual</p>
+                    <p className="text-2xl font-bold text-primary">{formatPrice(bundle.sellingPrice)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Harga Modal</p>
+                    <p className="text-xl font-bold text-orange-600">{formatPrice(bundle.costPrice)}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Margin Profit</p>
+                    <p className="text-lg font-bold text-green-600">
+                      {bundle.costPrice > 0 ? 
+                        `${(((bundle.sellingPrice - bundle.costPrice) / bundle.costPrice) * 100).toFixed(1)}%` 
+                        : '0%'
+                      }
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Jumlah Item</p>
-                    <p className="text-2xl font-bold">{bundle.contents?.length || 0}</p>
+                    <p className="text-lg font-bold">{bundle.contents?.length || 0}</p>
                   </div>
                 </div>
 
