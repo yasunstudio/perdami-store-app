@@ -30,6 +30,9 @@ export default function AdminOrderEditPage() {
   useEffect(() => {
     if (orderId) {
       fetchOrderBasicInfo()
+    } else {
+      setError('Order ID tidak valid')
+      setLoading(false)
     }
   }, [orderId])
 
@@ -37,6 +40,8 @@ export default function AdminOrderEditPage() {
     try {
       setLoading(true)
       setError(null)
+      
+      console.log('Fetching order details for edit page, ID:', orderId)
       
       const response = await fetch(`/api/admin/orders/${orderId}`, {
         method: 'GET',
@@ -46,6 +51,8 @@ export default function AdminOrderEditPage() {
         credentials: 'include'
       })
       
+      console.log('Response status:', response.status)
+      
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error('Order tidak ditemukan')
@@ -53,14 +60,21 @@ export default function AdminOrderEditPage() {
         if (response.status === 401) {
           throw new Error('Anda tidak memiliki akses ke halaman ini')
         }
-        throw new Error('Gagal memuat detail order')
+        if (response.status === 403) {
+          throw new Error('Akses ditolak')
+        }
+        
+        const errorText = await response.text()
+        console.error('Response error:', errorText)
+        throw new Error(`Gagal memuat detail order (${response.status})`)
       }
       
       const data = await response.json()
+      console.log('Received order data for edit:', data)
       setOrder(data)
     } catch (error) {
-      console.error('Error fetching order:', error)
-      setError(error instanceof Error ? error.message : 'Terjadi kesalahan')
+      console.error('Error fetching order for edit:', error)
+      setError(error instanceof Error ? error.message : 'Terjadi kesalahan saat memuat order')
     } finally {
       setLoading(false)
     }
@@ -69,6 +83,29 @@ export default function AdminOrderEditPage() {
   const handleOrderUpdate = () => {
     toast.success('Order berhasil diperbarui')
     router.push(`/admin/orders/${orderId}`)
+  }
+
+  // Early return for invalid orderId
+  if (!orderId || typeof orderId !== 'string') {
+    return (
+      <AdminPageLayout 
+        title="Error"
+        description="Order ID tidak valid"
+        showBackButton={true}
+        backUrl="/admin/orders"
+      >
+        <div className="text-center py-12">
+          <AlertTriangle className="h-16 w-16 text-red-500 dark:text-red-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-foreground mb-2">Order ID Tidak Valid</h2>
+          <p className="text-muted-foreground mb-6">Order ID yang Anda akses tidak valid.</p>
+          <div className="flex justify-center gap-4">
+            <Button onClick={() => router.push('/admin/orders')} variant="outline">
+              Kembali ke Daftar Order
+            </Button>
+          </div>
+        </div>
+      </AdminPageLayout>
+    )
   }
 
   if (loading) {
