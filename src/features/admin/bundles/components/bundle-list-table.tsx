@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Edit, Trash2, Eye, Power, PowerOff, Star, StarOff, Users, UserX, Package, ShoppingBag, EyeOff } from 'lucide-react'
+import { MoreHorizontal, Edit, Trash2, Eye, Power, PowerOff, Star, StarOff, Users, UserX, Package, ShoppingBag, EyeOff, Check, X } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import { ProductBundleWithRelations } from '../types/bundle.types'
 
@@ -134,25 +134,47 @@ export function BundleList({
                 </div>
               </TableCell>
               <TableCell>
-                <div className="flex flex-col gap-1">
-                  <Badge 
-                    variant={bundle.isActive ? 'default' : 'secondary'}
-                    className={`text-xs px-1 py-0.5 w-fit ${bundle.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
-                  >
-                    {bundle.isActive ? 'Aktif' : 'Tidak'}
-                  </Badge>
-                  {(bundle.isFeatured || !bundle.showToCustomer) && (
-                    <div className="flex gap-1 text-xs">
-                      {bundle.isFeatured && (
-                        <div title="Featured">
-                          <Star className="h-3 w-3 text-yellow-500" />
-                        </div>
-                      )}
-                      {!bundle.showToCustomer && (
-                        <div title="Disembunyikan dari customer">
-                          <EyeOff className="h-3 w-3 text-gray-500" />
-                        </div>
-                      )}
+                <div className="flex flex-col gap-2">
+                  {/* Active/Inactive Status */}
+                  <div className="flex items-center gap-1">
+                    {bundle.isActive ? (
+                      <Check className="h-3 w-3 text-green-600" />
+                    ) : (
+                      <X className="h-3 w-3 text-red-600" />
+                    )}
+                    <Badge 
+                      variant={bundle.isActive ? 'default' : 'secondary'}
+                      className={`text-xs px-2 py-0.5 ${bundle.isActive ? 'bg-green-100 text-green-800 border-green-200' : 'bg-red-100 text-red-800 border-red-200'}`}
+                    >
+                      {bundle.isActive ? 'Aktif' : 'Tidak Aktif'}
+                    </Badge>
+                  </div>
+                  
+                  {/* Customer Visibility Status */}
+                  <div className="flex items-center gap-1">
+                    {bundle.showToCustomer ? (
+                      <Eye className="h-3 w-3 text-blue-600" />
+                    ) : (
+                      <EyeOff className="h-3 w-3 text-gray-500" />
+                    )}
+                    <Badge 
+                      variant="outline"
+                      className={`text-xs px-2 py-0.5 ${bundle.showToCustomer ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-gray-50 text-gray-600 border-gray-200'}`}
+                    >
+                      {bundle.showToCustomer ? 'Publik' : 'Tersembunyi'}
+                    </Badge>
+                  </div>
+                  
+                  {/* Featured Status */}
+                  {bundle.isFeatured && (
+                    <div className="flex items-center gap-1">
+                      <Star className="h-3 w-3 text-yellow-500" />
+                      <Badge 
+                        variant="outline"
+                        className="text-xs px-2 py-0.5 bg-yellow-50 text-yellow-700 border-yellow-200"
+                      >
+                        Unggulan
+                      </Badge>
                     </div>
                   )}
                 </div>

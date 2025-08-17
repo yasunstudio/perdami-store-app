@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Edit, Trash2, Eye, Power, PowerOff, Star, StarOff, Users, UserX, EyeOff } from 'lucide-react'
+import { MoreHorizontal, Edit, Trash2, Eye, Power, PowerOff, Star, StarOff, Users, UserX, EyeOff, Check, X } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import type { ProductBundleWithRelations } from '../types/bundle.types'
 
@@ -120,19 +120,47 @@ export function BundleMobileCard({
 
           {/* Status Badges */}
           <div className="flex flex-wrap gap-2">
-            <Badge variant={bundle.isActive ? 'default' : 'secondary'}>
-              {bundle.isActive ? 'Aktif' : 'Tidak Aktif'}
+            {/* Active/Inactive Status */}
+            <Badge 
+              variant={bundle.isActive ? 'default' : 'secondary'}
+              className={`gap-1 ${bundle.isActive ? 'bg-green-100 text-green-800 border-green-200' : 'bg-red-100 text-red-800 border-red-200'}`}
+            >
+              {bundle.isActive ? (
+                <>
+                  <Check className="h-3 w-3" />
+                  Aktif
+                </>
+              ) : (
+                <>
+                  <X className="h-3 w-3" />
+                  Tidak Aktif
+                </>
+              )}
             </Badge>
+            
+            {/* Customer Visibility Status */}
+            <Badge 
+              variant="outline" 
+              className={`gap-1 ${bundle.showToCustomer ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-gray-50 text-gray-600 border-gray-200'}`}
+            >
+              {bundle.showToCustomer ? (
+                <>
+                  <Eye className="h-3 w-3" />
+                  Publik
+                </>
+              ) : (
+                <>
+                  <EyeOff className="h-3 w-3" />
+                  Tersembunyi
+                </>
+              )}
+            </Badge>
+            
+            {/* Featured Status */}
             {bundle.isFeatured && (
-              <Badge variant="outline" className="gap-1">
+              <Badge variant="outline" className="gap-1 bg-yellow-50 text-yellow-700 border-yellow-200">
                 <Star className="h-3 w-3" />
-                Featured
-              </Badge>
-            )}
-            {!bundle.showToCustomer && (
-              <Badge variant="outline" className="gap-1">
-                <EyeOff className="h-3 w-3" />
-                Disembunyikan
+                Unggulan
               </Badge>
             )}
           </div>
