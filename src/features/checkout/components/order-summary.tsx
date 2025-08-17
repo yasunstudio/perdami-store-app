@@ -115,7 +115,7 @@ export function OrderSummary({ cart }: OrderSummaryProps) {
             <span className="font-medium text-sm text-blue-900">Informasi Pembayaran</span>
           </div>
           <p className="text-xs text-blue-800">
-            Setelah pesanan dikonfirmasi, Anda akan menerima detail pembayaran melalui email dan WhatsApp.
+            Setelah pesanan dikonfirmasi, Anda akan menerima detail pembayaran di halaman pesanan.
           </p>
         </div>
 
@@ -124,8 +124,9 @@ export function OrderSummary({ cart }: OrderSummaryProps) {
           <h4 className="font-medium text-sm text-amber-900 mb-1">Penting!</h4>
           <ul className="text-xs text-amber-800 space-y-1">
             <li>• Pesanan hanya bisa diambil di venue</li>
-            <li>• Batas waktu pickup: Hari ke-3 event</li>
-            <li>• Bawa bukti pembayaran saat pickup</li>
+            <li>• Batas waktu pickup: Hari ke-3 event (sesuai tanggal yang dipilih)</li>
+            <li>• Bawa bukti pembayaran saat pickup (QR Code)</li>
+            <li>• Pastikan pembayaran sudah dikonfirmasi sebelum tanggal pickup</li>
           </ul>
         </div>
       </CardContent>
