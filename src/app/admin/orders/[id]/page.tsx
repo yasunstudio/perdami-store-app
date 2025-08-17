@@ -20,6 +20,7 @@ interface OrderWithDetails {
   totalAmount: number
   orderStatus: 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'READY' | 'COMPLETED' | 'CANCELLED'
   pickupMethod: 'VENUE'
+  pickupDate?: string | null
   notes?: string | null
   createdAt: string
   updatedAt: string
@@ -269,6 +270,7 @@ export default function OrderDetailPage() {
               paymentStatus: order.paymentStatus,
               paymentMethod: order.paymentMethod,
               paymentProof: order.paymentProof,
+              pickupDate: order.pickupDate,
               notes: order.notes,
               createdAt: order.createdAt,
               updatedAt: order.updatedAt,

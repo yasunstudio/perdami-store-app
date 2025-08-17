@@ -97,6 +97,7 @@ export async function GET(
       totalAmount: order.totalAmount,
       orderStatus: order.orderStatus,
       pickupMethod: order.pickupMethod,
+      pickupDate: order.pickupDate ? order.pickupDate.toISOString() : null,
       notes: order.notes,
       createdAt: order.createdAt.toISOString(),
       updatedAt: order.updatedAt.toISOString(),

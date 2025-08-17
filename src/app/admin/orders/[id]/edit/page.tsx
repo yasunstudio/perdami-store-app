@@ -29,7 +29,7 @@ interface OrderData {
   subtotalAmount: number
   serviceFee: number
   totalAmount: number
-  pickupDate?: string
+  pickupDate?: string | null
   createdAt: string
   updatedAt: string
   paymentMethod: string
@@ -433,6 +433,21 @@ export default function AdminOrderEditPage() {
                     </div>
                   </div>
                 </div>
+
+                {order.pickupDate && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Tanggal Pickup</Label>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-primary" />
+                      <span className="text-sm text-foreground font-medium">
+                        {format(new Date(order.pickupDate), 'EEEE, dd MMMM yyyy', { locale: id })}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground ml-6">
+                      Jam operasional: 09:00 - 17:00 WIB di venue Perdami 2025
+                    </p>
+                  </div>
+                )}
 
                 {order.bank && (
                   <div className="space-y-2">
