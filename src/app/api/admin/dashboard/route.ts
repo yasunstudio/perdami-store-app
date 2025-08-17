@@ -69,7 +69,7 @@ export async function GET() {
     }));
 
     // Format bundles with actual sales calculation and sort by totalSold
-    const formattedBundles = popularBundles.map((bundle, index) => {
+    const formattedBundles = popularBundles.map((bundle) => {
       // Calculate total sold from completed orders only
       const totalSold = bundle.orderItems
         .filter(item => item.order.orderStatus === 'COMPLETED')
@@ -86,15 +86,11 @@ export async function GET() {
         description: bundle.description?.substring(0, 100) || 'No description',
         totalSold,
         revenue: actualRevenue,
-        isFeatured: false // Will be set after sorting
+        isFeatured: bundle.isFeatured // Use actual database value instead of artificial ranking
       };
     })
     .sort((a, b) => b.totalSold - a.totalSold) // Sort by totalSold descending
-    .slice(0, 5) // Take top 5
-    .map((bundle, index) => ({
-      ...bundle,
-      isFeatured: index < 2 // Mark first 2 as featured
-    }));
+    .slice(0, 5); // Take top 5
 
     // Calculate revenue stats
     const totalRevenue = formattedOrders.reduce((sum: number, order: any) => sum + order.totalAmount, 0);
