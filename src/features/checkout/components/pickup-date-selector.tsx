@@ -54,12 +54,17 @@ export function PickupDateSelector({ selectedDate, onDateSelect, className }: Pi
         {pickupDates.map((option) => (
           <Button
             key={option.date}
+            type="button"
             variant={selectedDate === option.date ? 'default' : 'outline'}
             className={cn(
               "w-full h-auto p-4 flex flex-col items-start text-left",
               selectedDate === option.date && "ring-2 ring-primary ring-offset-2"
             )}
-            onClick={() => onDateSelect(option.date)}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              onDateSelect(option.date)
+            }}
             disabled={option.disabled}
           >
             <div className="flex items-center gap-2 mb-1">
