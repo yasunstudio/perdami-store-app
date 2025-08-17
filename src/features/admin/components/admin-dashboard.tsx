@@ -29,6 +29,10 @@ function AdminDashboard() {
     totalProducts: 0,
     totalOrders: 0,
     totalStores: 0,
+    totalRevenue: 0,
+    pendingOrders: 0,
+    completedOrders: 0,
+    cancelledOrders: 0,
     userGrowthRate: 0,
     productGrowthRate: 0,
     orderGrowthRate: 0,
@@ -70,6 +74,10 @@ function AdminDashboard() {
           totalProducts: data.stats.totalProducts || 0,
           totalOrders: data.stats.totalOrders || 0,
           totalStores: data.stats.totalStores || 0,
+          totalRevenue: data.stats.totalRevenue || 0,
+          pendingOrders: data.stats.pendingOrders || 0,
+          completedOrders: data.stats.completedOrders || 0,
+          cancelledOrders: data.stats.cancelledOrders || 0,
           userGrowthRate: data.stats.userGrowthRate || 0,
           productGrowthRate: data.stats.productGrowthRate || 0,
           orderGrowthRate: data.stats.orderGrowthRate || 0,
@@ -88,6 +96,10 @@ function AdminDashboard() {
           totalProducts: 0,
           totalOrders: 0,
           totalStores: 0,
+          totalRevenue: 0,
+          pendingOrders: 0,
+          completedOrders: 0,
+          cancelledOrders: 0,
           userGrowthRate: 0,
           productGrowthRate: 0,
           orderGrowthRate: 0,
@@ -143,8 +155,8 @@ function AdminDashboard() {
             />
             <StatsCard
               title="Pendapatan"
-              value={`Rp ${(recentOrders.reduce((sum, order) => sum + order.totalAmount, 0) / 1000000).toFixed(1)}M`}
-              description="Pendapatan bulan ini"
+              value={`Rp ${(stats.totalRevenue / 1000000).toFixed(1)}M`}
+              description="Total dari pesanan selesai"
               icon={<TrendingUp className="h-5 w-5" />}
               trend={{ value: stats.orderGrowthRate || 0, isPositive: (stats.orderGrowthRate || 0) > 0 }}
             />
@@ -160,7 +172,7 @@ function AdminDashboard() {
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pesanan Pending</p>
                     <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                      {recentOrders.filter(order => order.status === 'PENDING').length}
+                      {stats.pendingOrders}
                     </p>
                   </div>
                   <AlertCircle className="h-8 w-8 text-orange-600 dark:text-orange-400" />
@@ -195,6 +207,20 @@ function AdminDashboard() {
                     </p>
                   </div>
                   <Activity className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-md transition-shadow">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pesanan Selesai</p>
+                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {stats.completedOrders}
+                    </p>
+                  </div>
+                  <ShoppingCart className="h-8 w-8 text-green-600 dark:text-green-400" />
                 </div>
               </CardContent>
             </Card>

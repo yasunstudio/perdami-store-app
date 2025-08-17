@@ -4,6 +4,10 @@ export interface DashboardStats {
   totalProducts: number  // Mapped from totalBundles in API
   totalOrders: number
   totalStores: number
+  totalRevenue: number
+  pendingOrders: number
+  completedOrders: number
+  cancelledOrders: number
   userGrowthRate?: number
   productGrowthRate?: number
   orderGrowthRate?: number
