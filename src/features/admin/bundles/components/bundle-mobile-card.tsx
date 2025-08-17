@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { 
   DropdownMenu, 
@@ -10,236 +10,232 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Edit, Trash2, Eye, Power, PowerOff, Star, StarOff, Users, UserX, EyeOff, Check, X } from 'lucide-react'
+import { MoreHorizontal, Edit, Trash2, Eye, Power, PowerOff, Star, StarOff, Users, UserX, EyeOff, Check, X, Package } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import type { ProductBundleWithRelations } from '../types/bundle.types'
-
-// Helper function to format date
-const formatDate = (date: Date | string) => {
-  const d = new Date(date)
-  return d.toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
+import Image from 'next/image'
 
 interface BundleMobileCardProps {
   bundle: ProductBundleWithRelations
-  onView: (bundle: ProductBundleWithRelations) => void
-  onEdit: (bundle: ProductBundleWithRelations) => void
+  onView: (bundleId: string) => void
+  onEdit: (bundleId: string) => void
   onDelete: (bundleId: string) => void
   onToggleStatus: (bundleId: string, isActive: boolean) => void
   onToggleFeatured: (bundleId: string, isFeatured: boolean) => void
   onToggleShowToCustomer: (bundleId: string, showToCustomer: boolean) => void
 }
 
-export function BundleMobileCard({
-  bundle,
-  onView,
-  onEdit,
-  onDelete,
-  onToggleStatus,
+const getStatusIcon = (bundle: ProductBundleWithRelations) => {
+  if (!bundle.isActive) return <PowerOff className="h-3 w-3" />
+  if (!bundle.showToCustomer) return <EyeOff className="h-3 w-3" />
+  if (!bundle.isFeatured) return <StarOff className="h-3 w-3" />
+  return <Check className="h-3 w-3" />
+}
+
+const getStatusColor = (bundle: ProductBundleWithRelations) => {
+  if (!bundle.isActive) return 'bg-gray-500/80'
+  if (!bundle.showToCustomer) return 'bg-orange-500/80'
+  if (!bundle.isFeatured) return 'bg-blue-500/80'
+  return 'bg-green-500/80'
+}
+
+const getStatusText = (bundle: ProductBundleWithRelations) => {
+  if (!bundle.isActive) return 'Inactive'
+  if (!bundle.showToCustomer) return 'Private'
+  if (!bundle.isFeatured) return 'Not Featured'
+  return 'Active'
+}
+
+export function BundleMobileCard({ 
+  bundle, 
+  onEdit, 
+  onDelete, 
+  onView, 
+  onToggleStatus, 
   onToggleFeatured,
-  onToggleShowToCustomer,
+  onToggleShowToCustomer 
 }: BundleMobileCardProps) {
+  const profit = bundle.sellingPrice - bundle.costPrice
+  const profitMargin = bundle.costPrice > 0 ? ((profit / bundle.costPrice) * 100) : 0
+
   return (
-    <Card className="mb-4">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">{bundle.name}</CardTitle>
-          <div className="flex items-center space-x-2">
-            {bundle.image && (
-              <img
-                src={bundle.image}
-                alt={bundle.name}
-                className="h-10 w-10 rounded object-cover"
-              />
-            )}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {/* Bundle Info */}
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-muted-foreground">Harga Jual</p>
-              <p className="font-medium text-green-600">{formatPrice(bundle.sellingPrice)}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Harga Modal</p>
-              <p className="font-medium text-orange-600">{formatPrice(bundle.costPrice)}</p>
-            </div>
-          </div>
-
-          {/* Profit Info */}
-          <div className="grid grid-cols-3 gap-4 text-sm">
-            <div>
-              <p className="text-muted-foreground">Profit</p>
-              <p className="font-medium text-blue-600">
-                {formatPrice(bundle.sellingPrice - bundle.costPrice)}
-              </p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Margin</p>
-              <p className="font-medium text-purple-600">
-                {bundle.costPrice > 0 ? 
-                  `${(((bundle.sellingPrice - bundle.costPrice) / bundle.costPrice) * 100).toFixed(1)}%` 
-                  : '0%'
-                }
-              </p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Items</p>
-              <p className="font-medium">{bundle.contents?.length || 0}</p>
-            </div>
-          </div>
-
-          {/* Store and Date */}
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-muted-foreground">Toko</p>
-              <p className="font-medium">{bundle.store?.name}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Terakhir Update</p>
-              <p className="font-medium text-xs">{formatDate(bundle.updatedAt)}</p>
-            </div>
-          </div>
-
-          {/* Description */}
-          {bundle.description && (
-            <div>
-              <p className="text-sm text-muted-foreground">Deskripsi</p>
-              <p className="text-sm">{bundle.description}</p>
+    <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-card border-border">
+      <div className="relative">
+        {/* Image Section */}
+        <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
+          {bundle.image ? (
+            <Image
+              src={bundle.image}
+              alt={bundle.name}
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <Package className="h-12 w-12 text-gray-400 dark:text-gray-600" />
             </div>
           )}
-
-          {/* Status Badges */}
-          <div className="flex flex-wrap gap-2">
-            {/* Active/Inactive Status */}
+          
+          {/* Status Badge */}
+          <div className="absolute top-2 left-2">
             <Badge 
-              variant={bundle.isActive ? 'default' : 'secondary'}
-              className={`gap-1 ${bundle.isActive ? 'bg-green-100 text-green-800 border-green-200' : 'bg-red-100 text-red-800 border-red-200'}`}
+              variant="secondary" 
+              className={`${getStatusColor(bundle)} text-white border-0 text-xs font-medium`}
             >
-              {bundle.isActive ? (
-                <>
-                  <Check className="h-3 w-3" />
-                  Aktif
-                </>
-              ) : (
-                <>
-                  <X className="h-3 w-3" />
-                  Tidak Aktif
-                </>
-              )}
+              {getStatusIcon(bundle)}
+              <span className="ml-1">{getStatusText(bundle)}</span>
             </Badge>
-            
-            {/* Customer Visibility Status */}
-            <Badge 
-              variant="outline" 
-              className={`gap-1 ${bundle.showToCustomer ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-gray-50 text-gray-600 border-gray-200'}`}
-            >
-              {bundle.showToCustomer ? (
-                <>
-                  <Eye className="h-3 w-3" />
-                  Publik
-                </>
-              ) : (
-                <>
-                  <EyeOff className="h-3 w-3" />
-                  Tersembunyi
-                </>
-              )}
-            </Badge>
-            
-            {/* Featured Status */}
-            {bundle.isFeatured && (
-              <Badge variant="outline" className="gap-1 bg-yellow-50 text-yellow-700 border-yellow-200">
-                <Star className="h-3 w-3" />
-                Unggulan
-              </Badge>
-            )}
           </div>
 
-          {/* Actions */}
-          <div className="flex justify-end pt-2">
+          {/* Dropdown Menu */}
+          <div className="absolute top-2 right-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  className="h-8 w-8 p-0 bg-white/90 hover:bg-white dark:bg-gray-900/90 dark:hover:bg-gray-900"
+                >
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onView(bundle)}>
-                  <Eye className="h-4 w-4 mr-2" />
-                  Lihat Detail
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => onView(bundle.id)}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  View Details
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onEdit(bundle)}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
+                <DropdownMenuItem onClick={() => onEdit(bundle.id)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit Bundle
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => onToggleStatus(bundle.id, !bundle.isActive)}
-                >
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onToggleStatus(bundle.id, !bundle.isActive)}>
                   {bundle.isActive ? (
                     <>
-                      <PowerOff className="h-4 w-4 mr-2" />
-                      Nonaktifkan
+                      <PowerOff className="mr-2 h-4 w-4" />
+                      Deactivate
                     </>
                   ) : (
                     <>
-                      <Power className="h-4 w-4 mr-2" />
-                      Aktifkan
+                      <Power className="mr-2 h-4 w-4" />
+                      Activate
                     </>
                   )}
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => onToggleFeatured(bundle.id, !bundle.isFeatured)}
-                >
-                  {bundle.isFeatured ? (
-                    <>
-                      <StarOff className="h-4 w-4 mr-2" />
-                      Hapus dari Featured
-                    </>
-                  ) : (
-                    <>
-                      <Star className="h-4 w-4 mr-2" />
-                      Jadikan Featured
-                    </>
-                  )}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => onToggleShowToCustomer(bundle.id, !bundle.showToCustomer)}
-                >
+                <DropdownMenuItem onClick={() => onToggleShowToCustomer(bundle.id, !bundle.showToCustomer)}>
                   {bundle.showToCustomer ? (
                     <>
-                      <UserX className="h-4 w-4 mr-2" />
-                      Sembunyikan dari Customer
+                      <EyeOff className="mr-2 h-4 w-4" />
+                      Make Private
                     </>
                   ) : (
                     <>
-                      <Users className="h-4 w-4 mr-2" />
-                      Tampilkan ke Customer
+                      <Eye className="mr-2 h-4 w-4" />
+                      Make Public
+                    </>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onToggleFeatured(bundle.id, !bundle.isFeatured)}>
+                  {bundle.isFeatured ? (
+                    <>
+                      <StarOff className="mr-2 h-4 w-4" />
+                      Remove Featured
+                    </>
+                  ) : (
+                    <>
+                      <Star className="mr-2 h-4 w-4" />
+                      Make Featured
                     </>
                   )}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
                   onClick={() => onDelete(bundle.id)}
-                  className="text-red-600 dark:text-red-400"
+                  className="text-destructive focus:text-destructive"
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Hapus
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Bundle
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
-      </CardContent>
+
+        {/* Content Section */}
+        <CardContent className="p-4">
+          <div className="space-y-3">
+            {/* Bundle Name */}
+            <h3 className="font-semibold text-lg leading-tight line-clamp-2 min-h-[2.5rem]">
+              {bundle.name}
+            </h3>
+            
+            {/* Bundle Description */}
+            {bundle.description && (
+              <p className="text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]">
+                {bundle.description}
+              </p>
+            )}
+
+            {/* Bundle Items Count */}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Package className="h-4 w-4" />
+              <span>{bundle.contents?.length || 0} produk dalam bundle</span>
+            </div>
+
+            {/* Pricing Information */}
+            <div className="space-y-2">
+              {/* Selling Price */}
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Harga Jual:</span>
+                <span className="font-semibold text-lg">
+                  {formatPrice(bundle.sellingPrice)}
+                </span>
+              </div>
+              
+              {/* Cost Price */}
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Modal:</span>
+                <span className="text-muted-foreground">
+                  {formatPrice(bundle.costPrice)}
+                </span>
+              </div>
+              
+              {/* Profit */}
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Profit:</span>
+                <span className={`font-medium ${profit > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {formatPrice(profit)} ({profitMargin.toFixed(1)}%)
+                </span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+
+        {/* Footer Actions */}
+        <CardFooter className="p-4 pt-0">
+          <div className="flex gap-2 w-full">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => onView(bundle.id)}
+              className="flex-1"
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              View
+            </Button>
+            <Button 
+              variant="default" 
+              size="sm" 
+              onClick={() => onEdit(bundle.id)}
+              className="flex-1"
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+          </div>
+        </CardFooter>
+      </div>
     </Card>
   )
 }
