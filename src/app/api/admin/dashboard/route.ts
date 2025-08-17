@@ -92,10 +92,44 @@ export async function GET() {
     .sort((a, b) => b.totalSold - a.totalSold) // Sort by totalSold descending
     .slice(0, 5); // Take top 5
 
+    // Calculate real growth rates from database
+    const now = new Date();
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Get this month vs last month counts for real growth calculation
+    const [thisMonthUsers, lastMonthUsers, thisMonthOrders, lastMonthOrders, thisMonthBundles, lastMonthBundles, thisMonthStores, lastMonthStores] = await Promise.all([
+      prisma.user.count({ where: { createdAt: { gte: thisMonth } } }),
+      prisma.user.count({ where: { createdAt: { gte: lastMonth, lt: thisMonth } } }),
+      prisma.order.count({ where: { createdAt: { gte: thisMonth } } }),
+      prisma.order.count({ where: { createdAt: { gte: lastMonth, lt: thisMonth } } }),
+      prisma.productBundle.count({ where: { createdAt: { gte: thisMonth } } }),
+      prisma.productBundle.count({ where: { createdAt: { gte: lastMonth, lt: thisMonth } } }),
+      prisma.store.count({ where: { createdAt: { gte: thisMonth } } }),
+      prisma.store.count({ where: { createdAt: { gte: lastMonth, lt: thisMonth } } })
+    ]);
+
+    // Calculate growth rates (avoid division by zero)
+    const calculateGrowthRate = (current: number, previous: number): number => {
+      if (previous === 0) return current > 0 ? 100 : 0;
+      return ((current - previous) / previous) * 100;
+    };
+
+    const userGrowthRate = calculateGrowthRate(thisMonthUsers, lastMonthUsers);
+    const productGrowthRate = calculateGrowthRate(thisMonthBundles, lastMonthBundles);
+    const orderGrowthRate = calculateGrowthRate(thisMonthOrders, lastMonthOrders);
+    const storeGrowthRate = calculateGrowthRate(thisMonthStores, lastMonthStores);
+
     // Calculate revenue stats
     const totalRevenue = formattedOrders.reduce((sum: number, order: any) => sum + order.totalAmount, 0);
     const pendingOrders = formattedOrders.filter((order: any) => order.status === 'PENDING').length;
     const completedOrders = formattedOrders.filter((order: any) => order.status === 'COMPLETED').length;
+
+    console.log(`📊 Growth Analysis - Current vs Previous Month:`);
+    console.log(`Users: ${thisMonthUsers} vs ${lastMonthUsers} = ${userGrowthRate.toFixed(1)}%`);
+    console.log(`Orders: ${thisMonthOrders} vs ${lastMonthOrders} = ${orderGrowthRate.toFixed(1)}%`);
+    console.log(`Products: ${thisMonthBundles} vs ${lastMonthBundles} = ${productGrowthRate.toFixed(1)}%`);
+    console.log(`Stores: ${thisMonthStores} vs ${lastMonthStores} = ${storeGrowthRate.toFixed(1)}%`);
 
     const dashboardData = {
       stats: {
@@ -106,10 +140,10 @@ export async function GET() {
         totalRevenue,
         pendingOrders,
         completedOrders,
-        userGrowthRate: 12.5,
-        productGrowthRate: 8.3,
-        orderGrowthRate: 15.7,
-        storeGrowthRate: 5.2
+        userGrowthRate: Math.round(userGrowthRate * 10) / 10, // Round to 1 decimal
+        productGrowthRate: Math.round(productGrowthRate * 10) / 10,
+        orderGrowthRate: Math.round(orderGrowthRate * 10) / 10,
+        storeGrowthRate: Math.round(storeGrowthRate * 10) / 10
       },
       recentOrders: formattedOrders,
       popularProducts: formattedBundles
