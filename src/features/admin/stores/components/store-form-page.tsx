@@ -29,6 +29,8 @@ export function StoreFormPage({ mode, storeId }: StoreFormPageProps) {
     name: '',
     description: '',
     image: '',
+    whatsappNumber: '',
+    contactPerson: '',
     isActive: true,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -54,6 +56,8 @@ export function StoreFormPage({ mode, storeId }: StoreFormPageProps) {
           name: storeData.name,
           description: storeData.description || '',
           image: storeData.image || '',
+          whatsappNumber: storeData.whatsappNumber || '',
+          contactPerson: storeData.contactPerson || '',
           isActive: storeData.isActive
         })
       } else {
@@ -76,6 +80,14 @@ export function StoreFormPage({ mode, storeId }: StoreFormPageProps) {
       newErrors.name = 'Nama toko wajib diisi'
     } else if (formData.name.trim().length < 3) {
       newErrors.name = 'Nama toko minimal 3 karakter'
+    }
+
+    // Validate WhatsApp number if provided
+    if (formData.whatsappNumber.trim()) {
+      const cleanPhone = formData.whatsappNumber.replace(/[^0-9]/g, '')
+      if (!cleanPhone.match(/^(08|628)\d{8,12}$/)) {
+        newErrors.whatsappNumber = 'Format nomor WhatsApp tidak valid (contoh: 08123456789 atau 628123456789)'
+      }
     }
     
     setErrors(newErrors)
@@ -251,6 +263,59 @@ export function StoreFormPage({ mode, storeId }: StoreFormPageProps) {
                   <p className="text-xs text-muted-foreground">
                     {formData.description.length}/500 karakter
                   </p>
+                </div>
+
+                {/* WhatsApp Contact Info */}
+                <div className="space-y-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 bg-green-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs">📱</span>
+                    </div>
+                    <Label className="text-sm font-medium text-green-800">
+                      Kontak WhatsApp (untuk notifikasi pesanan)
+                    </Label>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* WhatsApp Number */}
+                    <div className="space-y-2">
+                      <Label htmlFor="whatsappNumber" className="text-sm font-medium">
+                        Nomor WhatsApp
+                      </Label>
+                      <Input
+                        id="whatsappNumber"
+                        type="text"
+                        placeholder="08123456789 atau 628123456789"
+                        value={formData.whatsappNumber}
+                        onChange={(e) => updateFormData('whatsappNumber', e.target.value)}
+                        onBlur={() => handleBlur('whatsappNumber')}
+                        className={errors.whatsappNumber && touched.whatsappNumber ? 'border-red-500' : ''}
+                      />
+                      {errors.whatsappNumber && touched.whatsappNumber && (
+                        <p className="text-sm text-red-600">{errors.whatsappNumber}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Nomor WhatsApp untuk menerima notifikasi pesanan baru
+                      </p>
+                    </div>
+
+                    {/* Contact Person */}
+                    <div className="space-y-2">
+                      <Label htmlFor="contactPerson" className="text-sm font-medium">
+                        Nama Kontak
+                      </Label>
+                      <Input
+                        id="contactPerson"
+                        type="text"
+                        placeholder="Nama pemilik/pengelola toko"
+                        value={formData.contactPerson}
+                        onChange={(e) => updateFormData('contactPerson', e.target.value)}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Nama yang akan disapa dalam pesan WhatsApp
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 <Separator />

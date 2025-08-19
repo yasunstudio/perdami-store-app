@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { AdminPageLayout } from '@/components/admin/admin-page-layout'
 import { OrderInformation } from '@/features/admin/components/order-management/order-information'
 import { OrderItems } from '@/features/admin/components/order-management/order-items'
+import { WhatsAppOrderNotification } from '@/components/admin/whatsapp-order-notification'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AlertTriangle, ArrowLeft, Package, Edit } from 'lucide-react'
@@ -92,14 +93,33 @@ export default function OrderDetailPage() {
   const orderId = params.id as string
 
   const [order, setOrder] = useState<OrderWithDetails | null>(null)
+  const [stores, setStores] = useState<Array<{id: string, name: string, whatsappNumber: string | null, contactPerson: string | null}>>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (orderId) {
       fetchOrderDetails()
+      fetchStores()
     }
   }, [orderId])
+
+  const fetchStores = async () => {
+    try {
+      const response = await fetch('/api/admin/stores?limit=100', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setStores(data.stores || [])
+      }
+    } catch (error) {
+      console.error('Error fetching stores:', error)
+    }
+  }
 
   const fetchOrderDetails = async () => {
     try {
@@ -299,6 +319,32 @@ export default function OrderDetailPage() {
             }}
             items={order.items}
             totalAmount={order.totalAmount}
+          />
+
+          {/* WhatsApp Notification to Stores */}
+          <WhatsAppOrderNotification
+            order={{
+              id: order.id,
+              orderNumber: order.orderNumber,
+              user: {
+                name: order.user.name,
+                phone: order.user.phone || null
+              },
+              orderItems: order.items.map(item => ({
+                id: item.id,
+                quantity: item.quantity,
+                bundle: {
+                  id: item.bundle.id,
+                  name: item.bundle.name,
+                  storeId: item.bundle.store.id
+                },
+                price: item.price
+              })),
+              totalAmount: order.totalAmount,
+              pickupDate: order.pickupDate || null,
+              createdAt: order.createdAt
+            }}
+            stores={stores}
           />
         </div>
       </div>

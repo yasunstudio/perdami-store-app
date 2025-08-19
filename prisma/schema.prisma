@@ -86,14 +86,16 @@ model UserNotificationSettings {
 }
 
 model Store {
-  id          String          @id @default(cuid())
-  name        String          @unique
-  description String?
-  image       String?
-  isActive    Boolean         @default(true)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  bundles     ProductBundle[]
+  id             String          @id @default(cuid())
+  name           String          @unique
+  description    String?
+  image          String?
+  whatsappNumber String?         // WhatsApp number for order notifications
+  contactPerson  String?         // Contact person name at the store
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  bundles        ProductBundle[]
 
   @@index([isActive])
   @@index([createdAt])

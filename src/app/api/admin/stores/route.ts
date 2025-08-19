@@ -8,6 +8,8 @@ const createStoreSchema = z.object({
   name: z.string().min(1, 'Nama toko wajib diisi'),
   description: z.string().optional(),
   image: z.string().optional(),
+  whatsappNumber: z.string().optional(),
+  contactPerson: z.string().optional(),
   isActive: z.boolean().default(true)
 })
 
