@@ -1,6 +1,9 @@
 /**
  * WhatsApp Integration Utilities
- * FREE solution for sending order notifications to stores
+ * FREE solution for sending order n*Order:* #${order.orderNumber}
+*Tanggal Order:* ${orderDate}
+*Customer:* ${order.user.name || 'Tidak ada nama'}
+*Phone:* ${order.user.phone || 'Tidak ada nomor'}Phone:* ${order.user.phone || 'Tidak ada nomor'}er:* #${order.orderNumber}Or*Phone:* ${order.user.phone || 'Tidak ada nomor'}er:* #${order.orderNumber}tifications to stores
  */
 
 import { format } from 'date-fns'
@@ -70,26 +73,26 @@ export function generateStoreOrderMessage(order: Order, store: Store): string {
   // Format order date
   const orderDate = format(new Date(order.createdAt), 'dd MMM yyyy HH:mm', { locale: id })
 
-  const message = `🛒 *PESANAN BARU - PERDAMI 2025*
+  const message = `*PESANAN BARU - PERDAMI 2025*
 
 � *Order:* #${order.orderNumber}
-📅 *Tanggal Order:* ${orderDate}
-👤 *Customer:* ${order.user.name || 'Tidak ada nama'}
+*Tanggal Order:* ${orderDate}
+*Customer:* ${order.user.name || 'Tidak ada nama'}
 � *Phone:* ${order.user.phone || 'Tidak ada nomor'}
 
-📦 *PESANAN UNTUK ${store.name.toUpperCase()}:*
+*PESANAN UNTUK ${store.name.toUpperCase()}:*
 ${itemsList}
 
-💰 *Total Pembayaran ke Toko:* Rp ${storeSubtotal.toLocaleString('id-ID')}
-📅 *Pickup:* ${pickupDate}
-📍 *Lokasi:* Venue PIT PERDAMI 2025
+*Total Pembayaran ke Toko:* Rp ${storeSubtotal.toLocaleString('id-ID')}
+*Pickup:* ${pickupDate}
+*Lokasi:* Venue PIT PERDAMI 2025
 
-🚨 *URGENT: Event 3 hari*
+*URGENT: Event 3 hari*
 Mohon konfirmasi dan siapkan pesanan sesuai jadwal pickup.
 
 Balas pesan ini untuk konfirmasi atau jika ada pertanyaan.
 
-Terima kasih! 🙏
+Terima kasih!
 
 ---
 *Sistem Perdami Store*`
