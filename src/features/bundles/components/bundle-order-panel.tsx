@@ -70,7 +70,7 @@ export function BundleOrderPanel({ bundle }: BundleOrderPanelProps) {
         bundleId: bundle.id,
         productId: bundle.id,
         name: bundle.name,
-        price: bundle.sellingPrice,
+        price: (bundle as any).price || bundle.sellingPrice,
         image: bundle.image || undefined,
         storeId,
         storeName,
@@ -88,7 +88,7 @@ export function BundleOrderPanel({ bundle }: BundleOrderPanelProps) {
     }
   }
 
-  const totalPrice = bundle.sellingPrice * quantity
+  const totalPrice = ((bundle as any).price || bundle.sellingPrice) * quantity
 
   return (
     <div className="space-y-3">
@@ -105,7 +105,7 @@ export function BundleOrderPanel({ bundle }: BundleOrderPanelProps) {
           {/* Price Display */}
           <div className="space-y-1">
             <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 text-right break-words">
-              {formatPrice(bundle.sellingPrice)}
+              {formatPrice((bundle as any).price || bundle.sellingPrice)}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 text-right">
               Per paket ({contents.length} item)
