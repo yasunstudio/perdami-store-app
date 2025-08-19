@@ -75,10 +75,10 @@ export function generateStoreOrderMessage(order: Order, store: Store): string {
 
   const message = `*PESANAN BARU - PERDAMI 2025*
 
-� *Order:* #${order.orderNumber}
+*Order:* #${order.orderNumber}
 *Tanggal Order:* ${orderDate}
 *Customer:* ${order.user.name || 'Tidak ada nama'}
-� *Phone:* ${order.user.phone || 'Tidak ada nomor'}
+*Phone:* ${order.user.phone || 'Tidak ada nomor'}
 
 *PESANAN UNTUK ${store.name.toUpperCase()}:*
 ${itemsList}
