@@ -57,7 +57,23 @@ export async function GET(
         isActive: store.isActive,
         createdAt: store.createdAt,
         updatedAt: store.updatedAt,
-        bundles: activeBundles, // Only return active bundles for customer
+        bundles: activeBundles.map((bundle: any) => ({
+          id: bundle.id,
+          name: bundle.name,
+          description: bundle.description,
+          image: bundle.image,
+          price: bundle.sellingPrice, // Map sellingPrice to price for frontend
+          costPrice: bundle.costPrice,
+          sellingPrice: bundle.sellingPrice,
+          contents: bundle.contents,
+          isActive: bundle.isActive,
+          isFeatured: bundle.isFeatured,
+          showToCustomer: bundle.showToCustomer,
+          storeId: bundle.storeId,
+          createdAt: bundle.createdAt,
+          updatedAt: bundle.updatedAt,
+          store: bundle.store
+        })),
         bundleCount: store._count.bundles,
         activeBundleCount: activeBundles.length,
         featuredBundleCount: activeBundles.filter((b: any) => b.isFeatured).length

@@ -48,7 +48,23 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      bundle
+      bundle: {
+        id: bundle.id,
+        name: bundle.name,
+        description: bundle.description,
+        image: bundle.image,
+        price: bundle.sellingPrice, // Map sellingPrice to price for frontend
+        costPrice: bundle.costPrice,
+        sellingPrice: bundle.sellingPrice,
+        contents: bundle.contents,
+        isActive: bundle.isActive,
+        isFeatured: bundle.isFeatured,
+        showToCustomer: bundle.showToCustomer,
+        storeId: bundle.storeId,
+        createdAt: bundle.createdAt,
+        updatedAt: bundle.updatedAt,
+        store: bundle.store
+      }
     })
 
   } catch (error) {
@@ -111,7 +127,7 @@ export async function PUT(
         ...(name && { name }),
         ...(description !== undefined && { description }),
         ...(image !== undefined && { image }),
-        ...(price && { price: parseFloat(price) }),
+        ...(price && { sellingPrice: parseFloat(price) }), // Map price to sellingPrice
         ...(contents !== undefined && { contents }),
         ...(isActive !== undefined && { isActive }),
         ...(isFeatured !== undefined && { isFeatured }),
@@ -136,7 +152,23 @@ export async function PUT(
     return NextResponse.json({
       success: true,
       message: 'Bundle updated successfully',
-      bundle: updatedBundle
+      bundle: {
+        id: updatedBundle.id,
+        name: updatedBundle.name,
+        description: updatedBundle.description,
+        image: updatedBundle.image,
+        price: updatedBundle.sellingPrice, // Map sellingPrice to price for frontend
+        costPrice: updatedBundle.costPrice,
+        sellingPrice: updatedBundle.sellingPrice,
+        contents: updatedBundle.contents,
+        isActive: updatedBundle.isActive,
+        isFeatured: updatedBundle.isFeatured,
+        showToCustomer: updatedBundle.showToCustomer,
+        storeId: updatedBundle.storeId,
+        createdAt: updatedBundle.createdAt,
+        updatedAt: updatedBundle.updatedAt,
+        store: updatedBundle.store
+      }
     })
 
   } catch (error) {

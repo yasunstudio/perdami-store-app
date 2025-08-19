@@ -30,10 +30,10 @@ export async function GET(request: Request) {
     let orderBy = {}
     switch (sort) {
       case 'price-low':
-        orderBy = { price: 'asc' }
+        orderBy = { sellingPrice: 'asc' }
         break
       case 'price-high':
-        orderBy = { price: 'desc' }
+        orderBy = { sellingPrice: 'desc' }
         break
       case 'name':
         orderBy = { name: 'asc' }
@@ -61,7 +61,23 @@ export async function GET(request: Request) {
     ])
 
     return NextResponse.json({
-      bundles: bundles,
+      bundles: bundles.map(bundle => ({
+        id: bundle.id,
+        name: bundle.name,
+        description: bundle.description,
+        image: bundle.image,
+        price: bundle.sellingPrice, // Map sellingPrice to price for frontend
+        costPrice: bundle.costPrice,
+        sellingPrice: bundle.sellingPrice,
+        contents: bundle.contents,
+        isActive: bundle.isActive,
+        isFeatured: bundle.isFeatured,
+        showToCustomer: bundle.showToCustomer,
+        storeId: bundle.storeId,
+        createdAt: bundle.createdAt,
+        updatedAt: bundle.updatedAt,
+        store: bundle.store
+      })),
       pagination: {
         page,
         limit,
