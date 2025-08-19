@@ -40,6 +40,7 @@ export async function GET(
               select: {
                 id: true,
                 name: true,
+                costPrice: true,
                 sellingPrice: true,
                 image: true,
                 storeId: true,
@@ -116,10 +117,14 @@ export async function GET(
         bundleId: item.bundleId,
         quantity: item.quantity,
         price: item.unitPrice,
+        costPrice: item.bundle.costPrice,
+        sellingPrice: item.bundle.sellingPrice,
         bundle: {
           id: item.bundle.id,
           name: item.bundle.name,
           price: item.bundle.sellingPrice,
+          costPrice: item.bundle.costPrice,
+          sellingPrice: item.bundle.sellingPrice,
           image: item.bundle.image,
           storeId: item.bundle.storeId,
           store: item.bundle.store
@@ -135,6 +140,8 @@ export async function GET(
           id: item.bundle.id,
           name: item.bundle.name,
           price: item.bundle.sellingPrice,
+          costPrice: item.bundle.costPrice,
+          sellingPrice: item.bundle.sellingPrice,
           image: item.bundle.image,
           store: item.bundle.store
         }

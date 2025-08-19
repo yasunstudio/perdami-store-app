@@ -96,6 +96,7 @@ export function StoreList({
               <TableRow>
                 <TableHead className="w-[150px]">Toko</TableHead>
                 <TableHead className="w-[80px]">Status</TableHead>
+                <TableHead className="w-[120px]">WhatsApp</TableHead>
                 <TableHead className="w-[60px]">Bundle</TableHead>
                 <TableHead className="w-[100px]">Dibuat</TableHead>
                 <TableHead className="w-[60px]">Aksi</TableHead>
@@ -126,6 +127,22 @@ export function StoreList({
                   >
                     {store.isActive ? 'Aktif' : 'Tidak'}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  {store.whatsappNumber ? (
+                    <div className="flex flex-col space-y-1">
+                      <span className="text-xs font-mono text-green-600 dark:text-green-400">
+                        {store.whatsappNumber}
+                      </span>
+                      {store.contactPerson && (
+                        <span className="text-xs text-muted-foreground">
+                          {store.contactPerson}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">-</span>
+                  )}
                 </TableCell>
                 <TableCell className="text-center">
                   <span className="text-xs font-medium">

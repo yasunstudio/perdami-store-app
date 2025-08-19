@@ -4,6 +4,8 @@ export interface StoreWithRelations {
   name: string
   description?: string | null
   image?: string | null
+  whatsappNumber?: string | null
+  contactPerson?: string | null
   isActive: boolean
   createdAt: Date
   updatedAt: Date
@@ -28,6 +30,8 @@ export interface StoreFormData {
   name: string
   description?: string
   image?: string
+  whatsappNumber?: string
+  contactPerson?: string
   isActive: boolean
 }
 

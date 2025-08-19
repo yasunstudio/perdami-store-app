@@ -14,7 +14,9 @@ interface OrderItem {
     name: string
     storeId: string
   }
-  price: number
+  price: number // Harga yang dibayar customer (sellingPrice)
+  costPrice: number // Harga beli dari toko
+  sellingPrice: number // Harga jual ke customer
 }
 
 interface Order {
@@ -48,13 +50,17 @@ export function generateStoreOrderMessage(order: Order, store: Store): string {
     return '' // Tidak ada item untuk toko ini
   }
 
-  // Format items
+  // Format items dengan info harga beli
   const itemsList = storeItems
-    .map(item => `• ${item.quantity}x ${item.bundle.name}`)
+    .map(item => {
+      return `- ${item.quantity}x ${item.bundle.name} (@Rp ${item.costPrice.toLocaleString('id-ID')})`
+    })
     .join('\n')
 
-  // Calculate subtotal untuk toko ini
-  const storeSubtotal = storeItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+  // Calculate subtotal untuk toko ini menggunakan costPrice (harga beli)
+  const storeSubtotal = storeItems.reduce((sum, item) => {
+    return sum + (item.costPrice * item.quantity)
+  }, 0)
 
   // Format pickup date
   const pickupDate = order.pickupDate 
@@ -66,19 +72,19 @@ export function generateStoreOrderMessage(order: Order, store: Store): string {
 
   const message = `🛒 *PESANAN BARU - PERDAMI 2025*
 
-📋 *Order:* #${order.orderNumber}
+� *Order:* #${order.orderNumber}
 📅 *Tanggal Order:* ${orderDate}
 👤 *Customer:* ${order.user.name || 'Tidak ada nama'}
-📞 *Phone:* ${order.user.phone || 'Tidak ada nomor'}
+� *Phone:* ${order.user.phone || 'Tidak ada nomor'}
 
 📦 *PESANAN UNTUK ${store.name.toUpperCase()}:*
 ${itemsList}
 
-💰 *Subtotal:* Rp ${storeSubtotal.toLocaleString('id-ID')}
+💰 *Total Pembayaran ke Toko:* Rp ${storeSubtotal.toLocaleString('id-ID')}
 📅 *Pickup:* ${pickupDate}
 📍 *Lokasi:* Venue PIT PERDAMI 2025
 
-⚠️ *URGENT: Event 3 hari*
+🚨 *URGENT: Event 3 hari*
 Mohon konfirmasi dan siapkan pesanan sesuai jadwal pickup.
 
 Balas pesan ini untuk konfirmasi atau jika ada pertanyaan.

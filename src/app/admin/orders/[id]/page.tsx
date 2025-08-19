@@ -41,10 +41,14 @@ interface OrderWithDetails {
     bundleId: string
     quantity: number
     price: number
+    costPrice: number
+    sellingPrice: number
     bundle: {
       id: string
       name: string
       price: number
+      costPrice: number
+      sellingPrice: number
       image?: string | null
       storeId: string
       store: {
@@ -62,6 +66,8 @@ interface OrderWithDetails {
       id: string
       name: string
       price: number
+      costPrice: number
+      sellingPrice: number
       image?: string | null
       store: {
         id: string
@@ -338,7 +344,9 @@ export default function OrderDetailPage() {
                   name: item.bundle.name,
                   storeId: item.bundle.store.id
                 },
-                price: item.price
+                price: item.price,
+                costPrice: item.bundle.costPrice,
+                sellingPrice: item.bundle.sellingPrice
               })),
               totalAmount: order.totalAmount,
               pickupDate: order.pickupDate || null,

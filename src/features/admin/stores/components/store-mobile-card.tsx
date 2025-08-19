@@ -2,14 +2,14 @@
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Edit, Trash2, Eye, EyeOff } from 'lucide-react'
-import { Store } from '@prisma/client'
+import { Edit, Trash2, Eye, EyeOff, MessageSquare } from 'lucide-react'
+import type { StoreWithRelations } from '../types/store.types'
 
 interface StoreMobileCardProps {
-  store: Store
-  onEdit: (store: Store) => void
-  onDelete: (store: Store) => void
-  onToggleVisibility: (store: Store) => void
+  store: StoreWithRelations
+  onEdit: (store: StoreWithRelations) => void
+  onDelete: (store: StoreWithRelations) => void
+  onToggleVisibility: (store: StoreWithRelations) => void
 }
 
 export function StoreMobileCard({
@@ -38,13 +38,28 @@ export function StoreMobileCard({
         <div className="space-y-2 text-sm">
           <div>
             <span className="font-medium">Status:</span>{' '}
-            <span className={store.isActive ? 'text-green-600' : 'text-red-600'}>
+            <span className={store.isActive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
               {store.isActive ? 'Aktif' : 'Tidak Aktif'}
             </span>
           </div>
           {store.description && (
             <div>
               <span className="font-medium">Deskripsi:</span> {store.description}
+            </div>
+          )}
+          {store.whatsappNumber && (
+            <div className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-green-600 dark:text-green-400" />
+              <div className="flex flex-col">
+                <span className="font-mono text-green-600 dark:text-green-400">
+                  {store.whatsappNumber}
+                </span>
+                {store.contactPerson && (
+                  <span className="text-xs text-muted-foreground">
+                    {store.contactPerson}
+                  </span>
+                )}
+              </div>
             </div>
           )}
         </div>

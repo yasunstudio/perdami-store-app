@@ -17,7 +17,9 @@ interface OrderItem {
     name: string
     storeId: string
   }
-  price: number
+  price: number // Harga yang dibayar customer (sellingPrice)
+  costPrice: number // Harga beli dari toko
+  sellingPrice: number // Harga jual ke customer
 }
 
 interface Order {
@@ -135,7 +137,10 @@ export function WhatsAppOrderNotification({ order, stores }: WhatsAppOrderNotifi
       <CardContent className="space-y-4">
         {relevantStores.map((store, index) => {
           const storeItems = order.orderItems.filter(item => item.bundle.storeId === store.id)
-          const storeSubtotal = storeItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+          // Calculate subtotal menggunakan costPrice (harga beli ke toko)
+          const storeSubtotal = storeItems.reduce((sum, item) => {
+            return sum + (item.costPrice * item.quantity)
+          }, 0)
           const isCopied = copiedStores.has(store.id)
 
           return (
@@ -173,7 +178,7 @@ export function WhatsAppOrderNotification({ order, stores }: WhatsAppOrderNotifi
                       <div key={item.id} className="flex justify-between text-sm">
                         <span>• {item.quantity}x {item.bundle.name}</span>
                         <span className="font-medium">
-                          Rp {(item.price * item.quantity).toLocaleString('id-ID')}
+                          Rp {(item.costPrice * item.quantity).toLocaleString('id-ID')}
                         </span>
                       </div>
                     ))}
