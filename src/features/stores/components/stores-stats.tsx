@@ -61,7 +61,7 @@ export function StoresStats() {
         </div>
         <div className="bg-card rounded-lg shadow-md p-6 text-center border">
           <h3 className="text-2xl font-bold text-red-600">-</h3>
-          <p className="text-muted-foreground">Total Bundle Produk</p>
+          <p className="text-muted-foreground">Total Paket</p>
         </div>
         <div className="bg-card rounded-lg shadow-md p-6 text-center border">
           <h3 className="text-2xl font-bold text-red-600">-</h3>
@@ -79,7 +79,7 @@ export function StoresStats() {
       </div>
       <div className="bg-card rounded-lg shadow-md p-6 text-center border">
         <h3 className="text-2xl font-bold text-green-600">{stats?.totalBundles || 0}</h3>
-        <p className="text-muted-foreground">Total Bundle Produk</p>
+        <p className="text-muted-foreground">Total Paket</p>
       </div>
       <div className="bg-card rounded-lg shadow-md p-6 text-center border">
         <h3 className="text-2xl font-bold text-purple-600">{stats?.activeStores || 0}</h3>
