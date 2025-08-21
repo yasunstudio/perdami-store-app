@@ -120,7 +120,7 @@ export interface CartItem {
   productId?: string
   bundleId?: string
   name: string
-  price: number // This will store sellingPrice for display
+  sellingPrice: number // Price displayed to customer
   quantity: number
   image?: string
   storeId: string

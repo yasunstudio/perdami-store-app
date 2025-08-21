@@ -39,7 +39,7 @@ export function CartItemCard({ item, className }: CartItemCardProps) {
     }
   }
 
-  const itemSubtotal = item.price * item.quantity
+    const itemSubtotal = item.sellingPrice * item.quantity
 
   return (
     <Card className={`group hover:shadow-md transition-all duration-200 overflow-hidden ${className}`}>
@@ -131,7 +131,7 @@ export function CartItemCard({ item, className }: CartItemCardProps) {
                 <div className="flex justify-between items-center">
                   <div>
                     <p className="text-lg font-bold text-primary">
-                      {formatPrice(item.price)}
+                      {formatPrice(item.sellingPrice)}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       per item
