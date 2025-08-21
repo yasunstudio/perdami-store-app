@@ -71,7 +71,6 @@ export function BundleCard({ bundle }: BundleCardProps) {
         image: bundle.image || undefined,
         storeId,
         storeName,
-        stock: 999, // Default stock for bundles
         contents: bundleItems // Use parsed bundle contents
       })
       toast.success(`${bundle.name} ditambahkan ke keranjang`)

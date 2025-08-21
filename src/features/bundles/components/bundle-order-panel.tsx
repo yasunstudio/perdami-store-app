@@ -74,7 +74,6 @@ export function BundleOrderPanel({ bundle }: BundleOrderPanelProps) {
         image: bundle.image || undefined,
         storeId,
         storeName,
-        stock: 999,
         quantity,
         contents: contents
       })
