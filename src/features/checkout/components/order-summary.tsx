@@ -47,14 +47,14 @@ export function OrderSummary({ cart }: OrderSummaryProps) {
                     <span className="text-muted-foreground">
                       {item.name} × {item.quantity}
                     </span>
-                    <span>{formatPrice(item.price * item.quantity)}</span>
+                    <span>{formatPrice(item.sellingPrice * item.quantity)}</span>
                   </div>
                 ))}
               </div>
               <Separator className="my-2" />
               <div className="flex justify-between text-sm font-medium">
                 <span>Subtotal {store.storeName}</span>
-                <span>{formatPrice(store.items.reduce((sum, item) => sum + (item.price * item.quantity), 0))}</span>
+                <span>{formatPrice(store.items.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0))}</span>
               </div>
             </div>
           ))}
