@@ -65,7 +65,7 @@ export function StoreCard({ store }: StoreCardProps) {
           <div className="flex gap-2 pt-2">
             <Button variant="outline" size="sm" className="flex-1" asChild>
               <Link href={`/bundles?store=${store.id}`}>
-                Lihat Bundle
+                Lihat Paket
               </Link>
             </Button>
             <Button size="sm" className="flex-1" asChild>
