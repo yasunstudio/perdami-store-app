@@ -81,7 +81,7 @@ export function BundlesPageView() {
         bundles: data.bundles.map(b => ({
           id: b.id,
           name: b.name,
-          price: b.price,
+          sellingPrice: b.sellingPrice,
           contents: b.contents,
           store: b.store
         }))
