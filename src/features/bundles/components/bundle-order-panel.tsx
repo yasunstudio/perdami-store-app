@@ -70,7 +70,7 @@ export function BundleOrderPanel({ bundle }: BundleOrderPanelProps) {
         bundleId: bundle.id,
         productId: bundle.id,
         name: bundle.name,
-        price: (bundle as any).price || bundle.sellingPrice,
+        sellingPrice: bundle.sellingPrice,
         image: bundle.image || undefined,
         storeId,
         storeName,
