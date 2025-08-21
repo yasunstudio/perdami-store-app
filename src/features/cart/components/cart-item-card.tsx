@@ -76,7 +76,7 @@ export function CartItemCard({ item, className }: CartItemCardProps) {
                       </div>
                       {item.type === 'bundle' && (
                         <Badge variant="secondary" className="text-xs h-5">
-                          Bundle
+                          Paket
                         </Badge>
                       )}
                     </div>
