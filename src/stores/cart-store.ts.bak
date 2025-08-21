@@ -7,7 +7,7 @@ import { SERVICE_FEE, calculateServiceFeePerStore } from '@/lib/service-fee'
 interface BundleContentItem {
   name: string
   description?: string
-  sellingPrice: number
+  price: number
   quantity: number
   image?: string
 }
@@ -132,7 +132,7 @@ const createCartStore = () => {
                   
                   // Recalculate store subtotal
                   updatedStores[existingStoreIndex].subtotal = updatedStores[existingStoreIndex].items.reduce(
-                    (total, cartItem) => total + (cartItem.sellingPrice * cartItem.quantity), 0
+                    (total, cartItem) => total + (cartItem.price * cartItem.quantity), 0
                   )
 
                   const newCart = createUpdatedCart(updatedStores)
@@ -143,7 +143,7 @@ const createCartStore = () => {
                     id: `product-${item.productId || 'unknown'}-${item.storeId || 'default'}-${Date.now()}`,
                     productId: item.productId,
                     name: item.name,
-                    sellingPrice: item.sellingPrice,
+                    price: item.price,
                     image: item.image,
                     storeId: item.storeId,
                     storeName: item.storeName,
@@ -160,7 +160,7 @@ const createCartStore = () => {
                   
                   // Recalculate store subtotal
                   updatedStores[existingStoreIndex].subtotal = updatedStores[existingStoreIndex].items.reduce(
-                    (total, cartItem) => total + (cartItem.sellingPrice * cartItem.quantity), 0
+                    (total, cartItem) => total + (cartItem.price * cartItem.quantity), 0
                   )
 
                   const newCart = createUpdatedCart(updatedStores)
@@ -172,7 +172,7 @@ const createCartStore = () => {
                   id: `product-${item.productId || 'unknown'}-${item.storeId || 'default'}-${Date.now()}`,
                   productId: item.productId,
                   name: item.name,
-                  sellingPrice: item.sellingPrice,
+                  price: item.price,
                   image: item.image,
                   storeId: item.storeId,
                   storeName: item.storeName,
@@ -185,7 +185,7 @@ const createCartStore = () => {
                   storeId: item.storeId || '',
                   storeName: item.storeName || '',
                   items: [newItem],
-                  subtotal: newItem.sellingPrice * quantity,
+                  subtotal: newItem.price * quantity,
                 }
 
                 const updatedStores = [...cart.stores, newStore]
@@ -231,7 +231,7 @@ const createCartStore = () => {
 
                   // Recalculate store subtotal
                   updatedStores[existingStoreIndex].subtotal = updatedStores[existingStoreIndex].items.reduce(
-                    (total, cartItem) => total + (cartItem.sellingPrice * cartItem.quantity), 0
+                    (total, cartItem) => total + (cartItem.price * cartItem.quantity), 0
                   )
 
                   const newCart = createUpdatedCart(updatedStores)
@@ -243,7 +243,7 @@ const createCartStore = () => {
                     productId: bundle.productId,
                     bundleId: bundle.bundleId,
                     name: bundle.name,
-                    sellingPrice: bundle.sellingPrice,
+                    price: bundle.price,
                     image: bundle.image,
                     storeId: bundle.storeId,
                     storeName: bundle.storeName,
@@ -262,7 +262,7 @@ const createCartStore = () => {
 
                   // Recalculate store subtotal
                   updatedStores[existingStoreIndex].subtotal = updatedStores[existingStoreIndex].items.reduce(
-                    (total, cartItem) => total + (cartItem.sellingPrice * cartItem.quantity), 0
+                    (total, cartItem) => total + (cartItem.price * cartItem.quantity), 0
                   )
 
                   const newCart = createUpdatedCart(updatedStores)
@@ -275,7 +275,7 @@ const createCartStore = () => {
                   productId: bundle.productId,
                   bundleId: bundle.bundleId,
                   name: bundle.name,
-                  sellingPrice: bundle.sellingPrice,
+                  price: bundle.price,
                   image: bundle.image,
                   storeId: bundle.storeId,
                   storeName: bundle.storeName,
@@ -290,7 +290,7 @@ const createCartStore = () => {
                   storeId: bundle.storeId || '',
                   storeName: bundle.storeName || '',
                   items: [newBundle],
-                  subtotal: newBundle.sellingPrice * quantity,
+                  subtotal: newBundle.price * quantity,
                 }
 
                 const updatedStores = [...cart.stores, newStore]
@@ -305,27 +305,20 @@ const createCartStore = () => {
           removeItem: (itemId, storeId) => {
             try {
               const { cart } = get()
-              const storeIndex = cart.stores.findIndex((store) => store.storeId === storeId)
-              
-              if (storeIndex >= 0) {
-                const updatedStores = [...cart.stores]
-                const updatedItems = updatedStores[storeIndex].items.filter((item) => item.id !== itemId)
-                
-                if (updatedItems.length === 0) {
-                  // If no items left in store, remove the store
-                  updatedStores.splice(storeIndex, 1)
-                } else {
-                  // Update store with remaining items
-                  updatedStores[storeIndex] = {
-                    ...updatedStores[storeIndex],
-                    items: updatedItems,
-                    subtotal: updatedItems.reduce((total, item) => total + (item.sellingPrice * item.quantity), 0)
+              const updatedStores = cart.stores.map((store) => {
+                if (store.storeId === storeId) {
+                  const filteredItems = store.items.filter((item) => item.id !== itemId)
+                  return {
+                    ...store,
+                    items: filteredItems,
+                    subtotal: filteredItems.reduce((total, item) => total + (item.price * item.quantity), 0),
                   }
                 }
-                
-                const newCart = createUpdatedCart(updatedStores)
-                set({ cart: newCart })
-              }
+                return store
+              }).filter((store) => store.items.length > 0) // Remove empty stores
+
+              const newCart = createUpdatedCart(updatedStores)
+              set({ cart: newCart })
             } catch (error) {
               console.error('Error removing item from cart:', error)
             }
@@ -333,41 +326,40 @@ const createCartStore = () => {
 
           updateQuantity: (itemId, storeId, quantity) => {
             try {
+              if (quantity <= 0) {
+                // If quantity is 0 or negative, remove the item
+                get().removeItem(itemId, storeId)
+                return
+              }
+
               const { cart } = get()
-              const storeIndex = cart.stores.findIndex((store) => store.storeId === storeId)
-              
-              if (storeIndex >= 0) {
-                const updatedStores = [...cart.stores]
-                const itemIndex = updatedStores[storeIndex].items.findIndex((item) => item.id === itemId)
-                
-                if (itemIndex >= 0) {
-                  if (quantity > 0) {
-                    // Update quantity
-                    updatedStores[storeIndex].items[itemIndex] = {
-                      ...updatedStores[storeIndex].items[itemIndex],
-                      quantity
-                    }
-                    
-                    // Recalculate store subtotal
-                    updatedStores[storeIndex].subtotal = updatedStores[storeIndex].items.reduce(
-                      (total, item) => total + (item.sellingPrice * item.quantity), 0
-                    )
-                    
-                    const newCart = createUpdatedCart(updatedStores)
-                    set({ cart: newCart })
-                  } else {
-                    // If quantity is 0 or negative, remove item
-                    get().removeItem(itemId, storeId)
+              const updatedStores = cart.stores.map((store) => {
+                if (store.storeId === storeId) {
+                  const updatedItems = store.items.map((item) =>
+                    item.id === itemId ? { ...item, quantity } : item
+                  )
+                  return {
+                    ...store,
+                    items: updatedItems,
+                    subtotal: updatedItems.reduce((total, item) => total + (item.price * item.quantity), 0),
                   }
                 }
-              }
+                return store
+              })
+
+              const newCart = createUpdatedCart(updatedStores)
+              set({ cart: newCart })
             } catch (error) {
-              console.error('Error updating quantity in cart:', error)
+              console.error('Error updating item quantity:', error)
             }
           },
 
           clearCart: () => {
-            set({ cart: initialCart })
+            try {
+              set({ cart: initialCart })
+            } catch (error) {
+              console.error('Error clearing cart:', error)
+            }
           },
 
           clearStore: (storeId) => {
@@ -385,7 +377,7 @@ const createCartStore = () => {
             try {
               const { cart } = get()
               const store = cart.stores.find((store) => store.storeId === storeId)
-              return store?.items || []
+              return store ? store.items : []
             } catch (error) {
               console.error('Error getting store items:', error)
               return []
@@ -396,29 +388,32 @@ const createCartStore = () => {
             try {
               const { cart } = get()
               const store = cart.stores.find((store) => store.storeId === storeId)
-              return store?.subtotal || 0
+              return store ? store.subtotal : 0
             } catch (error) {
               console.error('Error getting store subtotal:', error)
               return 0
             }
           },
-
         }),
         {
-          name: 'shopping-cart',
-          version: 2,
-          partialize: (state) => ({ cart: validateCartState(state.cart) }),
-          onRehydrateStorage: () => (state) => {
-            if (state) {
-              state.cart = validateCartState(state.cart)
-            }
-          },
+          name: 'cart-store',
         }
       )
     )
   } catch (error) {
     console.error('Error creating cart store:', error)
-    throw error
+    // Return a fallback store
+    return create<CartState>()(() => ({
+      cart: initialCart,
+      addItem: () => {},
+      addBundle: () => {},
+      removeItem: () => {},
+      updateQuantity: () => {},
+      clearCart: () => {},
+      clearStore: () => {},
+      getStoreItems: () => [],
+      getStoreSubtotal: () => 0,
+    }))
   }
 }
 
