@@ -14,7 +14,7 @@ interface BundleContentItem {
 
 interface CartState {
   cart: Cart
-  addItem: (item: Omit<CartItem, 'quantity' | 'id'> & { quantity?: number; storeId?: string; stock?: number }) => void
+  addItem: (item: Omit<CartItem, 'quantity' | 'id'> & { quantity?: number; storeId?: string }) => void
   addBundle: (bundle: Omit<CartItem, 'quantity' | 'id' | 'type'> & { 
     quantity?: number; 
     storeId?: string; 
@@ -147,7 +147,6 @@ const createCartStore = () => {
                     image: item.image,
                     storeId: item.storeId,
                     storeName: item.storeName,
-                    stock: item.stock || 0,
                     type: 'product',
                     quantity,
                   }
@@ -176,7 +175,6 @@ const createCartStore = () => {
                   image: item.image,
                   storeId: item.storeId,
                   storeName: item.storeName,
-                  stock: item.stock || 0,
                   type: 'product',
                   quantity,
                 }
@@ -247,7 +245,6 @@ const createCartStore = () => {
                     image: bundle.image,
                     storeId: bundle.storeId,
                     storeName: bundle.storeName,
-                    stock: 0, // Bundles don't have stock
                     type: 'bundle',
                     quantity,
                     contents: bundle.contents || [],
@@ -279,7 +276,6 @@ const createCartStore = () => {
                   image: bundle.image,
                   storeId: bundle.storeId,
                   storeName: bundle.storeName,
-                  stock: 0, // Bundles don't have stock
                   type: 'bundle',
                   quantity,
                   contents: bundle.contents || [],

@@ -125,7 +125,6 @@ export interface CartItem {
   image?: string
   storeId: string
   storeName: string
-  stock: number
   type: 'product' | 'bundle'
   // Bundle contents (bundle-only approach)
   contents?: {
