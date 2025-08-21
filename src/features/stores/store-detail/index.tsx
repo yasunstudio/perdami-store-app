@@ -22,7 +22,8 @@ interface Bundle {
   name: string
   description: string | null
   image: string | null
-  price: number
+  costPrice: number
+  sellingPrice: number
   contents: any
   isActive: boolean
   isFeatured: boolean
@@ -147,7 +148,7 @@ export default function StoreDetail({ storeId }: StoreDetailProps) {
 
                 <div className="flex items-center text-gray-600 dark:text-gray-400">
                   <Package className="h-4 w-4 mr-2" />
-                  <span>{activeBundles.length} bundle tersedia</span>
+                  <span>{activeBundles.length} paket tersedia</span>
                 </div>
               </div>
             </div>
@@ -156,7 +157,7 @@ export default function StoreDetail({ storeId }: StoreDetailProps) {
 
         {/* Bundles Section */}
         <div>
-          <h2 className="text-2xl font-bold mb-4">Bundle Tersedia</h2>
+          <h2 className="text-2xl font-bold mb-4">Paket Tersedia</h2>
           
           {activeBundles.length === 0 ? (
             <Card>
@@ -180,7 +181,8 @@ export default function StoreDetail({ storeId }: StoreDetailProps) {
                     name: bundle.name,
                     description: bundle.description,
                     image: bundle.image,
-                    price: bundle.price,
+                    sellingPrice: bundle.sellingPrice,
+                    costPrice: bundle.costPrice,
                     contents: bundle.contents,
                     isActive: bundle.isActive,
                     isFeatured: bundle.isFeatured,

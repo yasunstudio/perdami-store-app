@@ -57,7 +57,7 @@ export function StoreCard({ store }: StoreCardProps) {
           <div className="flex items-center text-sm">
             <Package className="h-4 w-4 mr-2 text-primary" />
             <span className="text-muted-foreground">
-              {store.bundleCount ? `${store.bundleCount} bundle tersedia` : 'Belum ada bundle'}
+              {store.bundleCount ? `${store.bundleCount} paket tersedia` : 'Belum ada paket'}
             </span>
           </div>
 
