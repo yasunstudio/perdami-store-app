@@ -117,7 +117,7 @@ export default function CheckoutPage() {
         store.items.map(item => ({
           bundleId: item.bundleId,
           quantity: item.quantity,
-          price: item.price,
+          sellingPrice: item.sellingPrice,
           storeId: item.storeId // Keep storeId for removeItem function
         }))
       )
@@ -126,8 +126,8 @@ export default function CheckoutPage() {
       const items = cartItems.map(item => ({
         bundleId: item.bundleId,
         quantity: item.quantity,
-        unitPrice: item.price,
-        totalPrice: item.price * item.quantity
+        unitPrice: item.sellingPrice,
+        totalPrice: item.sellingPrice * item.quantity
       }))
 
       // Pre-validate bundles availability
