@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Package, ShoppingCart, Store, Download, Printer } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
-import { generateOrderPDF } from '@/lib/pdf-generator'
 import { toast } from 'sonner'
 import Image from 'next/image'
 
@@ -66,77 +65,6 @@ export function OrderItems({ order, items, totalAmount }: OrderItemsProps) {
   const tax = 0 // No tax for now
   const shipping = 0 // No shipping for now
 
-  const handlePrintInvoice = () => {
-    const printWindow = window.open('', '_blank')
-    if (!printWindow) {
-      toast.error('Tidak dapat membuka jendela print. Pastikan popup tidak diblokir.')
-      return
-    }
-
-    const invoiceHTML = generateInvoiceHTML()
-    printWindow.document.write(invoiceHTML)
-    printWindow.document.close()
-    
-    printWindow.onload = () => {
-      printWindow.print()
-      printWindow.close()
-    }
-    
-    toast.success('Invoice berhasil disiapkan untuk print')
-  }
-
-  const handleExportPDF = async () => {
-    try {
-      toast.loading('Menyiapkan PDF...', { id: 'pdf-export' })
-
-      // Use PDF generator library for better PDF output
-      try {
-        await generateOrderPDF({
-          ...order,
-          orderItems: items.map(item => ({
-            ...item,
-            unitPrice: item.price,
-            bundle: item.bundle
-          })),
-          subtotalAmount: subtotal,
-          serviceFee: totalServiceFee,
-          totalAmount
-        })
-        toast.success('PDF berhasil diunduh!', { id: 'pdf-export' })
-        return
-      } catch (error) {
-        console.error('Error generating PDF with library:', error)
-        // Fallback to browser print if PDF generation fails
-      }
-      
-      // Generate HTML content locally as fallback
-      const htmlContent = generateInvoiceHTML()
-      
-      // Open new window with invoice content
-      const printWindow = window.open('', '_blank')
-      if (!printWindow) {
-        toast.error('Tidak dapat membuka jendela PDF. Pastikan popup tidak diblokir.', { id: 'pdf-export' })
-        return
-      }
-
-      printWindow.document.write(htmlContent)
-      printWindow.document.close()
-      
-      // Wait for content to load then open print dialog
-      printWindow.onload = () => {
-        setTimeout(() => {
-          printWindow.print()
-          // The user can choose "Save as PDF" from the print dialog
-        }, 500)
-      }
-      
-      toast.success('PDF siap untuk disimpan (pilih "Save as PDF" di dialog print)', { id: 'pdf-export' })
-    } catch (error) {
-      console.error('Error exporting PDF:', error)
-      toast.error('Gagal menyiapkan PDF untuk export', { id: 'pdf-export' })
-    }
-  }
-
   const generateInvoiceHTML = () => {
     const formatDate = (dateString: string) => {
       return new Date(dateString).toLocaleDateString('id-ID', {
@@ -144,6 +72,14 @@ export function OrderItems({ order, items, totalAmount }: OrderItemsProps) {
         month: 'long',
         year: 'numeric'
       })
+    }
+
+    const formatCurrency = (amount: number) => {
+      return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+      }).format(amount)
     }
 
     return `
@@ -168,6 +104,9 @@ export function OrderItems({ order, items, totalAmount }: OrderItemsProps) {
             .summary { margin-top: 20px; width: 300px; margin-left: auto; }
             .summary-row { display: flex; justify-content: space-between; padding: 5px 0; }
             .summary-row.total { font-weight: bold; border-top: 2px solid #333; padding-top: 10px; font-size: 16px; }
+            .payment-notes { margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 4px; border: 1px solid #ddd; }
+            .payment-notes h3 { font-size: 14px; color: #555; margin-bottom: 8px; }
+            .payment-notes p { font-size: 12px; color: #666; white-space: pre-line; }
             .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
             @media print {
               body { print-color-adjust: exact; }
@@ -177,8 +116,9 @@ export function OrderItems({ order, items, totalAmount }: OrderItemsProps) {
         </head>
         <body>
           <div class="header">
-            <div class="company-name">Perdami Store</div>
+            <div class="company-name">Dharma Wanita Perdami Jawa Barat</div>
             <div class="invoice-title">INVOICE</div>
+            <div style="font-size: 12px; margin-top: 10px;">${order.orderNumber}</div>
           </div>
 
           <div class="info-section">
@@ -226,7 +166,7 @@ export function OrderItems({ order, items, totalAmount }: OrderItemsProps) {
               <span>${formatPrice(subtotal)}</span>
             </div>
             <div class="summary-row">
-              <span>Ongkos Kirim (${stores.length} toko):</span>
+              <span>Service Fee (${stores.length} toko):</span>
               <span>${formatPrice(totalServiceFee)}</span>
             </div>
             <div class="summary-row total">
@@ -236,19 +176,65 @@ export function OrderItems({ order, items, totalAmount }: OrderItemsProps) {
           </div>
 
           ${order.payment?.notes ? `
-          <div style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 4px; border: 1px solid #ddd;">
-            <h3 style="font-size: 14px; color: #555; margin-bottom: 8px;">Catatan Pembayaran:</h3>
-            <p style="font-size: 12px; color: #666; white-space: pre-line;">${order.payment.notes}</p>
+          <div class="payment-notes">
+            <h3>Catatan Pembayaran:</h3>
+            <p>${order.payment.notes}</p>
           </div>
           ` : ''}
 
           <div class="footer">
             <p>Terima kasih atas pesanan Anda!</p>
-            <p>Invoice ini dibuat secara otomatis oleh sistem Perdami Store</p>
+            <p>Invoice ini dibuat secara otomatis oleh sistem Dharma Wanita Perdami Jawa Barat</p>
           </div>
         </body>
       </html>
     `
+  }
+
+  const handlePrintInvoice = () => {
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) {
+      toast.error('Tidak dapat membuka jendela print. Pastikan popup tidak diblokir.')
+      return
+    }
+
+    const invoiceHTML = generateInvoiceHTML()
+    printWindow.document.write(invoiceHTML)
+    printWindow.document.close()
+    
+    printWindow.onload = () => {
+      printWindow.print()
+      printWindow.close()
+    }
+    
+    toast.success('Invoice berhasil disiapkan untuk print')
+  }
+
+  const handleExportPDF = async () => {
+    try {
+      toast.loading('Menyiapkan PDF...', { id: 'pdf-export' })
+      
+      const htmlContent = generateInvoiceHTML()
+      const printWindow = window.open('', '_blank')
+      if (!printWindow) {
+        toast.error('Tidak dapat membuka jendela PDF. Pastikan popup tidak diblokir.', { id: 'pdf-export' })
+        return
+      }
+
+      printWindow.document.write(htmlContent)
+      printWindow.document.close()
+
+      // Wait for content to load then open print dialog
+      printWindow.onload = () => {
+        setTimeout(() => {
+          printWindow.print()
+          toast.success('Silakan pilih "Save as PDF" pada dialog print', { id: 'pdf-export' })
+        }, 500)
+      }
+    } catch (error) {
+      console.error('Error exporting PDF:', error)
+      toast.error('Gagal menyiapkan PDF untuk export', { id: 'pdf-export' })
+    }
   }
 
   return (
@@ -310,7 +296,7 @@ export function OrderItems({ order, items, totalAmount }: OrderItemsProps) {
                               </h4>
                               
                               <div className="text-xs text-muted-foreground">
-                                {formatPrice(item.bundle.price)} per paket
+                                {formatPrice(item.price)} per paket
                               </div>
                               
                               <div className="text-xs text-muted-foreground italic">
@@ -327,13 +313,8 @@ export function OrderItems({ order, items, totalAmount }: OrderItemsProps) {
                               </span>
                             </div>
                             
-                            <div className="text-right">
-                              <div className="font-medium text-sm text-foreground">
-                                {formatPrice(item.price * item.quantity)}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {item.quantity} × {formatPrice(item.price)}
-                              </div>
+                            <div className="text-sm font-medium">
+                              {formatPrice(item.price * item.quantity)}
                             </div>
                           </div>
                         </div>
@@ -341,23 +322,10 @@ export function OrderItems({ order, items, totalAmount }: OrderItemsProps) {
                     ))}
                   </div>
 
-                  <Separator />
-
-                  {/* Store Summary */}
-                  <div className="space-y-1 bg-muted/30 p-2 rounded-lg">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Subtotal {storeGroup.store.name}</span>
-                      <span className="text-foreground">{formatPrice(storeSubtotal)}</span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Ongkos Kirim</span>
-                      <span className="text-foreground">{formatPrice(serviceFeePerStore)}</span>
-                    </div>
-                    <Separator className="my-1" />
-                    <div className="flex justify-between font-medium text-sm">
-                      <span>Total {storeGroup.store.name}</span>
-                      <span>{formatPrice(storeSubtotal + serviceFeePerStore)}</span>
-                    </div>
+                  {/* Store Subtotal */}
+                  <div className="flex justify-between items-center text-sm pt-2 border-t border-border">
+                    <span className="font-medium">Subtotal {storeGroup.store.name}</span>
+                    <span>{formatPrice(storeSubtotal)}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -365,48 +333,45 @@ export function OrderItems({ order, items, totalAmount }: OrderItemsProps) {
           })}
         </div>
 
-        <Separator />
+        {/* Order Summary */}
+        <div className="pt-4 space-y-2">
+          <div className="flex justify-between items-center text-sm">
+            <span>Subtotal Produk</span>
+            <span>{formatPrice(subtotal)}</span>
+          </div>
+          
+          <div className="flex justify-between items-center text-sm">
+            <span>Service Fee ({stores.length} toko)</span>
+            <span>{formatPrice(totalServiceFee)}</span>
+          </div>
 
-        {/* Grand Total Summary */}
-        <div className="space-y-2 bg-muted/30 p-3 rounded-lg">
-          <h4 className="font-medium text-sm text-foreground">Ringkasan Total</h4>
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Subtotal Semua Item</span>
-              <span className="text-foreground">{formatPrice(subtotal)}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Ongkos Kirim ({stores.length} toko)</span>
-              <span className="text-foreground">{formatPrice(totalServiceFee)}</span>
-            </div>
-            
-            <Separator />
-            
-            <div className="flex justify-between text-base font-bold">
-              <span className="text-foreground">Total</span>
-              <span className="text-foreground">{formatPrice(totalAmount)}</span>
-            </div>
+          <Separator className="my-2" />
+          
+          <div className="flex justify-between items-center font-bold">
+            <span>Total Pembayaran</span>
+            <span className="text-lg">{formatPrice(totalAmount)}</span>
           </div>
         </div>
 
-        {/* Additional Actions */}
-        <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-border">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="flex items-center gap-2 w-full sm:w-auto h-8 text-xs"
+        {/* Actions */}
+        <div className="flex flex-col sm:flex-row gap-2 pt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full sm:w-auto"
             onClick={handlePrintInvoice}
           >
-            <Printer className="h-3 w-3" />
+            <Printer className="h-4 w-4 mr-2" />
             Print Invoice
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="flex items-center gap-2 w-full sm:w-auto h-8 text-xs"
+          
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full sm:w-auto"
             onClick={handleExportPDF}
           >
-            <Download className="h-3 w-3" />
+            <Download className="h-4 w-4 mr-2" />
             Export PDF
           </Button>
         </div>
