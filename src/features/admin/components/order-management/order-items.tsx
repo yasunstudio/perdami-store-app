@@ -170,7 +170,7 @@ export function OrderItems({ order, items, totalAmount }: OrderItemsProps) {
               <span>${formatPrice(subtotal)}</span>
             </div>
             <div class="summary-row">
-              <span>Service Fee (${stores.length} toko):</span>
+              <span>Ongkos Kirim (${stores.length} toko):</span>
               <span>${formatPrice(totalServiceFee)}</span>
             </div>
             <div class="summary-row total">
@@ -345,7 +345,7 @@ export function OrderItems({ order, items, totalAmount }: OrderItemsProps) {
           </div>
           
           <div className="flex justify-between items-center text-sm">
-            <span>Service Fee ({stores.length} toko)</span>
+            <span>Ongkos Kirim ({stores.length} toko)</span>
             <span>{formatPrice(totalServiceFee)}</span>
           </div>
 
