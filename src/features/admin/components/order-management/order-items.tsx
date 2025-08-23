@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Package, ShoppingCart, Store, Download, Printer } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
+import { generateOrderPDF } from '@/lib/pdf-generator'
 import { toast } from 'sonner'
 import Image from 'next/image'
 
@@ -18,6 +19,7 @@ interface OrderItemsProps {
     paymentStatus: string
     payment?: {
       method: string
+      notes?: string
     }
     user: {
       name: string | null
@@ -86,8 +88,28 @@ export function OrderItems({ order, items, totalAmount }: OrderItemsProps) {
   const handleExportPDF = async () => {
     try {
       toast.loading('Menyiapkan PDF...', { id: 'pdf-export' })
+
+      // Use PDF generator library for better PDF output
+      try {
+        await generateOrderPDF({
+          ...order,
+          orderItems: items.map(item => ({
+            ...item,
+            unitPrice: item.price,
+            bundle: item.bundle
+          })),
+          subtotalAmount: subtotal,
+          serviceFee: totalServiceFee,
+          totalAmount
+        })
+        toast.success('PDF berhasil diunduh!', { id: 'pdf-export' })
+        return
+      } catch (error) {
+        console.error('Error generating PDF with library:', error)
+        // Fallback to browser print if PDF generation fails
+      }
       
-      // Generate HTML content locally
+      // Generate HTML content locally as fallback
       const htmlContent = generateInvoiceHTML()
       
       // Open new window with invoice content
@@ -212,6 +234,13 @@ export function OrderItems({ order, items, totalAmount }: OrderItemsProps) {
               <span>${formatPrice(totalAmount)}</span>
             </div>
           </div>
+
+          ${order.payment?.notes ? `
+          <div style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 4px; border: 1px solid #ddd;">
+            <h3 style="font-size: 14px; color: #555; margin-bottom: 8px;">Catatan Pembayaran:</h3>
+            <p style="font-size: 12px; color: #666; white-space: pre-line;">${order.payment.notes}</p>
+          </div>
+          ` : ''}
 
           <div class="footer">
             <p>Terima kasih atas pesanan Anda!</p>
