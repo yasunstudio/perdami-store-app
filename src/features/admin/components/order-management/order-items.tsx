@@ -99,15 +99,18 @@ export function OrderItems({ order, items, totalAmount }: OrderItemsProps) {
             .info-box h3 { font-size: 14px; font-weight: bold; margin-bottom: 10px; color: #555; }
             .info-box p { margin: 5px 0; font-size: 12px; }
             .table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            .payment-notes { margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 4px; background-color: #f8f9fa; }
+            .payment-notes h3 { font-size: 14px; font-weight: bold; color: #555; margin-bottom: 8px; }
+            .payment-notes p { font-size: 12px; color: #666; white-space: pre-line; }
             .table th, .table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
             .table th { background-color: #f8f9fa; font-weight: bold; }
             .table .text-right { text-align: right; }
             .summary { margin-top: 20px; width: 300px; margin-left: auto; }
             .summary-row { display: flex; justify-content: space-between; padding: 5px 0; }
             .summary-row.total { font-weight: bold; border-top: 2px solid #333; padding-top: 10px; font-size: 16px; }
-            .payment-notes { margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 4px; border: 1px solid #ddd; }
-            .payment-notes h3 { font-size: 14px; color: #555; margin-bottom: 8px; }
-            .payment-notes p { font-size: 12px; color: #666; white-space: pre-line; }
+            .notes-section { margin-top: 20px; padding: 12px 15px; background-color: #f8f9fa; border-radius: 4px; border: 1px solid #ddd; }
+            .notes-section h3 { font-size: 14px; font-weight: bold; color: #333; margin-bottom: 8px; }
+            .notes-section p { font-size: 12px; color: #666; white-space: pre-line; line-height: 1.4; }
             .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
             @media print {
               body { print-color-adjust: exact; }
@@ -177,16 +180,9 @@ export function OrderItems({ order, items, totalAmount }: OrderItemsProps) {
           </div>
 
           ${order.notes ? `
-          <div class="payment-notes">
-            <h3>Catatan Order:</h3>
+          <div class="notes-section">
+            <h3>Catatan:</h3>
             <p>${order.notes}</p>
-          </div>
-          ` : ''}
-
-          ${order.payment?.notes ? `
-          <div class="payment-notes">
-            <h3>Catatan Pembayaran:</h3>
-            <p>${order.payment.notes}</p>
           </div>
           ` : ''}
 
