@@ -9,6 +9,7 @@ export interface InvoiceData {
   orderStatus: string
   paymentStatus: string
   paymentNotes?: string
+  orderNotes?: string
   items: Array<{
     name: string
     quantity: number
@@ -54,6 +55,30 @@ export class PDFInvoiceGenerator {
     }).format(amount)
   }
 
+  private addOrderNotes(data: InvoiceData): void {
+    if (data.orderNotes) {
+      this.addNewPageIfNeeded(30)
+      
+      this.pdf.setFontSize(12)
+      this.pdf.setFont('helvetica', 'bold')
+      this.pdf.text('Catatan Order:', this.margin, this.currentY)
+      
+      this.currentY += 8
+      
+      this.pdf.setFont('helvetica', 'normal')
+      this.pdf.setFontSize(10)
+      
+      const noteLines = this.pdf.splitTextToSize(data.orderNotes, this.pageWidth - (this.margin * 2))
+      noteLines.forEach((line: string) => {
+        this.addNewPageIfNeeded(5)
+        this.pdf.text(line, this.margin, this.currentY)
+        this.currentY += 5
+      })
+      
+      this.currentY += 10
+    }
+  }
+
   public generateInvoice(data: InvoiceData): jsPDF {
     // Header
     this.addHeader(data)
@@ -66,6 +91,9 @@ export class PDFInvoiceGenerator {
     
     // Total Section
     this.addTotalSection(data)
+    
+    // Order Notes Section
+    this.addOrderNotes(data)
     
     // Payment Notes Section
     this.addPaymentNotes(data)
