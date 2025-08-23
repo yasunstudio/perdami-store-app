@@ -16,6 +16,7 @@ interface OrderItemsProps {
     createdAt: string
     orderStatus: string
     paymentStatus: string
+    notes?: string
     payment?: {
       method: string
       notes?: string
@@ -174,6 +175,13 @@ export function OrderItems({ order, items, totalAmount }: OrderItemsProps) {
               <span>${formatPrice(totalAmount)}</span>
             </div>
           </div>
+
+          ${order.notes ? `
+          <div class="payment-notes">
+            <h3>Catatan Order:</h3>
+            <p>${order.notes}</p>
+          </div>
+          ` : ''}
 
           ${order.payment?.notes ? `
           <div class="payment-notes">
