@@ -294,46 +294,148 @@ export class PDFInvoiceGenerator {
 // Utility function to generate PDF from order data
 export async function generateOrderPDF(orderData: any): Promise<void> {
   try {
-    const invoiceData: InvoiceData = {
-      orderNumber: orderData.orderNumber,
-      customerName: orderData.user?.name || 'Customer',
-      customerPhone: orderData.user?.phone,
-      customerEmail: orderData.user?.email,
-      orderDate: typeof orderData.createdAt === 'string' 
-        ? new Date(orderData.createdAt).toLocaleDateString('id-ID')
-        : orderData.createdAt.toLocaleDateString('id-ID'),
-      orderStatus: orderData.orderStatus,
-      paymentStatus: orderData.paymentStatus,
-      paymentNotes: orderData.payment?.notes,
-      items: orderData.orderItems.map((item: any) => {
-        const bundleContents = item.bundle?.contents ? 
-          (typeof item.bundle.contents === 'string' 
-            ? JSON.parse(item.bundle.contents)
-            : item.bundle.contents
-          ).map((content: any) => ({
-            name: content.product?.name || content.name || 'Item',
-            quantity: content.quantity || 1
-          })) : undefined
-
-        return {
-          name: item.bundle?.name || 'Product',
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          totalPrice: item.unitPrice * item.quantity,
-          bundleContents
-        }
-      }),
-      subtotal: orderData.subtotalAmount,
-      serviceFee: orderData.serviceFee,
-      total: orderData.totalAmount
+    const formatDate = (dateString: string) => {
+      return new Date(dateString).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      })
     }
 
-    const generator = new PDFInvoiceGenerator()
-    generator.generateInvoice(invoiceData)
-    
-    const filename = `Invoice-${orderData.orderNumber}-${new Date().toISOString().split('T')[0]}.pdf`
-    await generator.downloadPDF(filename)
-    
+    const formatPrice = (amount: number) => {
+      return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+      }).format(amount)
+    }
+
+    // Generate HTML content with the same format as print invoice
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Invoice ${orderData.orderNumber}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+            .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+            .company-name { font-size: 24px; font-weight: bold; color: #2563eb; }
+            .invoice-title { font-size: 20px; margin-top: 10px; }
+            .info-section { display: flex; justify-content: space-between; margin: 20px 0; }
+            .info-box { width: 45%; }
+            .info-box h3 { font-size: 14px; font-weight: bold; margin-bottom: 10px; color: #555; }
+            .info-box p { margin: 5px 0; font-size: 12px; }
+            .table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            .table th, .table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+            .table th { background-color: #f8f9fa; font-weight: bold; }
+            .table .text-right { text-align: right; }
+            .summary { margin-top: 20px; width: 300px; margin-left: auto; }
+            .summary-row { display: flex; justify-content: space-between; padding: 5px 0; }
+            .summary-row.total { font-weight: bold; border-top: 2px solid #333; padding-top: 10px; font-size: 16px; }
+            .payment-notes { margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 4px; border: 1px solid #ddd; }
+            .payment-notes h3 { font-size: 14px; color: #555; margin-bottom: 8px; }
+            .payment-notes p { font-size: 12px; color: #666; white-space: pre-line; }
+            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
+            @media print {
+              body { print-color-adjust: exact; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="company-name">Dharma Wanita Perdami Jawa Barat</div>
+            <div class="invoice-title">INVOICE</div>
+            <div style="font-size: 12px; margin-top: 10px;">${orderData.orderNumber}</div>
+          </div>
+
+          <div class="info-section">
+            <div class="info-box">
+              <h3>Informasi Pesanan</h3>
+              <p><strong>No. Invoice:</strong> ${orderData.orderNumber}</p>
+              <p><strong>Tanggal:</strong> ${formatDate(orderData.createdAt)}</p>
+              <p><strong>Status:</strong> ${orderData.orderStatus}</p>
+              <p><strong>Pembayaran:</strong> ${orderData.payment?.method || 'Transfer Bank'}</p>
+            </div>
+            <div class="info-box">
+              <h3>Informasi Pelanggan</h3>
+              <p><strong>Nama:</strong> ${orderData.user?.name || 'Tidak tersedia'}</p>
+              <p><strong>Email:</strong> ${orderData.user?.email}</p>
+              ${orderData.user?.phone ? `<p><strong>Telepon:</strong> ${orderData.user.phone}</p>` : ''}
+            </div>
+          </div>
+
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Produk</th>
+                <th>Toko</th>
+                <th class="text-right">Harga</th>
+                <th class="text-right">Qty</th>
+                <th class="text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${orderData.orderItems.map((item: any) => `
+                <tr>
+                  <td>${item.bundle?.name || 'Product'}</td>
+                  <td>${item.bundle?.store?.name || 'Store'}</td>
+                  <td class="text-right">${formatPrice(item.unitPrice)}</td>
+                  <td class="text-right">${item.quantity}</td>
+                  <td class="text-right">${formatPrice(item.unitPrice * item.quantity)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div class="summary">
+            <div class="summary-row">
+              <span>Subtotal:</span>
+              <span>${formatPrice(orderData.subtotalAmount)}</span>
+            </div>
+            <div class="summary-row">
+              <span>Ongkos Kirim:</span>
+              <span>${formatPrice(orderData.serviceFee)}</span>
+            </div>
+            <div class="summary-row total">
+              <span>TOTAL:</span>
+              <span>${formatPrice(orderData.totalAmount)}</span>
+            </div>
+          </div>
+
+          ${orderData.payment?.notes ? `
+          <div class="payment-notes">
+            <h3>Catatan Pembayaran:</h3>
+            <p>${orderData.payment.notes}</p>
+          </div>
+          ` : ''}
+
+          <div class="footer">
+            <p>Terima kasih atas pesanan Anda!</p>
+            <p>Invoice ini dibuat secara otomatis oleh sistem Dharma Wanita Perdami Jawa Barat</p>
+          </div>
+        </body>
+      </html>
+    `
+
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) {
+      throw new Error('Tidak dapat membuka jendela print')
+    }
+
+    // Write content and prepare for printing
+    printWindow.document.write(htmlContent)
+    printWindow.document.close()
+
+    // Wait for content to load then trigger print
+    printWindow.onload = () => {
+      setTimeout(() => {
+        printWindow.print()
+        // User can choose "Save as PDF" from print dialog
+      }, 500)
+    }
   } catch (error) {
     console.error('Error generating PDF:', error)
     throw new Error('Failed to generate PDF invoice')
