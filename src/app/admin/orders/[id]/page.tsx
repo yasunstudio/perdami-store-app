@@ -314,16 +314,32 @@ export default function OrderDetailPage() {
               createdAt: order.createdAt,
               orderStatus: order.orderStatus,
               paymentStatus: order.paymentStatus,
+              notes: order.notes ?? undefined,
               payment: order.payment ? {
-                method: order.payment.method
+                method: order.payment.method,
+                notes: order.payment.notes ?? undefined
               } : undefined,
               user: {
                 name: order.user.name,
                 email: order.user.email,
-                phone: order.user.phone
+                phone: order.user.phone ?? undefined
               }
             }}
-            items={order.items}
+            items={order.items.map(item => ({
+              id: item.id,
+              quantity: item.quantity,
+              price: item.price,
+              bundle: {
+                id: item.bundle.id,
+                name: item.bundle.name,
+                price: item.bundle.price,
+                image: item.bundle.image ?? undefined,
+                store: {
+                  id: item.bundle.store.id,
+                  name: item.bundle.store.name
+                }
+              }
+            }))}
             totalAmount={order.totalAmount}
           />
 
