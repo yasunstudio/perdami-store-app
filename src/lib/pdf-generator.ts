@@ -8,6 +8,7 @@ export interface InvoiceData {
   orderDate: string
   orderStatus: string
   paymentStatus: string
+  paymentNotes?: string
   items: Array<{
     name: string
     quantity: number
@@ -66,6 +67,9 @@ export class PDFInvoiceGenerator {
     // Total Section
     this.addTotalSection(data)
     
+    // Payment Notes Section
+    this.addPaymentNotes(data)
+    
     // Footer
     this.addFooter()
 
@@ -76,7 +80,7 @@ export class PDFInvoiceGenerator {
     // Company Name
     this.pdf.setFontSize(24)
     this.pdf.setFont('helvetica', 'bold')
-    this.pdf.text('Perdami Store', this.pageWidth / 2, this.currentY, { align: 'center' })
+    this.pdf.text('Dharma Wanita Perdami Jawa Barat', this.pageWidth / 2, this.currentY, { align: 'center' })
     
     this.currentY += 15
     
@@ -239,6 +243,31 @@ export class PDFInvoiceGenerator {
     this.currentY += 15
   }
 
+  private addPaymentNotes(data: InvoiceData): void {
+    if (data.paymentNotes) {
+      this.addNewPageIfNeeded(40)
+      this.currentY += 10
+
+      // Payment Notes Title
+      this.pdf.setFontSize(11)
+      this.pdf.setFont('helvetica', 'bold')
+      this.pdf.text('Catatan Pembayaran:', this.margin, this.currentY)
+      this.currentY += 8
+
+      // Payment Notes Content
+      this.pdf.setFontSize(10)
+      this.pdf.setFont('helvetica', 'normal')
+      this.pdf.setTextColor(60, 60, 60)
+      const splitNotes = this.pdf.splitTextToSize(data.paymentNotes, this.pageWidth - (this.margin * 2))
+      splitNotes.forEach((line: string) => {
+        this.addNewPageIfNeeded(5)
+        this.pdf.text(line, this.margin, this.currentY)
+        this.currentY += 5
+      })
+      this.pdf.setTextColor(0, 0, 0)
+    }
+  }
+
   private addFooter(): void {
     this.currentY += 20
     
@@ -275,6 +304,7 @@ export async function generateOrderPDF(orderData: any): Promise<void> {
         : orderData.createdAt.toLocaleDateString('id-ID'),
       orderStatus: orderData.orderStatus,
       paymentStatus: orderData.paymentStatus,
+      paymentNotes: orderData.payment?.notes,
       items: orderData.orderItems.map((item: any) => {
         const bundleContents = item.bundle?.contents ? 
           (typeof item.bundle.contents === 'string' 
