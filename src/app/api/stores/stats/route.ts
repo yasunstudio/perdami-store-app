@@ -21,12 +21,19 @@ export async function GET(request: NextRequest) {
     const totalBundles = await prisma.productBundle.count()
     console.log(`Total bundles: ${totalBundles}`)
     
-    // Get top stores by bundle count
-    const topStoresByBundles = await prisma.store.findMany({
+    // Get top stores by bundle count and revenue
+    const topStores = await prisma.store.findMany({
       include: {
         bundles: {
           where: {
             isActive: true
+          },
+          include: {
+            orderItems: {
+              include: {
+                order: true
+              }
+            }
           }
         }
       },
@@ -35,23 +42,40 @@ export async function GET(request: NextRequest) {
       }
     })
     
-    // Calculate bundle counts and sort
-    const storesWithBundleCounts = topStoresByBundles
-      .map(store => ({
-        id: store.id,
-        name: store.name,
-        bundleCount: store.bundles.length
-      }))
-      .sort((a, b) => b.bundleCount - a.bundleCount)
+    // Calculate bundle counts, sales, and revenue
+    const storesWithStats = topStores
+      .map(store => {
+        const totalOrders = new Set()
+        let totalRevenue = 0
+        
+        store.bundles.forEach(bundle => {
+          bundle.orderItems.forEach(item => {
+            if (item.order) {
+              totalOrders.add(item.order.id)
+              totalRevenue += item.totalPrice
+            }
+          })
+        })
+        
+        return {
+          id: store.id,
+          name: store.name,
+          totalBundles: store.bundles.length,
+          activeBundles: store.bundles.filter(b => b.isActive).length,
+          totalOrders: totalOrders.size,
+          totalRevenue
+        }
+      })
+      .sort((a, b) => b.totalRevenue - a.totalRevenue)
       .slice(0, 5) // Top 5 stores
     
-    console.log('Top stores by bundles:', storesWithBundleCounts)
+    console.log('Top stores with stats:', storesWithStats)
     
     const stats = {
       totalStores,
       totalBundles,
       activeStores,
-      topStoresByBundles: storesWithBundleCounts
+      topStoresByProducts: storesWithStats
     }
     
     console.log('Returning stats:', stats)

@@ -151,28 +151,19 @@ export function AdvancedAnalytics() {
   const transformProductsData = (productsData: any) => {
     if (!productsData?.topSellingProducts) return []
     
-    const transformed = productsData.topSellingProducts.slice(0, 5).map((product: any) => ({
-      name: product.name,
-      sales: product.totalOrders || 0, // Changed from _count.orderItems to totalOrders
-      revenue: product.totalRevenue || 0, // Use the calculated totalRevenue
-      category: 'Bundle' // Since these are bundles, not categorized products
-    }))
-    
-    // Debug log
-    console.log('Products data transformed:', transformed)
-    
-    // If no real data, return sample data for visualization
-    if (transformed.length === 0 || transformed.every((item: any) => item.sales === 0)) {
-      const sampleData = [
-        { name: 'Produk A', sales: 25, revenue: 2500000, category: 'Elektronik' },
-        { name: 'Produk B', sales: 20, revenue: 2000000, category: 'Fashion' },
-        { name: 'Produk C', sales: 15, revenue: 1500000, category: 'Makanan' },
-        { name: 'Produk D', sales: 10, revenue: 1000000, category: 'Olahraga' },
-        { name: 'Produk E', sales: 5, revenue: 500000, category: 'Buku' }
-      ]
-      console.log('Using sample products data:', sampleData)
-      return sampleData
+    if (!productsData || !Array.isArray(productsData.topSellingProducts)) {
+      return []
     }
+
+    const transformed = productsData.topSellingProducts
+      .slice(0, 5)
+      .map((product: any) => ({
+        name: product.name || 'Unnamed Product',
+        sales: product.totalOrders || 0,
+        revenue: product.totalRevenue || 0,
+        category: 'Bundle'
+      }))
+      .sort((a: any, b: any) => b.revenue - a.revenue)
     
     return transformed
   }
@@ -181,23 +172,18 @@ export function AdvancedAnalytics() {
   const transformStoresData = (storesData: any) => {
     if (!storesData?.topStoresByProducts) return []
     
-    const transformed = storesData.topStoresByProducts.slice(0, 4).map((store: any) => ({
-      name: store.name,
-      products: store.totalBundles || 0, // Changed from _count.products to totalBundles
-      sales: store.activeBundles || 0,   // Use activeBundles as sales metric
-      revenue: (store.totalBundles || 0) * 100000 // Estimasi revenue per bundle
-    }))
+    const transformed = storesData.topStoresByProducts
+      .slice(0, 4)
+      .map((store: any) => ({
+        name: store.name || 'Unnamed Store',
+        products: store.totalBundles || 0,
+        sales: store.totalOrders || 0,
+        revenue: store.totalRevenue || 0
+      }))
+      .sort((a: any, b: any) => b.revenue - a.revenue)
     
-    // Debug log
     console.log('Stores data transformed:', transformed)
-    
-    // If no real data, return sample data for visualization
-    if (transformed.length === 0 || transformed.every((item: any) => item.revenue === 0)) {
-      const sampleData = [
-        { name: 'Toko A', products: 50, sales: 120, revenue: 2500000 },
-        { name: 'Toko B', products: 35, sales: 90, revenue: 1800000 },
-        { name: 'Toko C', products: 25, sales: 60, revenue: 1200000 },
-        { name: 'Toko D', products: 20, sales: 40, revenue: 800000 }
+    return transformed
       ]
       console.log('Using sample stores data:', sampleData)
       return sampleData
