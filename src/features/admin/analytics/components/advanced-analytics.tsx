@@ -36,7 +36,6 @@ interface AnalyticsData {
     name: string
     sales: number
     revenue: number
-    category: string
   }>
   storeData: Array<{
     name: string
@@ -140,7 +139,8 @@ export function AdvancedAnalytics() {
         const existing = salesByDate.get(orderDate)
         existing.orders += 1
         existing.revenue += order.totalAmount
-        existing.sales += order.itemCount || 1
+        // Calculate total quantity from order items
+        existing.sales += order.orderItems?.reduce((acc: number, item: any) => acc + item.quantity, 0) || 1
       }
     })
     
@@ -160,8 +160,7 @@ export function AdvancedAnalytics() {
       .map((product: any) => ({
         name: product.name || 'Unnamed Product',
         sales: product.totalOrders || 0,
-        revenue: product.totalRevenue || 0,
-        category: 'Bundle'
+        revenue: product.totalRevenue || 0
       }))
       .sort((a: any, b: any) => b.revenue - a.revenue)
     
@@ -183,12 +182,6 @@ export function AdvancedAnalytics() {
       .sort((a: any, b: any) => b.revenue - a.revenue)
     
     console.log('Stores data transformed:', transformed)
-    return transformed
-      ]
-      console.log('Using sample stores data:', sampleData)
-      return sampleData
-    }
-    
     return transformed
   }
 
@@ -425,7 +418,6 @@ export function AdvancedAnalytics() {
                       <th className="px-4 py-2 text-left">Produk</th>
                       <th className="px-4 py-2 text-right">Terjual</th>
                       <th className="px-4 py-2 text-right">Revenue</th>
-                      <th className="px-4 py-2 text-left">Kategori</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -438,7 +430,6 @@ export function AdvancedAnalytics() {
                         <td className="px-4 py-2 text-right font-bold text-green-600">
                           {formatCurrency(product.revenue)}
                         </td>
-                        <td className="px-4 py-2 text-gray-600">{product.category}</td>
                       </tr>
                     ))}
                   </tbody>
