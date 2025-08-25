@@ -59,7 +59,13 @@ export const exportOrdersToExcel = ({ allOrders, storeOrders }: ExportOrdersToEx
     XLSX.utils.book_append_sheet(workbook, storeSheet, storeName)
   })
 
-  // Save the workbook
-  const fileName = `orders-export-${format(new Date(), 'yyyy-MM-dd-HH-mm')}.xlsx`
-  XLSX.writeFile(workbook, fileName)
+  try {
+    // Save the workbook
+    const fileName = `orders-export-${format(new Date(), 'yyyy-MM-dd-HH-mm')}.xlsx`
+    XLSX.writeFile(workbook, fileName)
+    return true
+  } catch (error) {
+    console.error('Error exporting to Excel:', error)
+    throw new Error('Failed to export data to Excel file')
+  }
 }

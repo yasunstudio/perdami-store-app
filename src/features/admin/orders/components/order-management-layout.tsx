@@ -203,12 +203,16 @@ export default function OrderManagementLayout({
 
       // Export to Excel
       const { exportOrdersToExcel } = await import('@/lib/export-excel')
-      exportOrdersToExcel({
+      const success = await exportOrdersToExcel({
         allOrders: result.orders,
         storeOrders
       })
 
-      toast.success('Data berhasil diekspor ke Excel')
+      if (success) {
+        toast.success('Data berhasil diekspor ke Excel')
+      } else {
+        throw new Error('Failed to export data')
+      }
     } catch (error) {
       console.error('Error exporting orders:', error)
       toast.error('Gagal mengekspor data')
@@ -308,6 +312,16 @@ export default function OrderManagementLayout({
               </SelectContent>
             </Select>
 
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportExcel}
+              className="h-9"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export Excel
+            </Button>
+
             <div className="flex gap-2">
               <div className="flex rounded-md border border-input bg-background">
                 <Button
@@ -334,15 +348,6 @@ export default function OrderManagementLayout({
                 className="h-9 px-3"
               >
                 <RefreshCw className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleExportExcel}
-                className="h-9"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export Excel
               </Button>
             </div>
           </div>
