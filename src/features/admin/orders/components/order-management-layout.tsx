@@ -36,6 +36,7 @@ import { Badge } from '@/components/ui/badge'
 import { OrderStatusBadge } from '@/components/ui/order-status-badge'
 import { OrderListTable } from './order-list-table'
 import { OrderGridView } from './order-grid-view'
+import { Order } from '@/types'
 import { OrderWithRelations } from '../types/order.types'
 
 interface OrdersResponse {
@@ -178,6 +179,8 @@ export default function OrderManagementLayout({
 
   const handleExportExcel = async () => {
     try {
+      toast.loading('Mempersiapkan data untuk ekspor...')
+      
       const params = new URLSearchParams({
         sortField: sort.field,
         sortDirection: sort.direction,
@@ -187,13 +190,17 @@ export default function OrderManagementLayout({
 
       // Fetch all orders without pagination
       const response = await fetch(`/api/admin/orders/export?${params}`)
-      if (!response.ok) throw new Error('Failed to fetch orders for export')
+      if (!response.ok) throw new Error('Gagal mengambil data pesanan untuk ekspor')
       
       const result = await response.json()
       
+      if (!result.orders || !Array.isArray(result.orders)) {
+        throw new Error('Format data pesanan tidak valid')
+      }
+      
       // Group orders by store
-      const storeOrders = result.orders.reduce((acc: { [key: string]: any[] }, order: any) => {
-        const storeName = order.orderItems?.[0]?.bundle?.store?.name || 'Tidak Ada Toko'
+      const storeOrders = result.orders.reduce((acc: { [key: string]: Order[] }, order: Order) => {
+        const storeName = order.items?.[0]?.bundle?.store?.name || 'Tidak Ada Toko'
         if (!acc[storeName]) {
           acc[storeName] = []
         }
@@ -208,10 +215,11 @@ export default function OrderManagementLayout({
         storeOrders
       })
 
+      toast.dismiss()
       if (success) {
         toast.success('Data berhasil diekspor ke Excel')
       } else {
-        throw new Error('Failed to export data')
+        throw new Error('Gagal mengekspor data ke Excel')
       }
     } catch (error) {
       console.error('Error exporting orders:', error)
@@ -263,8 +271,17 @@ export default function OrderManagementLayout({
   return (
     <AdminPageLayout title={title} description={description}>
       <Card>
-        <CardHeader className="border-b">
+        <CardHeader className="border-b flex flex-row items-center justify-between">
           <CardTitle>Filter & Tampilan</CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportExcel}
+            className="h-9"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export Excel
+          </Button>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Filter Section */}
@@ -312,15 +329,7 @@ export default function OrderManagementLayout({
               </SelectContent>
             </Select>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportExcel}
-              className="h-9"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export Excel
-            </Button>
+
 
             <div className="flex gap-2">
               <div className="flex rounded-md border border-input bg-background">

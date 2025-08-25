@@ -60,9 +60,25 @@ export const exportOrdersToExcel = ({ allOrders, storeOrders }: ExportOrdersToEx
   })
 
   try {
-    // Save the workbook
+    // Convert workbook to array buffer
+    const wbout = XLSX.write(workbook, {
+      bookType: 'xlsx',
+      type: 'array'
+    })
+
+    // Convert array buffer to blob
+    const blob = new Blob([wbout], { type: 'application/octet-stream' })
+
+    // Create download link
     const fileName = `orders-export-${format(new Date(), 'yyyy-MM-dd-HH-mm')}.xlsx`
-    XLSX.writeFile(workbook, fileName)
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fileName
+    a.click()
+
+    // Cleanup
+    window.URL.revokeObjectURL(url)
     return true
   } catch (error) {
     console.error('Error exporting to Excel:', error)
