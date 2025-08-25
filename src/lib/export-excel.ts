@@ -14,8 +14,9 @@ export const exportOrdersToExcel = ({ allOrders, storeOrders }: ExportOrdersToEx
   // Sheet 1: All Orders
   const allOrdersData = allOrders.map((order) => ({
     'No. Pesanan': order.orderNumber,
-    'Customer': order.user?.name || order.customer?.name || 'N/A',
-    'Email': order.user?.email || order.customer?.email || 'N/A',
+    'Customer': order.customer?.name || order.user?.name || 'N/A',
+    'No. Telp': order.customer?.phone || order.user?.phone || 'N/A',
+    'Email': order.customer?.email || order.user?.email || 'N/A',
     'Jumlah Item': order.items?.length || 0,
     'Item': (order.items || [])
       .map((item) => `${item.bundle.name} (${item.quantity}x)`)
@@ -34,14 +35,33 @@ export const exportOrdersToExcel = ({ allOrders, storeOrders }: ExportOrdersToEx
   const allOrdersSheet = XLSX.utils.json_to_sheet(allOrdersData)
   XLSX.utils.book_append_sheet(workbook, allOrdersSheet, 'Semua Pesanan')
 
+  // Group orders by store first
+  const storeOrdersMap = allOrders.reduce((acc: { [key: string]: Order[] }, order) => {
+    // Get all unique stores from order items
+    order.items?.forEach((item) => {
+      if (item.bundle?.store) {
+        const storeName = item.bundle.store.name
+        if (!acc[storeName]) {
+          acc[storeName] = []
+        }
+        // Only add order if it hasn't been added for this store
+        if (!acc[storeName].find(o => o.id === order.id)) {
+          acc[storeName].push(order)
+        }
+      }
+    })
+    return acc
+  }, {})
+
   // Additional sheets for each store
-  Object.entries(storeOrders).forEach(([storeName, orders]) => {
+  Object.entries(storeOrdersMap).forEach(([storeName, orders]) => {
     const storeOrdersData = orders.map((order) => ({
       'No. Pesanan': order.orderNumber,
-      'Customer': order.user?.name || order.customer?.name || 'N/A',
-      'Email': order.user?.email || order.customer?.email || 'N/A',
-      'Jumlah Item': order.items?.length || 0,
+      'Customer': order.customer?.name || order.user?.name || 'N/A',
+      'No. Telp': order.customer?.phone || order.user?.phone || 'N/A',
+      'Email': order.customer?.email || order.user?.email || 'N/A',
       'Item': (order.items || [])
+        .filter(item => item.bundle?.store?.name === storeName)
         .map((item) => `${item.bundle.name} (${item.quantity}x)`)
         .join(', '),
       'Subtotal': order.subtotalAmount,

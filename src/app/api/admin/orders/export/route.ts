@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
-import { Prisma } from "@prisma/client"
+import { Prisma, OrderStatus, PaymentStatus } from "@prisma/client"
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,21 +20,21 @@ export async function GET(request: NextRequest) {
     const paymentStatus = searchParams.get('paymentStatus')
 
     // Build where clause
-    const where: any = {}
+    const where: Prisma.OrderWhereInput = {}
 
     if (orderStatus && orderStatus !== 'all') {
-      where.orderStatus = orderStatus
+      where.orderStatus = orderStatus as OrderStatus
     }
 
     if (paymentStatus && paymentStatus !== 'all') {
-      where.paymentStatus = paymentStatus
+      where.paymentStatus = paymentStatus as PaymentStatus
     }
 
     // Fetch all orders with full relations
     const orders = await prisma.order.findMany({
       where,
       orderBy: {
-        [sortField]: sortDirection
+        [sortField]: sortDirection as Prisma.SortOrder
       },
       include: {
         orderItems: {
@@ -50,27 +50,46 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Format response
-    const formattedOrders = orders.map(order => ({
-      id: order.id,
-      orderNumber: order.orderNumber,
-      orderStatus: order.orderStatus,
-      paymentStatus: order.paymentStatus,
-      subtotalAmount: order.subtotalAmount,
-      serviceFee: order.serviceFee,
-      totalAmount: order.totalAmount,
-      pickupDate: order.pickupDate,
-      createdAt: order.createdAt,
-      items: order.orderItems.map(item => ({
-        bundle: item.bundle ? {
-          id: item.bundle.id,
-          name: item.bundle.name,
-          store: item.bundle.store
-        } : null,
-        quantity: item.quantity,
-        price: item.unitPrice
-      }))
-    }))
+    type OrderWithRelations = Prisma.OrderGetPayload<{
+      include: {
+        orderItems: {
+          include: {
+            bundle: {
+              include: {
+                store: true
+              }
+            }
+          }
+        }
+        payment: true
+      }
+    }>
+
+    // Format response with proper typing
+    const formattedOrders = orders.map((order: OrderWithRelations) => {
+      const { id, orderNumber, orderStatus, paymentStatus, subtotalAmount, serviceFee, totalAmount, pickupDate, createdAt, orderItems } = order
+
+      return {
+        id,
+        orderNumber,
+        orderStatus,
+        paymentStatus,
+        subtotalAmount,
+        serviceFee,
+        totalAmount,
+        pickupDate,
+        createdAt,
+        items: orderItems.map(item => ({
+          bundle: item.bundle ? {
+            id: item.bundle.id,
+            name: item.bundle.name,
+            store: item.bundle.store
+          } : null,
+          quantity: item.quantity,
+          price: item.unitPrice
+        }))
+      }
+    })
 
     return NextResponse.json({ orders: formattedOrders })
   } catch (error) {
