@@ -19,7 +19,8 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
-  AlertTriangle
+  AlertTriangle,
+  Download
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
@@ -32,6 +33,7 @@ import {
   DialogDescription 
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
+import { OrderStatusBadge } from '@/components/ui/order-status-badge'
 import { OrderListTable } from './order-list-table'
 import { OrderGridView } from './order-grid-view'
 import { OrderWithRelations } from '../types/order.types'
@@ -170,32 +172,47 @@ export default function OrderManagementLayout({
     fetchOrders()
   }, [page, filters, sort])
 
-  const getStatusBadge = (status: string) => {
-    let variant: 'default' | 'secondary' | 'destructive' | 'outline' = 'default'
-    let label = status
+  const getStatusBadge = (status: string, type: 'order' | 'payment' = 'order') => {
+    return <OrderStatusBadge status={status} type={type} />
+  }
 
-    switch (status) {
-      case 'PENDING':
-        variant = 'outline'
-        label = 'Pending'
-        break
-      case 'CONFIRMED':
-        variant = 'secondary'
-        label = 'Dikonfirmasi'
-        break
-      case 'COMPLETED':
-        variant = 'default'
-        label = 'Selesai'
-        break
-      case 'CANCELLED':
-        variant = 'destructive'
-        label = 'Dibatalkan'
-        break
-      default:
-        variant = 'outline'
+  const handleExportExcel = async () => {
+    try {
+      const params = new URLSearchParams({
+        sortField: sort.field,
+        sortDirection: sort.direction,
+        ...(filters.orderStatus !== 'all' && { orderStatus: filters.orderStatus }),
+        ...(filters.paymentStatus !== 'all' && { paymentStatus: filters.paymentStatus })
+      })
+
+      // Fetch all orders without pagination
+      const response = await fetch(`/api/admin/orders/export?${params}`)
+      if (!response.ok) throw new Error('Failed to fetch orders for export')
+      
+      const result = await response.json()
+      
+      // Group orders by store
+      const storeOrders = result.orders.reduce((acc: { [key: string]: any[] }, order: any) => {
+        const storeName = order.orderItems?.[0]?.bundle?.store?.name || 'Tidak Ada Toko'
+        if (!acc[storeName]) {
+          acc[storeName] = []
+        }
+        acc[storeName].push(order)
+        return acc
+      }, {})
+
+      // Export to Excel
+      const { exportOrdersToExcel } = await import('@/lib/export-excel')
+      exportOrdersToExcel({
+        allOrders: result.orders,
+        storeOrders
+      })
+
+      toast.success('Data berhasil diekspor ke Excel')
+    } catch (error) {
+      console.error('Error exporting orders:', error)
+      toast.error('Gagal mengekspor data')
     }
-
-    return <Badge variant={variant}>{label}</Badge>
   }
 
   const handleFilterChange = (key: string, value: string) => {
@@ -317,6 +334,15 @@ export default function OrderManagementLayout({
                 className="h-9 px-3"
               >
                 <RefreshCw className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleExportExcel}
+                className="h-9"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export Excel
               </Button>
             </div>
           </div>
