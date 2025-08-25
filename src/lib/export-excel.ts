@@ -35,47 +35,105 @@ export const exportOrdersToExcel = ({ allOrders, storeOrders }: ExportOrdersToEx
   const allOrdersSheet = XLSX.utils.json_to_sheet(allOrdersData)
   XLSX.utils.book_append_sheet(workbook, allOrdersSheet, 'Semua Pesanan')
 
-  // Group orders by store first
-  const storeOrdersMap = allOrders.reduce((acc: { [key: string]: Order[] }, order) => {
-    // Get all unique stores from order items
+  // Group and calculate store-specific data
+  const storeOrdersMap = allOrders.reduce((acc: { [key: string]: any[] }, order) => {
+    // Process each order item by store
     order.items?.forEach((item) => {
       if (item.bundle?.store) {
         const storeName = item.bundle.store.name
         if (!acc[storeName]) {
           acc[storeName] = []
         }
-        // Only add order if it hasn't been added for this store
-        if (!acc[storeName].find(o => o.id === order.id)) {
-          acc[storeName].push(order)
-        }
+
+        // Calculate item specific totals
+        const itemTotal = item.price * item.quantity
+
+        // Add detailed store order entry
+        acc[storeName].push({
+          orderNumber: order.orderNumber,
+          customerName: order.user?.name || 'N/A',
+          customerPhone: order.user?.phone || 'N/A',
+          customerEmail: order.user?.email || 'N/A',
+          itemName: item.bundle.name,
+          quantity: item.quantity,
+          pricePerUnit: item.price,
+          itemTotal: itemTotal,
+          serviceFee: order.serviceFee,
+          orderStatus: order.orderStatus,
+          paymentStatus: order.paymentStatus,
+          orderDate: order.createdAt,
+          pickupDate: order.pickupDate
+        })
       }
     })
     return acc
   }, {})
 
   // Additional sheets for each store
-  Object.entries(storeOrdersMap).forEach(([storeName, orders]) => {
-    const storeOrdersData = orders.map((order) => ({
-      'No. Pesanan': order.orderNumber,
-      'Customer': order.user?.name || 'N/A',
-      'No. Telp': order.user?.phone || 'N/A',
-      'Email': order.user?.email || 'N/A',
-      'Item': (order.items || [])
-        .filter(item => item.bundle?.store?.name === storeName)
-        .map((item) => `${item.bundle.name} (${item.quantity}x)`)
-        .join(', '),
-      'Subtotal': order.subtotalAmount,
-      'Biaya Layanan': order.serviceFee,
-      'Total': order.totalAmount,
-      'Status Order': order.orderStatus,
-      'Status Pembayaran': order.paymentStatus,
-      'Tanggal Order': format(new Date(order.createdAt), 'dd MMM yyyy HH:mm', { locale: id }),
-      'Tanggal Pickup': order.pickupDate 
-        ? format(new Date(order.pickupDate), 'dd MMM yyyy HH:mm', { locale: id })
+  Object.entries(storeOrdersMap).forEach(([storeName, orderItems]) => {
+    const storeOrdersData = orderItems.map((item) => ({
+      'No. Pesanan': item.orderNumber,
+      'Customer': item.customerName,
+      'No. Telp': item.customerPhone,
+      'Email': item.customerEmail,
+      'Nama Item': item.itemName,
+      'Jumlah': item.quantity,
+      'Harga Satuan': item.pricePerUnit,
+      'Total Item': item.itemTotal,
+      'Biaya Layanan': item.serviceFee,
+      'Status Order': item.orderStatus,
+      'Status Pembayaran': item.paymentStatus,
+      'Tanggal Order': format(new Date(item.orderDate), 'dd MMM yyyy HH:mm', { locale: id }),
+      'Tanggal Pickup': item.pickupDate 
+        ? format(new Date(item.pickupDate), 'dd MMM yyyy HH:mm', { locale: id })
         : 'Belum dijadwalkan'
     }))
 
-    const storeSheet = XLSX.utils.json_to_sheet(storeOrdersData)
+    // Calculate summary data
+    const summary = {
+      totalOrders: new Set(orderItems.map(item => item.orderNumber)).size,
+      totalItems: orderItems.reduce((sum, item) => sum + item.quantity, 0),
+      totalRevenue: orderItems.reduce((sum, item) => sum + item.itemTotal, 0),
+      totalServiceFee: orderItems.reduce((sum, item) => sum + item.serviceFee, 0)
+    }
+
+    // Add summary rows at the top
+    const summaryData = [
+      ['Ringkasan Penjualan'],
+      ['Total Pesanan', summary.totalOrders],
+      ['Total Item Terjual', summary.totalItems],
+      ['Total Pendapatan', summary.totalRevenue],
+      ['Total Biaya Layanan', summary.totalServiceFee],
+      ['Total Bersih', summary.totalRevenue],
+      [''],  // Empty row as separator
+    ]
+
+    // Create worksheet and add summary
+    const storeSheet = XLSX.utils.aoa_to_sheet(summaryData)
+    
+    // Add the detailed order data below summary
+    XLSX.utils.sheet_add_json(storeSheet, storeOrdersData, { 
+      origin: 'A' + (summaryData.length + 1)
+    })
+
+    // Set column widths
+    const columnWidths = [
+      { wch: 15 },  // No. Pesanan
+      { wch: 20 },  // Customer
+      { wch: 15 },  // No. Telp
+      { wch: 25 },  // Email
+      { wch: 30 },  // Nama Item
+      { wch: 10 },  // Jumlah
+      { wch: 15 },  // Harga Satuan
+      { wch: 15 },  // Total Item
+      { wch: 15 },  // Biaya Layanan
+      { wch: 15 },  // Status Order
+      { wch: 15 },  // Status Pembayaran
+      { wch: 20 },  // Tanggal Order
+      { wch: 20 },  // Tanggal Pickup
+    ]
+    storeSheet['!cols'] = columnWidths
+
     XLSX.utils.book_append_sheet(workbook, storeSheet, storeName)
   })
 
