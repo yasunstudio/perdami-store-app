@@ -14,9 +14,9 @@ export const exportOrdersToExcel = ({ allOrders, storeOrders }: ExportOrdersToEx
   // Sheet 1: All Orders
   const allOrdersData = allOrders.map((order) => ({
     'No. Pesanan': order.orderNumber,
-    'Customer': order.customer?.name || order.user?.name || 'N/A',
-    'No. Telp': order.customer?.phone || order.user?.phone || 'N/A',
-    'Email': order.customer?.email || order.user?.email || 'N/A',
+    'Customer': order.user?.name || 'N/A',
+    'No. Telp': order.user?.phone || 'N/A',
+    'Email': order.user?.email || 'N/A',
     'Jumlah Item': order.items?.length || 0,
     'Item': (order.items || [])
       .map((item) => `${item.bundle.name} (${item.quantity}x)`)
@@ -57,9 +57,9 @@ export const exportOrdersToExcel = ({ allOrders, storeOrders }: ExportOrdersToEx
   Object.entries(storeOrdersMap).forEach(([storeName, orders]) => {
     const storeOrdersData = orders.map((order) => ({
       'No. Pesanan': order.orderNumber,
-      'Customer': order.customer?.name || order.user?.name || 'N/A',
-      'No. Telp': order.customer?.phone || order.user?.phone || 'N/A',
-      'Email': order.customer?.email || order.user?.email || 'N/A',
+      'Customer': order.user?.name || 'N/A',
+      'No. Telp': order.user?.phone || 'N/A',
+      'Email': order.user?.email || 'N/A',
       'Item': (order.items || [])
         .filter(item => item.bundle?.store?.name === storeName)
         .map((item) => `${item.bundle.name} (${item.quantity}x)`)

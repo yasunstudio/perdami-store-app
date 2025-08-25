@@ -37,6 +37,13 @@ export async function GET(request: NextRequest) {
         [sortField]: sortDirection as Prisma.SortOrder
       },
       include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+            phone: true
+          }
+        },
         orderItems: {
           include: {
             bundle: {
@@ -52,6 +59,13 @@ export async function GET(request: NextRequest) {
 
     type OrderWithRelations = Prisma.OrderGetPayload<{
       include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+            phone: true
+          }
+        },
         orderItems: {
           include: {
             bundle: {
@@ -67,7 +81,19 @@ export async function GET(request: NextRequest) {
 
     // Format response with proper typing
     const formattedOrders = orders.map((order: OrderWithRelations) => {
-      const { id, orderNumber, orderStatus, paymentStatus, subtotalAmount, serviceFee, totalAmount, pickupDate, createdAt, orderItems } = order
+      const { 
+        id, 
+        orderNumber, 
+        orderStatus, 
+        paymentStatus, 
+        subtotalAmount, 
+        serviceFee, 
+        totalAmount, 
+        pickupDate, 
+        createdAt, 
+        orderItems,
+        user 
+      } = order
 
       return {
         id,
@@ -79,6 +105,7 @@ export async function GET(request: NextRequest) {
         totalAmount,
         pickupDate,
         createdAt,
+        user,
         items: orderItems.map(item => ({
           bundle: item.bundle ? {
             id: item.bundle.id,
