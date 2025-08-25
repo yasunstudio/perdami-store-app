@@ -178,8 +178,8 @@ export default function OrderManagementLayout({
   }
 
   const handleExportExcel = async () => {
+    const toastId = toast.loading('Mempersiapkan data untuk ekspor...')
     try {
-      toast.loading('Mempersiapkan data untuk ekspor...')
       
       const params = new URLSearchParams({
         sortField: sort.field,
@@ -215,15 +215,18 @@ export default function OrderManagementLayout({
         storeOrders
       })
 
-      toast.dismiss()
       if (success) {
-        toast.success('Data berhasil diekspor ke Excel')
+        toast.success('Data berhasil diekspor ke Excel', {
+          id: toastId
+        })
       } else {
         throw new Error('Gagal mengekspor data ke Excel')
       }
     } catch (error) {
       console.error('Error exporting orders:', error)
-      toast.error('Gagal mengekspor data')
+      toast.error('Gagal mengekspor data', {
+        id: toastId
+      })
     }
   }
 
