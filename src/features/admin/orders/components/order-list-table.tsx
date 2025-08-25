@@ -35,96 +35,96 @@ export function OrderListTable({
   getPaymentStatusBadge
 }: OrderListTableProps) {
   return (
-    <div className="overflow-x-auto rounded-lg border">
-      <div className="min-w-[950px]">
-        <Table className="w-full table-fixed">
+    <div className="rounded-md border">
+      <div className="relative w-full overflow-auto">
+        <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-[18%]">No. Pesanan</TableHead>
-              <TableHead className="w-[18%]">Customer</TableHead>
-              <TableHead className="w-[10%]">Items</TableHead>
-              <TableHead className="w-[10%] text-right">Total</TableHead>
-              <TableHead className="w-[9%]">Status</TableHead>
-              <TableHead className="w-[10%]">Pembayaran</TableHead>
-              <TableHead className="w-[9%]">Dibuat</TableHead>
-              <TableHead className="w-[9%]">Pickup</TableHead>
-              <TableHead className="w-[7%] text-center">Aksi</TableHead>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-[15%]">No. Pesanan</TableHead>
+              <TableHead className="w-[15%]">Customer</TableHead>
+              <TableHead className="w-[12%]">Items</TableHead>
+              <TableHead className="w-[12%] text-right">Total</TableHead>
+              <TableHead className="w-[10%]">Status</TableHead>
+              <TableHead className="w-[12%]">Pembayaran</TableHead>
+              <TableHead className="w-[10%]">Dibuat</TableHead>
+              <TableHead className="w-[10%]">Pickup</TableHead>
+              <TableHead className="w-[4%] text-center">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {orders.map((order) => (
-              <TableRow key={order.id} className="hover:bg-muted/50">
-                <TableCell className="font-medium w-[18%]">
+              <TableRow key={order.id}>
+                <TableCell>
                   <div className="font-mono text-sm break-all">{order.orderNumber}</div>
                 </TableCell>
-                <TableCell className="w-[18%]">
-                  <div className="space-y-1">
-                    <div className="font-medium truncate">
+                <TableCell>
+                  <div className="flex flex-col space-y-1">
+                    <span className="font-medium truncate">
                       {order.customer?.name || order.user?.name || 'N/A'}
-                    </div>
-                    <div className="text-sm text-muted-foreground truncate">
+                    </span>
+                    <span className="text-sm text-muted-foreground truncate">
                       {order.customer?.email || order.user?.email || 'N/A'}
-                    </div>
+                    </span>
                   </div>
                 </TableCell>
-                <TableCell className="w-[10%]">
-                  <div className="space-y-1">
-                    <div className="text-sm font-medium">
+                <TableCell>
+                  <div className="flex flex-col space-y-1">
+                    <span className="text-sm font-medium">
                       {(order.items || order.orderItems || []).length} item(s)
-                    </div>
-                    <div className="text-xs text-muted-foreground truncate">
+                    </span>
+                    <span className="text-xs text-muted-foreground truncate">
                       {(order.items || order.orderItems || [])
                         .slice(0, 2)
                         .map(item => item.bundle.name)
                         .join(', ')}
                       {(order.items || order.orderItems || []).length > 2 && '...'}
-                    </div>
+                    </span>
                   </div>
                 </TableCell>
-                <TableCell className="font-medium w-[10%] text-right">
-                  <div className="truncate">{formatPrice(order.totalAmount)}</div>
+                <TableCell className="text-right">
+                  <span className="font-medium">{formatPrice(order.totalAmount)}</span>
                 </TableCell>
-                <TableCell className="w-[9%]">
+                <TableCell>
                   {getStatusBadge(order.orderStatus)}
                 </TableCell>
-                <TableCell className="w-[10%]">
+                <TableCell>
                   {getPaymentStatusBadge(order.paymentStatus)}
                 </TableCell>
-                <TableCell className="w-[9%]">
-                  <div className="space-y-1">
-                    <div className="text-sm">
+                <TableCell>
+                  <div className="flex flex-col space-y-0.5">
+                    <span className="text-sm">
                       {format(new Date(order.createdAt), 'dd MMM yyyy', { locale: id })}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
+                    </span>
+                    <span className="text-xs text-muted-foreground">
                       {format(new Date(order.createdAt), 'HH:mm')}
-                    </div>
+                    </span>
                   </div>
                 </TableCell>
-                <TableCell className="w-[9%]">
-                  <div className="space-y-1">
+                <TableCell>
+                  <div className="flex flex-col space-y-0.5">
                     {order.pickupDate ? (
                       <>
-                        <div className="text-sm">
+                        <span className="text-sm">
                           {format(new Date(order.pickupDate), 'dd MMM yyyy', { locale: id })}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
+                        </span>
+                        <span className="text-xs text-muted-foreground">
                           {format(new Date(order.pickupDate), 'HH:mm')}
-                        </div>
+                        </span>
                       </>
                     ) : (
-                      <div className="text-sm text-gray-400">
+                      <span className="text-sm text-muted-foreground">
                         Belum dijadwalkan
-                      </div>
+                      </span>
                     )}
                   </div>
                 </TableCell>
-                <TableCell className="w-[7%] text-center">
+                <TableCell className="text-center">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button 
                         variant="ghost" 
-                        size="sm"
-                        className="h-8 w-8 p-0"
+                        size="icon"
+                        className="h-8 w-8"
                       >
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
