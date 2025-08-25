@@ -75,13 +75,69 @@ export default function OrderManagementLayout({
   const [isDeleting, setIsDeleting] = useState(false)
   const [orderToDelete, setOrderToDelete] = useState<OrderWithRelations | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [sort, setSort] = useState({ field: 'createdAt', direction: 'desc' })
+  const [totalPages, setTotalPages] = useState(1)
   
+  // Verify payment function
+  const verifyPayment = async (orderId: string, status: 'PAID' | 'FAILED') => {
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}/payment`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      })
+
+      if (!response.ok) throw new Error('Failed to verify payment')
+      
+      toast.success('Status pembayaran berhasil diperbarui')
+      fetchOrders()
+    } catch (error) {
+      console.error('Error verifying payment:', error)
+      toast.error('Gagal memperbarui status pembayaran')
+    }
+  }
+
+  // Quick actions for each order
+  const getQuickActions = (order: OrderWithRelations) => {
+    if (order.paymentStatus === 'PENDING' && order.paymentProofUrl) {
+      return (
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            onClick={() => verifyPayment(order.id, 'PAID')}
+            variant="default"
+          >
+            <CheckCircle className="h-4 w-4 mr-1" />
+            Terima
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => verifyPayment(order.id, 'FAILED')}
+            variant="destructive"
+          >
+            <XCircle className="h-4 w-4 mr-1" />
+            Tolak
+          </Button>
+        </div>
+      )
+    }
+    return null
+  }
+
+  // Check if order needs payment verification
+  const needsPaymentVerification = (order: OrderWithRelations): boolean => {
+    return order.paymentStatus === 'PENDING' && Boolean(order.paymentProofUrl)
+  }
+
   // Fetch orders function
   const fetchOrders = async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams({
         page: page.toString(),
+        perPage: '10',
+        sortField: sort.field,
+        sortDirection: sort.direction,
         ...(filters.search && { search: filters.search }),
         ...(filters.orderStatus !== 'all' && { orderStatus: filters.orderStatus }),
         ...(filters.paymentStatus !== 'all' && { paymentStatus: filters.paymentStatus })
@@ -94,6 +150,7 @@ export default function OrderManagementLayout({
 
       const result = await response.json()
       setData(result)
+      setTotalPages(result.totalPages || 1)
     } catch (error) {
       console.error('Error fetching orders:', error)
       toast.error('Gagal memuat data pesanan')
@@ -102,10 +159,16 @@ export default function OrderManagementLayout({
     }
   }
 
+  // Refresh data function
+  const refreshData = () => {
+    fetchOrders()
+    toast.success('Data berhasil diperbarui')
+  }
+
   // Initial fetch
   useEffect(() => {
     fetchOrders()
-  }, [page, filters])
+  }, [page, filters, sort])
 
   const getStatusBadge = (status: string) => {
     let variant: 'default' | 'secondary' | 'destructive' | 'outline' = 'default'
@@ -228,22 +291,32 @@ export default function OrderManagementLayout({
               </SelectContent>
             </Select>
 
-            <div className="flex rounded-md border border-input bg-background">
+            <div className="flex gap-2">
+              <div className="flex rounded-md border border-input bg-background">
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('table')}
+                  className="rounded-r-none border-r h-9 px-3"
+                >
+                  <LayoutList className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                  className="rounded-l-none h-9 px-3"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </Button>
+              </div>
               <Button
-                variant={viewMode === 'table' ? 'default' : 'ghost'}
+                variant="outline"
                 size="sm"
-                onClick={() => setViewMode('table')}
-                className="rounded-r-none border-r h-9 px-3"
+                onClick={refreshData}
+                className="h-9 px-3"
               >
-                <LayoutList className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('grid')}
-                className="rounded-l-none h-9 px-3"
-              >
-                <LayoutGrid className="h-4 w-4" />
+                <RefreshCw className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -287,9 +360,36 @@ export default function OrderManagementLayout({
                 onDelete={handleDeleteOrder}
                 getStatusBadge={getStatusBadge}
                 getPaymentStatusBadge={getStatusBadge}
-                getQuickActions={() => null}
-                needsPaymentVerification={() => false}
+                getQuickActions={getQuickActions}
+                needsPaymentVerification={needsPaymentVerification}
               />
+            )}
+
+            {/* Pagination */}
+            {!loading && data?.orders && data.orders.length > 0 && (
+              <div className="flex items-center justify-between pt-4">
+                <div className="text-sm text-muted-foreground">
+                  Halaman {page} dari {totalPages}
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page <= 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={page >= totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         </CardContent>
