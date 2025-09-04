@@ -46,7 +46,8 @@ import {
   Phone,
   Clock,
   AlertCircle,
-  QrCode
+  QrCode,
+  LayoutGrid
 } from 'lucide-react';
 
 // Import new components and utilities
@@ -110,7 +111,7 @@ const navigation: SidebarItem[] = [
     name: 'Dashboard',
     href: '/admin',
     icon: LayoutDashboard,
-    permission: PERMISSIONS.ANALYTICS_READ
+    permission: PERMISSIONS.REPORTS_READ
   },
   {
     name: 'Manajemen Pesanan',
@@ -152,30 +153,16 @@ const navigation: SidebarItem[] = [
   },
   {
     name: 'Analitik & Laporan',
-    href: '/admin/analytics',
+    href: '/admin/reports-overview',
     icon: BarChart,
     permission: PERMISSIONS.REPORTS_READ,
     children: [
       {
-        name: 'Order ke Toko (Analytics)',
-        href: '/admin/analytics/order-to-stores',
-        icon: TrendingUp,
+        name: 'Overview Laporan',
+        href: '/admin/reports-overview',
+        icon: LayoutGrid,
         permission: PERMISSIONS.REPORTS_READ
       },
-      {
-        name: 'Log Aktivitas',
-        href: '/admin/audit-logs',
-        icon: Activity,
-        permission: PERMISSIONS.AUDIT_LOGS_READ
-      }
-    ]
-  },
-  {
-    name: 'Laporan Detail',
-    href: '/admin/reports-overview',
-    icon: FileText,
-    permission: PERMISSIONS.REPORTS_READ,
-    children: [
       {
         name: 'Pembayaran ke Toko',
         href: '/admin/reports/store-payment-details',
@@ -185,8 +172,14 @@ const navigation: SidebarItem[] = [
       {
         name: 'Laporan Penjualan',
         href: '/admin/reports/sales-summary',
-        icon: FileText,
+        icon: TrendingUp,
         permission: PERMISSIONS.REPORTS_READ
+      },
+      {
+        name: 'Log Aktivitas',
+        href: '/admin/audit-logs',
+        icon: Activity,
+        permission: PERMISSIONS.AUDIT_LOGS_READ
       }
     ]
   },

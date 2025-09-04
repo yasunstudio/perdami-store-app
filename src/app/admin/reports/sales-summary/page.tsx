@@ -46,9 +46,9 @@ export default function SalesSummaryPage() {
                 Lihat Laporan Pembayaran
               </Button>
             </Link>
-            <Link href="/admin/analytics/order-to-stores">
+            <Link href="/admin">
               <Button variant="outline">
-                Lihat Analytics
+                Kembali ke Dashboard
               </Button>
             </Link>
           </div>
@@ -87,13 +87,6 @@ export default function SalesSummaryPage() {
               <p className="text-sm text-gray-600">Detailed cost-based payment reports to stores</p>
               <Link href="/admin/reports/store-payment-details">
                 <Button size="sm" className="mt-2">View Report</Button>
-              </Link>
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-medium">Order Analytics</h4>
-              <p className="text-sm text-gray-600">Summary analytics and dashboard views</p>
-              <Link href="/admin/analytics/order-to-stores">
-                <Button size="sm" variant="outline" className="mt-2">View Analytics</Button>
               </Link>
             </div>
           </CardContent>

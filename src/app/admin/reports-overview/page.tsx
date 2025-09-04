@@ -82,13 +82,7 @@ export default function ReportsOverviewPage() {
           <CardTitle>Quick Links</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Link href="/admin/analytics/order-to-stores">
-              <Button variant="outline" className="w-full justify-start">
-                <TrendingUp className="w-4 h-4 mr-2" />
-                Analytics
-              </Button>
-            </Link>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <Link href="/admin/orders">
               <Button variant="outline" className="w-full justify-start">
                 <FileText className="w-4 h-4 mr-2" />
