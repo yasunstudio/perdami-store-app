@@ -145,28 +145,15 @@ export const StoreSelector: React.FC<StoreSelectorProps> = ({
                   />
                   
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <div className="min-w-0 flex-1 mr-2">
-                        <p className="font-medium text-gray-900 dark:text-white truncate">
-                          {store.name}
+                    <div className="space-y-1">
+                      <p className="font-medium text-gray-900 dark:text-white truncate">
+                        {store.name}
+                      </p>
+                      {store.address && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                          {store.address}
                         </p>
-                        {store.address && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                            {store.address}
-                          </p>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center gap-2 text-xs flex-shrink-0">
-                        <Badge variant={store.status === 'active' ? 'default' : 'secondary'} className="whitespace-nowrap">
-                          {store.status}
-                        </Badge>
-                        {store.contactPerson && (
-                          <span className="text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                            {store.contactPerson}
-                          </span>
-                        )}
-                      </div>
+                      )}
                     </div>
                   </div>
                 </div>
