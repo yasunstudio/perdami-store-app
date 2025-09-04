@@ -103,15 +103,24 @@ export const useOrderToStores = (): UseOrderToStoresReturn => {
     setBatchError(null);
     
     try {
+      console.log('[Hook] Fetching batches...');
+      
       const response = await fetch('/api/admin/analytics/order-to-stores/batches');
       
+      console.log('[Hook] Batches response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch batches');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('[Hook] Batches API error:', errorData);
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
       }
       
       const data = await response.json();
+      console.log('[Hook] Batches data received:', data);
+      
       setBatches(data.batches || []);
     } catch (error) {
+      console.error('[Hook] Error in fetchBatches:', error);
       setBatchError(error instanceof Error ? error.message : 'Failed to fetch batches');
     } finally {
       setIsLoadingBatches(false);
