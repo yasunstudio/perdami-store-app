@@ -157,13 +157,7 @@ const navigation: SidebarItem[] = [
     permission: PERMISSIONS.REPORTS_READ,
     children: [
       {
-        name: 'Laporan Penjualan',
-        href: '/admin/reports',
-        icon: FileText,
-        permission: PERMISSIONS.REPORTS_READ
-      },
-      {
-        name: 'Order ke Toko',
+        name: 'Order ke Toko (Analytics)',
         href: '/admin/analytics/order-to-stores',
         icon: TrendingUp,
         permission: PERMISSIONS.REPORTS_READ
@@ -173,6 +167,26 @@ const navigation: SidebarItem[] = [
         href: '/admin/audit-logs',
         icon: Activity,
         permission: PERMISSIONS.AUDIT_LOGS_READ
+      }
+    ]
+  },
+  {
+    name: 'Laporan Detail',
+    href: '/admin/reports',
+    icon: FileText,
+    permission: PERMISSIONS.REPORTS_READ,
+    children: [
+      {
+        name: 'Pembayaran ke Toko',
+        href: '/admin/reports/store-payment-details',
+        icon: Building2,
+        permission: PERMISSIONS.REPORTS_READ
+      },
+      {
+        name: 'Laporan Penjualan',
+        href: '/admin/reports',
+        icon: FileText,
+        permission: PERMISSIONS.REPORTS_READ
       }
     ]
   },
