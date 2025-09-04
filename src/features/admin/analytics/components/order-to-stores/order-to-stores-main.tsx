@@ -101,6 +101,9 @@ export const OrderToStoresMain: React.FC = () => {
             <FileText className="w-5 h-5 mr-2" />
             Filter & Configuration
           </CardTitle>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+            💡 Tip: Biarkan kosong untuk menampilkan semua data, atau pilih toko/batch tertentu untuk filter khusus
+          </p>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Store Selection */}
@@ -150,7 +153,7 @@ export const OrderToStoresMain: React.FC = () => {
           <div className="flex gap-3">
             <Button 
               onClick={handleGenerateReport}
-              disabled={isLoading || filters.storeIds.length === 0}
+              disabled={isLoading}
               className="flex-1"
             >
               {isLoading ? (

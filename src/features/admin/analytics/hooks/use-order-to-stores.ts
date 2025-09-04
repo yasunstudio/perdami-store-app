@@ -64,8 +64,8 @@ export const useOrderToStores = (): UseOrderToStoresReturn => {
     storeIds: [],
     batchIds: [],
     dateRange: {
-      startDate: new Date(),
-      endDate: new Date()
+      startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
+      endDate: new Date() // today
     }
   });
   
