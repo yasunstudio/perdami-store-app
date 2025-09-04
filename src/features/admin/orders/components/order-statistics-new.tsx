@@ -32,21 +32,48 @@ interface OrderStatisticsProps {
 export function OrderStatistics({ stats, loading }: OrderStatisticsProps) {
   if (loading) {
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 mb-6">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
-          <Card key={i}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                <div className="h-4 bg-muted animate-pulse rounded" />
-              </CardTitle>
-              <div className="h-4 w-4 bg-muted animate-pulse rounded" />
-            </CardHeader>
-            <CardContent>
-              <div className="h-8 bg-muted animate-pulse rounded mb-2" />
-              <div className="h-3 bg-muted animate-pulse rounded w-3/4" />
-            </CardContent>
-          </Card>
-        ))}
+      <div className="space-y-6 mb-6">
+        {/* GRUP 1: PEMBAYARAN & PROFIT Loading */}
+        <div>
+          <div className="h-6 bg-muted animate-pulse rounded w-48 mb-3" />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    <div className="h-4 bg-muted animate-pulse rounded" />
+                  </CardTitle>
+                  <div className="h-4 w-4 bg-muted animate-pulse rounded" />
+                </CardHeader>
+                <CardContent>
+                  <div className="h-8 bg-muted animate-pulse rounded mb-2" />
+                  <div className="h-3 bg-muted animate-pulse rounded w-3/4" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        {/* GRUP 2: STATISTIK ORDER Loading */}
+        <div>
+          <div className="h-6 bg-muted animate-pulse rounded w-32 mb-3" />
+          <div className="grid gap-4 md:grid-cols-2">
+            {[1, 2].map((i) => (
+              <Card key={i}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    <div className="h-4 bg-muted animate-pulse rounded" />
+                  </CardTitle>
+                  <div className="h-4 w-4 bg-muted animate-pulse rounded" />
+                </CardHeader>
+                <CardContent>
+                  <div className="h-8 bg-muted animate-pulse rounded mb-2" />
+                  <div className="h-3 bg-muted animate-pulse rounded w-3/4" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
       </div>
     )
   }
@@ -72,113 +99,125 @@ export function OrderStatistics({ stats, loading }: OrderStatisticsProps) {
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 mb-6">
-      {/* 1. Total Orders */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-          <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{stats.totalOrders}</div>
-          <p className="text-xs text-muted-foreground">
-            <span className="inline-flex items-center text-green-600">
-              <TrendingUp className="h-3 w-3 mr-1" />
-              {stats.completionRate}%
-            </span>
-            {' '}completion rate
-          </p>
-        </CardContent>
-      </Card>
+    <div className="space-y-6 mb-6">
+      {/* GRUP 1: PEMBAYARAN & PROFIT */}
+      <div>
+        <h3 className="text-lg font-semibold mb-3 text-gray-800">💰 Pembayaran & Profit</h3>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {/* 1. Total Revenue */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatNumber(stats.totalRevenue)}</div>
+              <p className="text-xs text-muted-foreground">
+                <span className="inline-flex items-center text-blue-600">
+                  <Receipt className="h-3 w-3 mr-1" />
+                  {formatCurrency(stats.averageOrderValue)}
+                </span>
+                {' '}avg order
+              </p>
+            </CardContent>
+          </Card>
 
-      {/* 2. Total Revenue */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-          <DollarSign className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{formatNumber(stats.totalRevenue)}</div>
-          <p className="text-xs text-muted-foreground">
-            <span className="inline-flex items-center text-blue-600">
-              <Receipt className="h-3 w-3 mr-1" />
-              {formatCurrency(stats.averageOrderValue)}
-            </span>
-            {' '}avg order
-          </p>
-        </CardContent>
-      </Card>
+          {/* 2. Total Pembelian ke Toko */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Pembelian</CardTitle>
+              <Receipt className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatNumber(stats.totalPurchases)}</div>
+              <p className="text-xs text-muted-foreground">
+                <span className="inline-flex items-center text-orange-600">
+                  <DollarSign className="h-3 w-3 mr-1" />
+                  Cost to stores
+                </span>
+              </p>
+            </CardContent>
+          </Card>
 
-      {/* 3. Total Pembelian ke Toko */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Pembelian</CardTitle>
-          <Receipt className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{formatNumber(stats.totalPurchases)}</div>
-          <p className="text-xs text-muted-foreground">
-            <span className="inline-flex items-center text-orange-600">
-              <DollarSign className="h-3 w-3 mr-1" />
-              Cost to stores
-            </span>
-          </p>
-        </CardContent>
-      </Card>
+          {/* 3. Gross Profit */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Gross Profit</CardTitle>
+              <PiggyBank className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatNumber(stats.grossProfit)}</div>
+              <p className="text-xs text-muted-foreground">
+                <span className="inline-flex items-center text-green-600">
+                  <TrendingUp className="h-3 w-3 mr-1" />
+                  {stats.profitMargin.toFixed(1)}%
+                </span>
+                {' '}margin
+              </p>
+            </CardContent>
+          </Card>
 
-      {/* 4. Gross Profit */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Gross Profit</CardTitle>
-          <PiggyBank className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{formatNumber(stats.grossProfit)}</div>
-          <p className="text-xs text-muted-foreground">
-            <span className="inline-flex items-center text-green-600">
-              <TrendingUp className="h-3 w-3 mr-1" />
-              {stats.profitMargin.toFixed(1)}%
-            </span>
-            {' '}margin
-          </p>
-        </CardContent>
-      </Card>
+          {/* 4. Service Fees */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Service Fees</CardTitle>
+              <Receipt className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatNumber(stats.serviceFeeRevenue)}</div>
+              <p className="text-xs text-muted-foreground">
+                <span className="inline-flex items-center text-purple-600">
+                  <DollarSign className="h-3 w-3 mr-1" />
+                  Platform revenue
+                </span>
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
-      {/* 5. Orders Completed */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Orders Completed</CardTitle>
-          <CheckCircle className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{stats.totalOrders}</div>
-          <p className="text-xs text-muted-foreground">
-            <span className="inline-flex items-center text-green-600">
-              <CheckCircle className="h-3 w-3 mr-1" />
-              Successfully delivered
-            </span>
-          </p>
-        </CardContent>
-      </Card>
+      {/* GRUP 2: STATISTIK ORDER */}
+      <div>
+        <h3 className="text-lg font-semibold mb-3 text-gray-800">📋 Statistik Order</h3>
+        <div className="grid gap-4 md:grid-cols-2">
+          {/* 1. Total Orders */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalOrders}</div>
+              <p className="text-xs text-muted-foreground">
+                <span className="inline-flex items-center text-green-600">
+                  <TrendingUp className="h-3 w-3 mr-1" />
+                  {stats.completionRate}%
+                </span>
+                {' '}completion rate
+              </p>
+            </CardContent>
+          </Card>
 
-      {/* 6. Pending Payments */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Pending Payments</CardTitle>
-          <Clock className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{stats.pendingPayments}</div>
-          <p className="text-xs text-muted-foreground">
-            <span className={`inline-flex items-center ${
-              stats.pendingPayments > 0 ? 'text-orange-600' : 'text-green-600'
-            }`}>
-              <Clock className="h-3 w-3 mr-1" />
-              {stats.pendingPayments > 0 ? 'Needs attention' : 'All clear'}
-            </span>
-          </p>
-        </CardContent>
-      </Card>
+          {/* 2. Pending Payments */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending Payments</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.pendingPayments}</div>
+              <p className="text-xs text-muted-foreground">
+                <span className={`inline-flex items-center ${
+                  stats.pendingPayments > 0 ? 'text-orange-600' : 'text-green-600'
+                }`}>
+                  <Clock className="h-3 w-3 mr-1" />
+                  {stats.pendingPayments > 0 ? 'Needs attention' : 'All clear'}
+                </span>
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   )
 }
