@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+// Get batch based on order creation time (matching frontend logic)
+const getBatchFromOrderTime = (orderDate: Date): string => {
+  const hour = orderDate.getHours();
+  return hour >= 6 && hour < 18 ? 'batch_1' : 'batch_2';
+};
+
 export async function GET(request: NextRequest) {
   try {
     // Get query parameters
@@ -77,9 +83,8 @@ export async function GET(request: NextRequest) {
     orders.forEach(order => {
       // Apply batch filtering if specified
       if (batchId) {
-        const orderHour = new Date(order.createdAt).getHours();
-        const orderBatch = orderHour >= 6 && orderHour < 18 ? 'batch_1' : 'batch_2';
-        console.log(`Order ${order.id}: hour=${orderHour}, batch=${orderBatch}, filter=${batchId}`);
+        const orderBatch = getBatchFromOrderTime(order.createdAt);
+        console.log(`Order ${order.id}: createdAt=${order.createdAt.toISOString()}, batch=${orderBatch}, filter=${batchId}`);
         if (orderBatch !== batchId) return;
       }
 
