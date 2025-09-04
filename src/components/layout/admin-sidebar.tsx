@@ -26,7 +26,6 @@ import {
   ChevronLeft,
   User,
   Building2,
-  TrendingUp,
   Cog,
   UserCheck,
   UserX,
@@ -167,12 +166,6 @@ const navigation: SidebarItem[] = [
         name: 'Pembayaran ke Toko',
         href: '/admin/reports/store-payment-details',
         icon: Building2,
-        permission: PERMISSIONS.REPORTS_READ
-      },
-      {
-        name: 'Laporan Penjualan',
-        href: '/admin/reports/sales-summary',
-        icon: TrendingUp,
         permission: PERMISSIONS.REPORTS_READ
       },
       {

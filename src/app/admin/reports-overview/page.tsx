@@ -18,7 +18,7 @@ export default function ReportsOverviewPage() {
       </div>
 
       {/* Report Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {/* Store Payment Details */}
         <Card>
           <CardHeader>
@@ -42,34 +42,6 @@ export default function ReportsOverviewPage() {
               <Button className="w-full">
                 <FileText className="w-4 h-4 mr-2" />
                 Lihat Laporan
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        {/* Sales Summary */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
-              Laporan Penjualan
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-gray-600 dark:text-gray-400">
-              Laporan summary penjualan dan revenue berdasarkan harga jual ke customer.
-              Analisis performa bisnis secara keseluruhan.
-            </p>
-            <div className="space-y-2 text-sm text-gray-500">
-              <p>• Summary revenue dan profit</p>
-              <p>• Analisis per periode waktu</p>
-              <p>• Top performing products</p>
-              <p>• Customer analytics</p>
-            </div>
-            <Link href="/admin/reports/sales-summary">
-              <Button className="w-full" variant="outline" disabled>
-                <FileText className="w-4 h-4 mr-2" />
-                Coming Soon
               </Button>
             </Link>
           </CardContent>
