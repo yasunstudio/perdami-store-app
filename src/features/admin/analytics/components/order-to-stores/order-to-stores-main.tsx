@@ -7,12 +7,14 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, RefreshCw, Download, FileText } from 'lucide-react';
 import { useOrderToStores } from '../../hooks';
 import { ExportOptions as ExportOptionsType, QuickTemplate, DateRange } from '../../types';
-import { StoreSelector } from './store-selector';
-import { BatchSelector } from './batch-selector';
-import { DateRangePicker } from './date-range-picker';
-import { ReportPreview } from './report-preview';
-import { ExportOptions } from './export-options';
-import { QuickTemplates } from './quick-templates';
+import { 
+  StoreSelector,
+  BatchSelector,
+  DateRangePicker,
+  ReportPreview,
+  ExportOptions,
+  QuickTemplates
+} from './index';
 
 export const OrderToStoresMain: React.FC = () => {
   const {
