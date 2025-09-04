@@ -184,9 +184,9 @@ export async function GET(request: NextRequest) {
     }
 
     if (format === 'excel') {
-      return generateExcelFile(orderData, template);
+      return generateExcelFile(orderData, template, storeIds, batchIds, startDate, endDate);
     } else if (format === 'pdf') {
-      return generatePDFFile(orderData, template);
+      return generatePDFFile(orderData, template, storeIds, batchIds, startDate, endDate);
     } else if (format === 'whatsapp') {
       return generateWhatsAppText(orderData, template);
     } else if (format === 'email') {
@@ -207,7 +207,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function generateExcelFile(data: OrderData[], template: string) {
+function generateExcelFile(data: OrderData[], template: string, storeIds: string[], batchIds: string[], startDate: string | null, endDate: string | null) {
   try {
     const workbook = XLSX.utils.book_new();
     
@@ -257,12 +257,59 @@ function generateExcelFile(data: OrderData[], template: string) {
     const batchWS = XLSX.utils.aoa_to_sheet([batchHeaders, ...batchRows]);
     XLSX.utils.book_append_sheet(workbook, batchWS, 'Batch Summary');
 
+    // Generate meaningful filename based on filters
+    const generateFileName = () => {
+      const date = new Date();
+      const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+      
+      let filename = 'order-to-stores';
+      
+      // Add date range to filename
+      if (startDate && endDate) {
+        const start = new Date(startDate).toISOString().split('T')[0];
+        const end = new Date(endDate).toISOString().split('T')[0];
+        filename += `_${start}_to_${end}`;
+      } else {
+        filename += `_${dateStr}`;
+      }
+      
+      // Add store filter info
+      if (storeIds.length > 0) {
+        if (storeIds.length === 1) {
+          // Use a generic store identifier since we don't have store data here
+          filename += `_1-store`;
+        } else {
+          filename += `_${storeIds.length}-stores`;
+        }
+      } else {
+        filename += '_all-stores';
+      }
+      
+      // Add batch filter info
+      if (batchIds.length > 0) {
+        const batchNames = batchIds.map(id => 
+          id === 'batch_1' ? 'batch1' : id === 'batch_2' ? 'batch2' : id
+        );
+        filename += `_${batchNames.join('-')}`;
+      } else {
+        filename += '_all-batches';
+      }
+      
+      // Add template info
+      filename += `_${template}`;
+      
+      // Add order count
+      filename += `_${data.length}orders`;
+      
+      return `${filename}.xlsx`;
+    };
+
     const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
     
     return new NextResponse(buffer, {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': `attachment; filename="order-to-stores-${Date.now()}.xlsx"`
+        'Content-Disposition': `attachment; filename="${generateFileName()}"`
       }
     });
 
@@ -272,7 +319,7 @@ function generateExcelFile(data: OrderData[], template: string) {
   }
 }
 
-function generatePDFFile(data: OrderData[], template: string) {
+function generatePDFFile(data: OrderData[], template: string, storeIds: string[], batchIds: string[], startDate: string | null, endDate: string | null) {
   try {
     const doc = new jsPDF();
     
@@ -315,12 +362,47 @@ function generatePDFFile(data: OrderData[], template: string) {
       }
     });
 
+    // Generate filename for PDF
+    const generatePDFFileName = () => {
+      const date = new Date();
+      const dateStr = date.toISOString().split('T')[0];
+      
+      let filename = 'order-to-stores';
+      
+      if (startDate && endDate) {
+        const start = new Date(startDate).toISOString().split('T')[0];
+        const end = new Date(endDate).toISOString().split('T')[0];
+        filename += `_${start}_to_${end}`;
+      } else {
+        filename += `_${dateStr}`;
+      }
+      
+      if (storeIds.length > 0) {
+        filename += `_${storeIds.length}-stores`;
+      } else {
+        filename += '_all-stores';
+      }
+      
+      if (batchIds.length > 0) {
+        const batchNames = batchIds.map(id => 
+          id === 'batch_1' ? 'batch1' : id === 'batch_2' ? 'batch2' : id
+        );
+        filename += `_${batchNames.join('-')}`;
+      } else {
+        filename += '_all-batches';
+      }
+      
+      filename += `_${template}_${data.length}orders`;
+      
+      return `${filename}.pdf`;
+    };
+
     const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
     
     return new NextResponse(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="order-to-stores-${Date.now()}.pdf"`
+        'Content-Disposition': `attachment; filename="${generatePDFFileName()}"`
       }
     });
 
