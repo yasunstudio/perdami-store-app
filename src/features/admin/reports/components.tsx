@@ -75,7 +75,7 @@ export const StorePaymentDetailsPage = () => {
   }
 
   return (
-    <div className="container mx-auto py-6 px-4 space-y-6">
+    <div className="container mx-auto py-8 px-4 space-y-8">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -101,24 +101,27 @@ export const StorePaymentDetailsPage = () => {
       </div>
 
       {/* Filter Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
+      <Card className="shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <FileText className="w-5 h-5 text-blue-600" />
             Filter Laporan
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <CardContent className="space-y-6">
+          {/* Filter Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Store Filter */}
-            <div className="space-y-2">
-              <Label htmlFor="store-select">Pilih Toko</Label>
+            <div className="space-y-3">
+              <Label htmlFor="store-select" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Pilih Toko
+              </Label>
               <Select
                 value={filters.storeId || 'all'}
                 onValueChange={(value) => updateFilters({ storeId: value === 'all' ? undefined : value })}
                 disabled={isLoadingStores}
               >
-                <SelectTrigger id="store-select">
+                <SelectTrigger id="store-select" className="h-10">
                   {isLoadingStores ? (
                     <div className="flex items-center">
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -140,11 +143,14 @@ export const StorePaymentDetailsPage = () => {
             </div>
 
             {/* Start Date */}
-            <div className="space-y-2">
-              <Label htmlFor="start-date">Tanggal Mulai</Label>
+            <div className="space-y-3">
+              <Label htmlFor="start-date" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Tanggal Mulai
+              </Label>
               <Input
                 id="start-date"
                 type="date"
+                className="h-10"
                 value={formatDateForInput(filters.startDate)}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -154,11 +160,14 @@ export const StorePaymentDetailsPage = () => {
             </div>
 
             {/* End Date */}
-            <div className="space-y-2">
-              <Label htmlFor="end-date">Tanggal Akhir</Label>
+            <div className="space-y-3">
+              <Label htmlFor="end-date" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Tanggal Akhir
+              </Label>
               <Input
                 id="end-date"
                 type="date"
+                className="h-10"
                 value={formatDateForInput(filters.endDate)}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -168,13 +177,15 @@ export const StorePaymentDetailsPage = () => {
             </div>
 
             {/* Batch Filter */}
-            <div className="space-y-2">
-              <Label htmlFor="batch-select">Pilih Batch</Label>
+            <div className="space-y-3">
+              <Label htmlFor="batch-select" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Pilih Batch
+              </Label>
               <Select
                 value={filters.batchId || 'all'}
                 onValueChange={(value) => updateFilters({ batchId: value === 'all' ? undefined : value })}
               >
-                <SelectTrigger id="batch-select">
+                <SelectTrigger id="batch-select" className="h-10">
                   <SelectValue placeholder="Pilih batch..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -189,12 +200,13 @@ export const StorePaymentDetailsPage = () => {
             </div>
           </div>
           
-          <div className="flex justify-between items-center pt-4 border-t">
-            <div className="flex gap-2">
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex flex-wrap gap-3">
               <Button 
                 onClick={handleGenerateReport}
                 disabled={isLoading}
-                className="min-w-[120px]"
+                className="min-w-[140px] h-10"
               >
                 {isLoading ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -209,6 +221,7 @@ export const StorePaymentDetailsPage = () => {
                   variant="outline" 
                   onClick={clearFilters}
                   disabled={isLoading}
+                  className="h-10"
                 >
                   Clear Filters
                 </Button>
@@ -216,12 +229,13 @@ export const StorePaymentDetailsPage = () => {
             </div>
 
             {hasData && (
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handleExport('excel')}
                   disabled={isLoading || isExporting}
+                  className="h-10 px-4"
                 >
                   {isExporting ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -236,6 +250,7 @@ export const StorePaymentDetailsPage = () => {
                   size="sm"
                   onClick={() => handleExport('pdf')}
                   disabled={isLoading || isExporting}
+                  className="h-10 px-4"
                 >
                   {isExporting ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -252,31 +267,31 @@ export const StorePaymentDetailsPage = () => {
 
       {/* Summary */}
       {summary && hasData && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Summary - {summary.storeName}</CardTitle>
+        <Card className="shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-semibold">Summary - {summary.storeName}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="text-center p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">
                   {summary.totalOrders}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Orders</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Orders</p>
               </div>
               
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+              <div className="text-center p-4 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
+                <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-2">
                   {summary.totalItems}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Items</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Items</p>
               </div>
               
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+              <div className="text-center p-4 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800">
+                <div className="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-2">
                   {formatCurrency(summary.totalCost)}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Cost</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Cost</p>
               </div>
             </div>
           </CardContent>
@@ -285,13 +300,13 @@ export const StorePaymentDetailsPage = () => {
 
       {/* Table */}
       {hasData ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>
+        <Card className="shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-semibold">
               Payment Details ({paymentDetails.length} items)
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -341,8 +356,12 @@ export const StorePaymentDetailsPage = () => {
         </Card>
       ) : (
         !isLoading && hasFilters && (
-          <Card>
-            <CardContent className="text-center py-8">
+          <Card className="shadow-sm">
+            <CardContent className="text-center py-12">
+              <FileText className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                No Data Found
+              </h3>
               <p className="text-gray-500 dark:text-gray-400">
                 No payment details found for the selected filters.
               </p>
@@ -353,11 +372,14 @@ export const StorePaymentDetailsPage = () => {
 
       {/* Loading overlay */}
       {isLoading && (
-        <Card>
-          <CardContent className="text-center py-8">
-            <Loader2 className="w-8 h-8 mx-auto mb-4 animate-spin" />
+        <Card className="shadow-sm">
+          <CardContent className="text-center py-12">
+            <Loader2 className="w-16 h-16 mx-auto mb-4 animate-spin text-blue-600" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              Loading Payment Details
+            </h3>
             <p className="text-gray-600 dark:text-gray-400">
-              Loading payment details...
+              Please wait while we fetch the data...
             </p>
           </CardContent>
         </Card>
