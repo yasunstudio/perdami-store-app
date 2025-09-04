@@ -35,10 +35,6 @@ export const StorePaymentDetailsPage = () => {
     clearExportError
   } = usePaymentExport();
 
-  const handleGenerateReport = async () => {
-    await fetchPaymentDetails();
-  };
-
   const handleRefresh = async () => {
     clearError();
     clearExportError();
@@ -108,11 +104,11 @@ export const StorePaymentDetailsPage = () => {
             Filter Laporan
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4">
           {/* Filter Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Store Filter */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label htmlFor="store-select" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Pilih Toko
               </Label>
@@ -121,7 +117,7 @@ export const StorePaymentDetailsPage = () => {
                 onValueChange={(value) => updateFilters({ storeId: value === 'all' ? undefined : value })}
                 disabled={isLoadingStores}
               >
-                <SelectTrigger id="store-select" className="h-10">
+                <SelectTrigger id="store-select" className="w-full h-10">
                   {isLoadingStores ? (
                     <div className="flex items-center">
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -143,14 +139,14 @@ export const StorePaymentDetailsPage = () => {
             </div>
 
             {/* Start Date */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label htmlFor="start-date" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Tanggal Mulai
               </Label>
               <Input
                 id="start-date"
                 type="date"
-                className="h-10"
+                className="w-full h-10"
                 value={formatDateForInput(filters.startDate)}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -160,14 +156,14 @@ export const StorePaymentDetailsPage = () => {
             </div>
 
             {/* End Date */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label htmlFor="end-date" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Tanggal Akhir
               </Label>
               <Input
                 id="end-date"
                 type="date"
-                className="h-10"
+                className="w-full h-10"
                 value={formatDateForInput(filters.endDate)}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -177,7 +173,7 @@ export const StorePaymentDetailsPage = () => {
             </div>
 
             {/* Batch Filter */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label htmlFor="batch-select" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Pilih Batch
               </Label>
@@ -185,7 +181,7 @@ export const StorePaymentDetailsPage = () => {
                 value={filters.batchId || 'all'}
                 onValueChange={(value) => updateFilters({ batchId: value === 'all' ? undefined : value })}
               >
-                <SelectTrigger id="batch-select" className="h-10">
+                <SelectTrigger id="batch-select" className="w-full h-10">
                   <SelectValue placeholder="Pilih batch..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -201,21 +197,8 @@ export const StorePaymentDetailsPage = () => {
           </div>
           
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
             <div className="flex flex-wrap gap-3">
-              <Button 
-                onClick={handleGenerateReport}
-                disabled={isLoading}
-                className="min-w-[140px] h-10"
-              >
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <FileText className="w-4 h-4 mr-2" />
-                )}
-                Generate Report
-              </Button>
-              
               {hasFilters && (
                 <Button 
                   variant="outline" 
@@ -223,8 +206,16 @@ export const StorePaymentDetailsPage = () => {
                   disabled={isLoading}
                   className="h-10"
                 >
-                  Clear Filters
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Reset Filters
                 </Button>
+              )}
+              
+              {isLoading && (
+                <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Loading data...
+                </div>
               )}
             </div>
 
