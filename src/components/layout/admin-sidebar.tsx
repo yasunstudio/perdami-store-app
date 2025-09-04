@@ -152,14 +152,14 @@ const navigation: SidebarItem[] = [
   },
   {
     name: 'Analitik & Laporan',
-    href: '/admin/reports-overview',
+    href: '/admin/reports',
     icon: BarChart,
     permission: PERMISSIONS.REPORTS_READ,
     children: [
       {
-        name: 'Overview Laporan',
-        href: '/admin/reports-overview',
-        icon: LayoutGrid,
+        name: 'Laporan & Analisis',
+        href: '/admin/reports',
+        icon: BarChart,
         permission: PERMISSIONS.REPORTS_READ
       },
       {
