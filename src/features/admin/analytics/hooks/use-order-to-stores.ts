@@ -135,13 +135,26 @@ export const useOrderToStores = (): UseOrderToStoresReturn => {
     try {
       console.log('[Hook] Generating report with filters:', JSON.stringify(filters, null, 2));
       
-      const response = await fetch('/api/admin/analytics/order-to-stores/preview', {
+      // Try the new v2 API first, fallback to original if needed
+      let response = await fetch('/api/admin/analytics/order-to-stores/preview-v2', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ filters })
       });
+      
+      // If v2 API doesn't exist, use original
+      if (response.status === 404) {
+        console.log('[Hook] V2 API not found, using original preview API');
+        response = await fetch('/api/admin/analytics/order-to-stores/preview', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ filters })
+        });
+      }
       
       console.log('[Hook] Preview API response status:', response.status);
       
