@@ -19,6 +19,19 @@ export const formatDate = (date: Date | null): string => {
   }).format(new Date(date));
 };
 
+export const formatDateTime = (date: Date | null): string => {
+  if (!date) return '-';
+  
+  return new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date(date));
+};
+
 export const calculateSummary = (details: StorePaymentDetail[], storeName: string): StorePaymentSummary => {
   const totalItems = details.reduce((sum, detail) => sum + detail.quantity, 0);
   const totalCost = details.reduce((sum, detail) => sum + detail.totalPrice, 0);

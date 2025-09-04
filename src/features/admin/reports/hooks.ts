@@ -11,14 +11,24 @@ export const useStorePaymentDetails = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingStores, setIsLoadingStores] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<StorePaymentFilters>({});
+  
+  // Initialize with today's date as default
+  const today = new Date();
+  const [filters, setFilters] = useState<StorePaymentFilters>({
+    startDate: today,
+    endDate: today
+  });
 
   const updateFilters = useCallback((newFilters: Partial<StorePaymentFilters>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
   }, []);
 
   const clearFilters = useCallback(() => {
-    setFilters({});
+    const today = new Date();
+    setFilters({
+      startDate: today,
+      endDate: today
+    });
   }, []);
 
   const clearError = useCallback(() => {

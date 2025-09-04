@@ -4,13 +4,14 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, RefreshCw, FileText, Download, FileSpreadsheet } from 'lucide-react';
+import { Loader2, RefreshCw, FileText, Download, FileSpreadsheet, ArrowLeft } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import Link from 'next/link';
 import { useStorePaymentDetails, usePaymentExport } from './hooks';
-import { formatCurrency, formatDate, getAvailableBatches, getBatchName } from './utils';
+import { formatCurrency, formatDate, formatDateTime, getAvailableBatches, getBatchName } from './utils';
 
 export const StorePaymentDetailsPage = () => {
   const {
@@ -77,8 +78,14 @@ export const StorePaymentDetailsPage = () => {
   return (
     <div className="container mx-auto py-6 px-4 space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
+      <div className="flex items-center gap-4">
+        <Link href="/admin/reports-overview">
+          <Button variant="outline" size="sm">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Reports
+          </Button>
+        </Link>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Laporan Detail Pembayaran ke Toko
           </h1>
@@ -139,27 +146,6 @@ export const StorePaymentDetailsPage = () => {
               </Select>
             </div>
 
-            {/* Batch Filter */}
-            <div className="space-y-2">
-              <Label htmlFor="batch-select">Pilih Batch</Label>
-              <Select
-                value={filters.batchId || 'all'}
-                onValueChange={(value) => updateFilters({ batchId: value === 'all' ? undefined : value })}
-              >
-                <SelectTrigger id="batch-select">
-                  <SelectValue placeholder="Pilih batch..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Batches</SelectItem>
-                  {availableBatches.map((batch) => (
-                    <SelectItem key={batch.id} value={batch.id}>
-                      {batch.name} ({batch.timeRange})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
             {/* Start Date */}
             <div className="space-y-2">
               <Label htmlFor="start-date">Tanggal Mulai</Label>
@@ -186,6 +172,27 @@ export const StorePaymentDetailsPage = () => {
                   updateFilters({ endDate: value ? new Date(value) : undefined });
                 }}
               />
+            </div>
+
+            {/* Batch Filter */}
+            <div className="space-y-2">
+              <Label htmlFor="batch-select">Pilih Batch</Label>
+              <Select
+                value={filters.batchId || 'all'}
+                onValueChange={(value) => updateFilters({ batchId: value === 'all' ? undefined : value })}
+              >
+                <SelectTrigger id="batch-select">
+                  <SelectValue placeholder="Pilih batch..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Batches</SelectItem>
+                  {availableBatches.map((batch) => (
+                    <SelectItem key={batch.id} value={batch.id}>
+                      {batch.name} ({batch.timeRange})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           
@@ -296,7 +303,7 @@ export const StorePaymentDetailsPage = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="min-w-[100px]">Tanggal Order</TableHead>
+                    <TableHead className="min-w-[140px]">Tanggal Order</TableHead>
                     <TableHead className="min-w-[120px]">Batch</TableHead>
                     <TableHead className="min-w-[150px]">Customer</TableHead>
                     <TableHead className="min-w-[120px]">No Telepon</TableHead>
@@ -304,7 +311,6 @@ export const StorePaymentDetailsPage = () => {
                     <TableHead className="min-w-[80px] text-right">Jumlah</TableHead>
                     <TableHead className="min-w-[120px] text-right">Harga Satuan</TableHead>
                     <TableHead className="min-w-[120px] text-right">Total Harga</TableHead>
-                    <TableHead className="min-w-[150px]">Catatan</TableHead>
                     <TableHead className="min-w-[100px]">Tanggal Pickup</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -315,7 +321,7 @@ export const StorePaymentDetailsPage = () => {
                     
                     return (
                       <TableRow key={`${detail.orderId}-${detail.itemName}-${index}`}>
-                        <TableCell>{formatDate(detail.orderDate)}</TableCell>
+                        <TableCell>{formatDateTime(detail.orderDate)}</TableCell>
                         <TableCell>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                             batchName === 'Batch 1' 
@@ -331,7 +337,6 @@ export const StorePaymentDetailsPage = () => {
                         <TableCell className="text-right">{detail.quantity}</TableCell>
                         <TableCell className="text-right">{formatCurrency(detail.unitPrice)}</TableCell>
                         <TableCell className="text-right font-medium">{formatCurrency(detail.totalPrice)}</TableCell>
-                        <TableCell className="max-w-[200px] truncate">{detail.orderNotes || '-'}</TableCell>
                         <TableCell>{formatDate(detail.pickupDate)}</TableCell>
                       </TableRow>
                     );
