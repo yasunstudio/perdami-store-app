@@ -135,8 +135,8 @@ export const useOrderToStores = (): UseOrderToStoresReturn => {
     try {
       console.log('[Hook] Generating report with filters:', JSON.stringify(filters, null, 2));
       
-      // Use simple API endpoint
-      const response = await fetch('/api/admin/analytics/order-to-stores/simple-preview', {
+      // Use consistent preview endpoint
+      const response = await fetch('/api/admin/analytics/order-to-stores/preview', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -155,7 +155,7 @@ export const useOrderToStores = (): UseOrderToStoresReturn => {
       const data = await response.json();
       console.log('[Hook] Report data received:', data);
       
-      // Data is at root level for simple API
+      // Data is at root level
       setReportData(data);
     } catch (error) {
       setReportError(error instanceof Error ? error.message : 'Failed to generate report');
