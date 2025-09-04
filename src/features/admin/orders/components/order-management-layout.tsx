@@ -36,7 +36,7 @@ import { Badge } from '@/components/ui/badge'
 import { OrderStatusBadge } from '@/components/ui/order-status-badge'
 import { OrderListTable } from './order-list-table'
 import { OrderGridView } from './order-grid-view'
-import { OrderStatistics } from './order-statistics'
+import { OrderStatistics } from './order-statistics-new'
 import { Order } from '@/types'
 import { OrderWithRelations } from '../types/order.types'
 
@@ -61,6 +61,19 @@ interface OrdersResponse {
   }
 }
 
+interface OrderStatsResponse {
+  totalOrders: number
+  totalRevenue: number
+  totalPurchases: number
+  grossProfit: number
+  productProfit: number
+  serviceFeeRevenue: number
+  completionRate: number
+  pendingPayments: number
+  averageOrderValue: number
+  profitMargin: number
+}
+
 interface OrderManagementLayoutProps {
   title?: string
   description?: string
@@ -75,6 +88,7 @@ export default function OrderManagementLayout({
   const [selectedOrder, setSelectedOrder] = useState<OrderWithRelations | null>(null)
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<OrdersResponse | null>(null)
+  const [orderStats, setOrderStats] = useState<OrderStatsResponse | null>(null)
   const [filters, setFilters] = useState({
     search: '',
     orderStatus: 'all',
@@ -138,6 +152,21 @@ export default function OrderManagementLayout({
     return order.paymentStatus === 'PENDING' && Boolean(order.paymentProofUrl)
   }
 
+  // Fetch order statistics
+  const fetchOrderStats = async () => {
+    try {
+      const response = await fetch('/api/admin/orders/stats')
+      if (!response.ok) {
+        throw new Error('Failed to fetch order statistics')
+      }
+      const result = await response.json()
+      setOrderStats(result.data)
+    } catch (error) {
+      console.error('Error fetching order statistics:', error)
+      // Don't show error toast for stats as it's not critical
+    }
+  }
+
   // Fetch orders function
   const fetchOrders = async () => {
     try {
@@ -152,14 +181,25 @@ export default function OrderManagementLayout({
         ...(filters.paymentStatus !== 'all' && { paymentStatus: filters.paymentStatus })
       })
 
-      const response = await fetch(`/api/admin/orders?${params}`)
-      if (!response.ok) {
+      // Fetch both orders and stats
+      const [ordersResponse, statsResponse] = await Promise.all([
+        fetch(`/api/admin/orders?${params}`),
+        fetch('/api/admin/orders/stats')
+      ])
+
+      if (!ordersResponse.ok) {
         throw new Error('Failed to fetch orders')
       }
 
-      const result = await response.json()
-      setData(result)
-      setTotalPages(result.totalPages || 1)
+      const ordersResult = await ordersResponse.json()
+      setData(ordersResult)
+      setTotalPages(ordersResult.totalPages || 1)
+
+      // Fetch stats if not already loaded or if it's the first load
+      if (statsResponse.ok && !orderStats) {
+        const statsResult = await statsResponse.json()
+        setOrderStats(statsResult.data)
+      }
     } catch (error) {
       console.error('Error fetching orders:', error)
       toast.error('Gagal memuat data pesanan')
@@ -171,6 +211,7 @@ export default function OrderManagementLayout({
   // Refresh data function
   const refreshData = () => {
     fetchOrders()
+    fetchOrderStats()
     toast.success('Data berhasil diperbarui')
   }
 
@@ -294,10 +335,9 @@ export default function OrderManagementLayout({
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Statistics Cards */}
-          {data && (
+          {orderStats && (
             <OrderStatistics 
-              stats={data.stats}
-              paymentStats={data.paymentStats}
+              stats={orderStats}
               loading={loading}
             />
           )}
