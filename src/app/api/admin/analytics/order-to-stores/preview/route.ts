@@ -14,22 +14,97 @@ export async function POST(request: NextRequest) {
 
     const { storeIds, batchIds, dateRange } = filters;
 
+    // Build base where clause
+    const whereClause: any = {
+      orderStatus: 'CONFIRMED'
+    };
+
     // Build date range filter
-    const dateFilter: any = {};
-    if (dateRange.startDate) {
-      dateFilter.gte = new Date(dateRange.startDate);
+    if (dateRange?.startDate) {
+      whereClause.createdAt = {
+        gte: new Date(dateRange.startDate)
+      };
     }
-    if (dateRange.endDate) {
+    if (dateRange?.endDate) {
       const end = new Date(dateRange.endDate);
       end.setHours(23, 59, 59, 999);
-      dateFilter.lte = end;
+      whereClause.createdAt = {
+        ...whereClause.createdAt,
+        lte: end
+      };
     }
 
-    // Build where clause
-    const whereClause: any = {
-      orderStatus: 'CONFIRMED',
-      ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter })
-    };
+    // Build batch filter if specified
+    if (batchIds && batchIds.length > 0) {
+      const batchConditions = batchIds.map((batchId: string) => {
+        const today = new Date();
+        
+        if (batchId === 'batch_1') {
+          // Batch 1: 06:00-18:00
+          const batchStart = new Date(today);
+          batchStart.setHours(6, 0, 0, 0);
+          const batchEnd = new Date(today);
+          batchEnd.setHours(18, 0, 0, 0);
+          
+          return {
+            AND: [
+              { createdAt: { gte: batchStart } },
+              { createdAt: { lt: batchEnd } }
+            ]
+          };
+        } else if (batchId === 'batch_2') {
+          // Batch 2: 18:00-06:00 (spans midnight)
+          const batchStart = new Date(today);
+          batchStart.setHours(18, 0, 0, 0);
+          const batchEndTomorrow = new Date(today);
+          batchEndTomorrow.setDate(today.getDate() + 1);
+          batchEndTomorrow.setHours(6, 0, 0, 0);
+          
+          // Also include yesterday's evening to today's morning
+          const batchStartYesterday = new Date(today);
+          batchStartYesterday.setDate(today.getDate() - 1);
+          batchStartYesterday.setHours(18, 0, 0, 0);
+          const batchEndToday = new Date(today);
+          batchEndToday.setHours(6, 0, 0, 0);
+          
+          return {
+            OR: [
+              {
+                AND: [
+                  { createdAt: { gte: batchStart } },
+                  { createdAt: { lt: batchEndTomorrow } }
+                ]
+              },
+              {
+                AND: [
+                  { createdAt: { gte: batchStartYesterday } },
+                  { createdAt: { lt: batchEndToday } }
+                ]
+              }
+            ]
+          };
+        }
+        return {};
+      });
+
+      if (batchConditions.length > 0) {
+        whereClause.AND = whereClause.AND || [];
+        whereClause.AND.push({ OR: batchConditions });
+      }
+    }
+
+    // Store filter (through orderItems -> bundle -> store relationship)
+    if (storeIds && storeIds.length > 0) {
+      whereClause.orderItems = {
+        some: {
+          bundle: {
+            storeId: {
+              in: storeIds
+            }
+          }
+        }
+      };
+    }
 
     // Fetch orders with related data
     const orders = await prisma.order.findMany({
@@ -197,18 +272,49 @@ export async function POST(request: NextRequest) {
       .sort((a, b) => b.orderCount - a.orderCount)
       .slice(0, 5);
 
-    // Batch breakdown (simplified)
-    const batchBreakdown = (batchIds || []).map((batchId: string) => ({
-      batch: {
-        id: batchId,
-        name: batchId === 'batch_1' ? 'Batch 1 (Siang)' : 'Batch 2 (Malam)',
-        orderCount: Math.floor(totalOrders / (batchIds.length || 1)),
-        totalValue: Math.floor(totalValue / (batchIds.length || 1))
-      },
-      storeCount: storeCount,
-      orderDistribution: [],
-      peakTime: '12:00'
-    }));
+    // Calculate real batch breakdown
+    const batchBreakdown = [];
+    
+    if (batchIds && batchIds.length > 0) {
+      for (const batchId of batchIds) {
+        // Get orders specifically for this batch
+        const batchOrders = filteredOrders.filter(order => {
+          const orderHour = new Date(order.createdAt).getHours();
+          
+          if (batchId === 'batch_1') {
+            return orderHour >= 6 && orderHour < 18;
+          } else if (batchId === 'batch_2') {
+            return orderHour >= 18 || orderHour < 6;
+          }
+          return false;
+        });
+
+        const batchOrderCount = batchOrders.length;
+        const batchTotalValue = batchOrders.reduce((sum, order) => sum + Number(order.totalAmount), 0);
+        
+        // Get unique stores in this batch
+        const batchStoreSet = new Set();
+        batchOrders.forEach(order => {
+          order.orderItems.forEach(item => {
+            if (item.bundle?.store) {
+              batchStoreSet.add(item.bundle.store.id);
+            }
+          });
+        });
+
+        batchBreakdown.push({
+          batch: {
+            id: batchId,
+            name: batchId === 'batch_1' ? 'Batch 1 (06:00-18:00)' : 'Batch 2 (18:00-06:00)',
+            orderCount: batchOrderCount,
+            totalValue: batchTotalValue
+          },
+          storeCount: batchStoreSet.size,
+          orderDistribution: [],
+          peakTime: batchId === 'batch_1' ? '12:00' : '20:00'
+        });
+      }
+    }
 
     const reportData = {
       summary: {

@@ -30,6 +30,12 @@ export async function GET(request: NextRequest) {
     const template = searchParams.get('template');
     const timestamp = searchParams.get('timestamp');
     const orderCount = searchParams.get('orderCount');
+    
+    // Get filters from URL if available
+    const storeIds = searchParams.get('storeIds')?.split(',').filter(Boolean) || [];
+    const batchIds = searchParams.get('batchIds')?.split(',').filter(Boolean) || [];
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
 
     if (!format || !template || !timestamp) {
       return NextResponse.json(
@@ -38,14 +44,83 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // For this demo, we'll use the current session data or fetch recent orders
-    // In a full implementation, you'd store the export session and retrieve specific data
+    // Build the same filter logic as the main export API
+    const whereClause: any = {
+      orderStatus: 'CONFIRMED'
+    };
+
+    // Date range filter
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      whereClause.createdAt = {
+        gte: start,
+        lte: end
+      };
+    }
+
+    // Batch filter (if specified)
+    if (batchIds.length > 0) {
+      const batchConditions = batchIds.map((batchId: string) => {
+        const today = new Date();
+        
+        if (batchId === 'batch_1') {
+          // Morning batch: 06:00-18:00
+          const batchStart = new Date(today);
+          batchStart.setHours(6, 0, 0, 0);
+          const batchEnd = new Date(today);
+          batchEnd.setHours(18, 0, 0, 0);
+          
+          return {
+            AND: [
+              { createdAt: { gte: batchStart } },
+              { createdAt: { lt: batchEnd } }
+            ]
+          };
+        } else if (batchId === 'batch_2') {
+          // Evening batch: 18:00-06:00 (spans midnight)
+          const batchStart = new Date(today);
+          batchStart.setHours(18, 0, 0, 0);
+          const batchEndTomorrow = new Date(today);
+          batchEndTomorrow.setDate(today.getDate() + 1);
+          batchEndTomorrow.setHours(6, 0, 0, 0);
+          
+          return {
+            OR: [
+              { createdAt: { gte: batchStart } },
+              { createdAt: { lt: batchEndTomorrow } }
+            ]
+          };
+        }
+        return {};
+      });
+
+      if (batchConditions.length > 0) {
+        whereClause.AND = whereClause.AND || [];
+        whereClause.AND.push({ OR: batchConditions });
+      }
+    }
+
+    // Store filter (through orderItems -> bundle -> store relationship)
+    if (storeIds.length > 0) {
+      whereClause.orderItems = {
+        some: {
+          bundle: {
+            storeId: {
+              in: storeIds
+            }
+          }
+        }
+      };
+    }
+
     let orderData: OrderData[] = [];
     
     try {
-      // Fetch recent orders for demonstration
+      // Fetch filtered orders from database
       const orders = await prisma.order.findMany({
-        take: parseInt(orderCount || '50'), // Limit to avoid large exports
+        where: whereClause,
         include: {
           orderItems: {
             include: {
@@ -65,8 +140,16 @@ export async function GET(request: NextRequest) {
         },
         orderBy: {
           createdAt: 'desc'
-        }
+        },
+        take: 500 // Reasonable limit for export
       });
+
+      if (orders.length === 0) {
+        return NextResponse.json(
+          { error: 'No orders found matching the specified criteria' },
+          { status: 404 }
+        );
+      }
 
       // Transform data
       orderData = orders.map((order, index) => {
@@ -75,9 +158,9 @@ export async function GET(request: NextRequest) {
         
         // Determine batch based on creation time
         const createdHour = new Date(order.createdAt).getHours();
-        const batchName = createdHour >= 7 && createdHour < 19 
-          ? 'Batch 07:00-19:00' 
-          : 'Batch 19:00-07:00';
+        const batchName = createdHour >= 6 && createdHour < 18 
+          ? 'Batch 1 (06:00-18:00)' 
+          : 'Batch 2 (18:00-06:00)';
 
         return {
           orderNumber: order.orderNumber || `ORD-${String(index + 1).padStart(3, '0')}`,
@@ -91,44 +174,13 @@ export async function GET(request: NextRequest) {
           userEmail: order.user?.email || 'unknown@email.com'
         };
       });
+
     } catch (dbError) {
-      console.error('Database error, using sample data:', dbError);
-      // Fallback to sample data if database fails
-      orderData = [
-        {
-          orderNumber: 'ORD-001',
-          storeName: 'Toko Sari Roti',
-          totalValue: 150000,
-          itemCount: 5,
-          batchName: 'Batch 07:00-19:00',
-          createdAt: new Date().toISOString(),
-          status: 'completed',
-          userName: 'John Doe',
-          userEmail: 'john@example.com'
-        },
-        {
-          orderNumber: 'ORD-002',
-          storeName: 'Warung Bu Ani',
-          totalValue: 275000,
-          itemCount: 8,
-          batchName: 'Batch 19:00-07:00',
-          createdAt: new Date().toISOString(),
-          status: 'completed',
-          userName: 'Jane Smith',
-          userEmail: 'jane@example.com'
-        },
-        {
-          orderNumber: 'ORD-003',
-          storeName: 'Mini Market Sejahtera',
-          totalValue: 420000,
-          itemCount: 12,
-          batchName: 'Batch 07:00-19:00',
-          createdAt: new Date().toISOString(),
-          status: 'pending',
-          userName: 'Bob Wilson',
-          userEmail: 'bob@example.com'
-        }
-      ];
+      console.error('Database error during export:', dbError);
+      return NextResponse.json(
+        { error: 'Database error during export. Please try again later.' },
+        { status: 500 }
+      );
     }
 
     if (format === 'excel') {

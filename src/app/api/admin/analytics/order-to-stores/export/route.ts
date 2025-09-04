@@ -139,8 +139,30 @@ export async function POST(request: NextRequest) {
     // Generate unique timestamp for this export
     const timestamp = Date.now();
     
+    // Build query parameters for download URL
+    const downloadParams = new URLSearchParams({
+      format: exportOptions.format,
+      template: exportOptions.template,
+      timestamp: timestamp.toString(),
+      orderCount: orders.length.toString()
+    });
+
+    // Add filter parameters
+    if (filters.storeIds && filters.storeIds.length > 0) {
+      downloadParams.append('storeIds', filters.storeIds.join(','));
+    }
+    if (filters.batchIds && filters.batchIds.length > 0) {
+      downloadParams.append('batchIds', filters.batchIds.join(','));
+    }
+    if (filters.dateRange?.startDate) {
+      downloadParams.append('startDate', filters.dateRange.startDate);
+    }
+    if (filters.dateRange?.endDate) {
+      downloadParams.append('endDate', filters.dateRange.endDate);
+    }
+    
     // Create the download URL with all necessary parameters
-    const downloadUrl = `/api/admin/analytics/order-to-stores/export/download?format=${exportOptions.format}&template=${exportOptions.template}&timestamp=${timestamp}&orderCount=${orders.length}`;
+    const downloadUrl = `/api/admin/analytics/order-to-stores/export/download?${downloadParams.toString()}`;
 
     // Store export metadata (optional - for tracking)
     console.log(`Export requested: ${exportOptions.format} format, ${exportOptions.template} template, ${orders.length} orders`);
