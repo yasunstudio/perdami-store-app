@@ -4,82 +4,105 @@ import { BATCH_CONFIG } from '@/features/admin/analytics/constants';
 
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    
+    // Parse filters from query parameters
+    const storeIdsParam = searchParams.get('storeIds');
+    const batchIdsParam = searchParams.get('batchIds');
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    
+    const storeIds = storeIdsParam ? storeIdsParam.split(',') : [];
+    const batchIds = batchIdsParam ? batchIdsParam.split(',') : [];
+    
+    // Build date filter
+    let dateStart = startDate ? new Date(startDate) : new Date();
+    let dateEnd = endDate ? new Date(endDate) : new Date();
+    
+    // If no date filter specified, use today
+    if (!startDate && !endDate) {
+      dateStart.setHours(0, 0, 0, 0);
+      dateEnd.setHours(23, 59, 59, 999);
+    } else if (endDate) {
+      dateEnd.setHours(23, 59, 59, 999);
+    }
+    
     const currentTime = new Date();
     const currentHour = currentTime.getHours();
     
     // Determine current active batch
     const isInBatch1 = currentHour >= 6 && currentHour < 18;
     const isInBatch2 = currentHour >= 18 || currentHour < 6;
-    
-    // Calculate actual order counts and values from database
-    const today = new Date();
-    const startOfDay = new Date(today);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(today);
-    endOfDay.setHours(23, 59, 59, 999);
 
-    // Batch 1: 06:00-18:00
-    const batch1Start = new Date(today);
+    // Build store filter for orders
+    const storeFilter: any = {};
+    if (storeIds.length > 0) {
+      storeFilter.orderItems = {
+        some: {
+          bundle: {
+            storeId: {
+              in: storeIds
+            }
+          }
+        }
+      };
+    }
+
+    // Batch 1: 06:00-18:00 within date range
+    const batch1Start = new Date(dateStart);
     batch1Start.setHours(6, 0, 0, 0);
-    const batch1End = new Date(today);
+    const batch1End = new Date(dateEnd);
     batch1End.setHours(18, 0, 0, 0);
 
-    // Batch 2: 18:00-06:00 (spans midnight)
-    const batch2StartToday = new Date(today);
-    batch2StartToday.setHours(18, 0, 0, 0);
-    const batch2EndTomorrow = new Date(today);
-    batch2EndTomorrow.setDate(today.getDate() + 1);
-    batch2EndTomorrow.setHours(6, 0, 0, 0);
-
-    const batch2StartYesterday = new Date(today);
-    batch2StartYesterday.setDate(today.getDate() - 1);
-    batch2StartYesterday.setHours(18, 0, 0, 0);
-    const batch2EndToday = new Date(today);
-    batch2EndToday.setHours(6, 0, 0, 0);
-
-    // Get Batch 1 orders (06:00-18:00 today)
+    // Get Batch 1 orders (06:00-18:00 within date range)
     const batch1Orders = await prisma.order.findMany({
       where: {
         orderStatus: 'CONFIRMED',
         createdAt: {
           gte: batch1Start,
-          lt: batch1End
-        }
+          lte: batch1End
+        },
+        ...storeFilter
       },
       select: {
         totalAmount: true
       }
     });
 
-    // Get Batch 2 orders (18:00 yesterday - 06:00 today OR 18:00 today - 06:00 tomorrow)
-    const batch2OrdersYesterday = await prisma.order.findMany({
+    // Batch 2: 18:00-06:00 (handle spanning midnight within date range)
+    let batch2Orders: any[] = [];
+    
+    // For batch 2, we need to handle the fact that it spans midnight
+    // We'll query 18:00-23:59 and 00:00-06:00 within the date range
+    const batch2Evening = await prisma.order.findMany({
       where: {
         orderStatus: 'CONFIRMED',
         createdAt: {
-          gte: batch2StartYesterday,
-          lt: batch2EndToday
-        }
+          gte: new Date(dateStart.getTime()).setHours(18, 0, 0, 0),
+          lte: new Date(dateEnd.getTime()).setHours(23, 59, 59, 999)
+        },
+        ...storeFilter
       },
       select: {
         totalAmount: true
       }
     });
 
-    const batch2OrdersToday = await prisma.order.findMany({
+    const batch2Morning = await prisma.order.findMany({
       where: {
         orderStatus: 'CONFIRMED',
         createdAt: {
-          gte: batch2StartToday,
-          lt: batch2EndTomorrow
-        }
+          gte: new Date(dateStart.getTime()).setHours(0, 0, 0, 0),
+          lte: new Date(dateEnd.getTime()).setHours(6, 0, 0, 0)
+        },
+        ...storeFilter
       },
       select: {
         totalAmount: true
       }
     });
 
-    // Combine batch 2 orders
-    const batch2Orders = [...batch2OrdersYesterday, ...batch2OrdersToday];
+    batch2Orders = [...batch2Evening, ...batch2Morning];
 
     // Calculate metrics
     const batch1OrderCount = batch1Orders.length;
@@ -88,7 +111,7 @@ export async function GET(request: NextRequest) {
     const batch2OrderCount = batch2Orders.length;
     const batch2Value = batch2Orders.reduce((sum, order) => sum + Number(order.totalAmount), 0);
 
-    const batches = [
+    const allBatches = [
       {
         id: BATCH_CONFIG.batch1.id,
         name: BATCH_CONFIG.batch1.displayName,
@@ -115,9 +138,14 @@ export async function GET(request: NextRequest) {
       }
     ];
 
+    // Filter batches if batchIds are specified
+    const filteredBatches = batchIds.length > 0 
+      ? allBatches.filter(batch => batchIds.includes(batch.id))
+      : allBatches;
+
     return NextResponse.json({
       success: true,
-      batches
+      batches: filteredBatches
     });
 
   } catch (error) {
