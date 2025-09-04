@@ -75,3 +75,7 @@ setup-*
 **/create-*
 **/fix-*
 **/setup-*
+
+# But allow API routes for debugging
+!src/app/api/**/debug-*/route.ts
+!src/app/api/**/create-*/route.ts
