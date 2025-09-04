@@ -12,6 +12,7 @@ import {
   BatchSelector,
   DateRangePicker,
   ReportPreview,
+  ReportSummary,
   ExportOptions,
   QuickTemplates
 } from './index';
@@ -168,6 +169,14 @@ export const OrderToStoresMain: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Report Summary */}
+      {reportData && (
+        <ReportSummary 
+          reportData={reportData}
+          filters={filters}
+        />
+      )}
 
       {/* Report Preview */}
       {reportData && (

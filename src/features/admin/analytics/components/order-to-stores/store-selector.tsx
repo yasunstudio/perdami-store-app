@@ -62,8 +62,6 @@ export const StoreSelector: React.FC<StoreSelectorProps> = ({
   };
 
   const selectedStores = stores.filter(store => selectedStoreIds.includes(store.id));
-  const totalOrders = selectedStores.reduce((sum, store) => sum + store.orderCount, 0);
-  const totalValue = selectedStores.reduce((sum, store) => sum + store.totalValue, 0);
 
   if (isLoading) {
     return (
@@ -114,9 +112,8 @@ export const StoreSelector: React.FC<StoreSelectorProps> = ({
                   {selectedStoreIds.length} toko dipilih
                 </span>
               </div>
-              <div className="flex items-center gap-4 text-gray-600 dark:text-gray-400">
-                <span>{totalOrders} orders</span>
-                <span>Rp {totalValue.toLocaleString('id-ID')}</span>
+              <div className="text-gray-600 dark:text-gray-400">
+                <span>Siap untuk generate report</span>
               </div>
             </div>
           </CardContent>
@@ -162,11 +159,13 @@ export const StoreSelector: React.FC<StoreSelectorProps> = ({
                       
                       <div className="flex items-center gap-2 text-xs flex-shrink-0">
                         <Badge variant={store.status === 'active' ? 'default' : 'secondary'} className="whitespace-nowrap">
-                          {store.orderCount} orders
+                          {store.status}
                         </Badge>
-                        <span className="text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                          Rp {store.totalValue.toLocaleString('id-ID')}
-                        </span>
+                        {store.contactPerson && (
+                          <span className="text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                            {store.contactPerson}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

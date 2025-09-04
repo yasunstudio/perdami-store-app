@@ -1,11 +1,10 @@
 export interface StoreData {
   id: string;
   name: string;
-  orderCount: number;
-  totalValue: number;
-  status: 'active' | 'preparing' | 'ready' | 'completed';
+  status: 'active' | 'inactive';
   address?: string;
   phone?: string;
+  contactPerson?: string;
   lastUpdated: Date;
 }
 
@@ -16,8 +15,7 @@ export interface BatchData {
   startTime: string;
   endTime: string;
   cutoffTime: string;
-  orderCount: number;
-  totalValue: number;
+  description: string;
   isActive: boolean;
   isCurrent: boolean;
 }

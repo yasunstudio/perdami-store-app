@@ -249,7 +249,9 @@ export const ReportPreview: React.FC<ReportPreviewProps> = ({
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
                     Peak time: {batchData.peakTime} | 
-                    Total orders: {formatNumber(batchData.batch.orderCount)}
+                    Total orders: {formatNumber(
+                      batchData.orderDistribution.reduce((sum, dist) => sum + dist.orderCount, 0)
+                    )}
                   </div>
                 </div>
               ))}

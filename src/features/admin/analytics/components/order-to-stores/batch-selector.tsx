@@ -50,8 +50,6 @@ export const BatchSelector: React.FC<BatchSelectorProps> = ({
 
   // Calculate summary for selected batches
   const selectedBatches = batches.filter(batch => selectedBatchIds.includes(batch.id));
-  const totalOrders = selectedBatches.reduce((sum, batch) => sum + batch.orderCount, 0);
-  const totalValue = selectedBatches.reduce((sum, batch) => sum + batch.totalValue, 0);
 
   const formatTime = (time: string) => {
     return time.substring(0, 5); // Convert HH:mm:ss to HH:mm
@@ -108,12 +106,11 @@ export const BatchSelector: React.FC<BatchSelectorProps> = ({
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-blue-500" />
                 <span className="font-medium">
-                  Total: {selectedBatchIds.length} batch
+                  Total: {selectedBatchIds.length} batch dipilih
                 </span>
               </div>
-              <div className="flex items-center gap-4 text-gray-600 dark:text-gray-400">
-                <span>{totalOrders} orders</span>
-                <span>Rp {totalValue.toLocaleString('id-ID')}</span>
+              <div className="text-gray-600 dark:text-gray-400">
+                <span>Siap untuk generate report</span>
               </div>
             </div>
           </CardContent>
@@ -169,16 +166,16 @@ export const BatchSelector: React.FC<BatchSelectorProps> = ({
                         
                         <div className="text-right">
                           <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {batch.orderCount} orders
+                            {statusConfig.label}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            Rp {batch.totalValue.toLocaleString('id-ID')}
+                            {batch.timeRange}
                           </p>
                         </div>
                       </div>
 
                       {/* Batch Details */}
-                      <div className="grid grid-cols-3 gap-4 text-xs text-gray-600 dark:text-gray-400">
+                      <div className="grid grid-cols-2 gap-4 text-xs text-gray-600 dark:text-gray-400">
                         <div className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           <span>
@@ -192,17 +189,14 @@ export const BatchSelector: React.FC<BatchSelectorProps> = ({
                             Cut-off: {formatTime(batch.cutoffTime)}
                           </span>
                         </div>
-                        
-                        <div className="flex items-center gap-1">
-                          <TrendingUp className="w-3 h-3" />
-                          <span>
-                            Avg: Rp {batch.orderCount > 0 
-                              ? Math.round(batch.totalValue / batch.orderCount).toLocaleString('id-ID')
-                              : '0'
-                            }
-                          </span>
-                        </div>
                       </div>
+
+                      {/* Description */}
+                      {batch.description && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {batch.description}
+                        </p>
+                      )}
 
                       {/* Time Range Description */}
                       <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -217,13 +211,13 @@ export const BatchSelector: React.FC<BatchSelectorProps> = ({
         )}
       </div>
 
-      {/* Today's Summary */}
+      {/* Batch Summary */}
       {batches.length > 0 && (
         <Card className="bg-gray-50 dark:bg-gray-900">
           <CardContent className="p-3">
             <div className="text-center">
               <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                📊 Today's Batch Summary
+                📊 Available Batches
               </h4>
               <div className="grid grid-cols-3 gap-4 text-xs">
                 <div>
@@ -233,15 +227,15 @@ export const BatchSelector: React.FC<BatchSelectorProps> = ({
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-500 dark:text-gray-400">Total Orders</p>
+                  <p className="text-gray-500 dark:text-gray-400">Active Now</p>
                   <p className="font-semibold text-gray-900 dark:text-white">
-                    {batches.reduce((sum, batch) => sum + batch.orderCount, 0)}
+                    {batches.filter(batch => batch.isActive).length}
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-500 dark:text-gray-400">Total Value</p>
+                  <p className="text-gray-500 dark:text-gray-400">Selected</p>
                   <p className="font-semibold text-gray-900 dark:text-white">
-                    Rp {batches.reduce((sum, batch) => sum + batch.totalValue, 0).toLocaleString('id-ID')}
+                    {selectedBatchIds.length}
                   </p>
                 </div>
               </div>

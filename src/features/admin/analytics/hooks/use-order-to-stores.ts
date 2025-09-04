@@ -82,27 +82,7 @@ export const useOrderToStores = (): UseOrderToStoresReturn => {
     setStoreError(null);
     
     try {
-      // Build query parameters from current filters
-      const queryParams = new URLSearchParams();
-      
-      if (filters.storeIds.length > 0) {
-        queryParams.set('storeIds', filters.storeIds.join(','));
-      }
-      
-      if (filters.batchIds.length > 0) {
-        queryParams.set('batchIds', filters.batchIds.join(','));
-      }
-      
-      if (filters.dateRange.startDate) {
-        queryParams.set('startDate', filters.dateRange.startDate.toISOString());
-      }
-      
-      if (filters.dateRange.endDate) {
-        queryParams.set('endDate', filters.dateRange.endDate.toISOString());
-      }
-      
-      const url = `/api/admin/analytics/order-to-stores/stores?${queryParams.toString()}`;
-      const response = await fetch(url);
+      const response = await fetch('/api/admin/analytics/order-to-stores/stores');
       
       if (!response.ok) {
         throw new Error('Failed to fetch stores');
@@ -115,7 +95,7 @@ export const useOrderToStores = (): UseOrderToStoresReturn => {
     } finally {
       setIsLoadingStores(false);
     }
-  }, [filters]);
+  }, []);
   
   // Fetch batches
   const fetchBatches = useCallback(async () => {
@@ -123,27 +103,7 @@ export const useOrderToStores = (): UseOrderToStoresReturn => {
     setBatchError(null);
     
     try {
-      // Build query parameters from current filters
-      const queryParams = new URLSearchParams();
-      
-      if (filters.storeIds.length > 0) {
-        queryParams.set('storeIds', filters.storeIds.join(','));
-      }
-      
-      if (filters.batchIds.length > 0) {
-        queryParams.set('batchIds', filters.batchIds.join(','));
-      }
-      
-      if (filters.dateRange.startDate) {
-        queryParams.set('startDate', filters.dateRange.startDate.toISOString());
-      }
-      
-      if (filters.dateRange.endDate) {
-        queryParams.set('endDate', filters.dateRange.endDate.toISOString());
-      }
-      
-      const url = `/api/admin/analytics/order-to-stores/batches?${queryParams.toString()}`;
-      const response = await fetch(url);
+      const response = await fetch('/api/admin/analytics/order-to-stores/batches');
       
       if (!response.ok) {
         throw new Error('Failed to fetch batches');
@@ -156,7 +116,7 @@ export const useOrderToStores = (): UseOrderToStoresReturn => {
     } finally {
       setIsLoadingBatches(false);
     }
-  }, [filters]);
+  }, []);
   
   // Generate report
   const generateReport = useCallback(async () => {
@@ -263,20 +223,6 @@ export const useOrderToStores = (): UseOrderToStoresReturn => {
   useEffect(() => {
     refreshData();
   }, [refreshData]);
-  
-  // Refresh stores when filters change
-  useEffect(() => {
-    if (stores.length > 0) { // Only refresh if stores have been loaded initially
-      fetchStores();
-    }
-  }, [filters.storeIds, filters.batchIds, filters.dateRange, fetchStores]);
-  
-  // Refresh batches when filters change
-  useEffect(() => {
-    if (batches.length > 0) { // Only refresh if batches have been loaded initially
-      fetchBatches();
-    }
-  }, [filters.storeIds, filters.batchIds, filters.dateRange, fetchBatches]);
   
   // Computed values
   const isLoading = isLoadingStores || isLoadingBatches || isLoadingReport;
