@@ -69,16 +69,18 @@ export function AdvancedAnalytics() {
       console.log('🔄 Fetching analytics data from APIs...')
       
       // Fetch real data from multiple API endpoints
-      const [dashboardResponse, productsResponse, storesResponse] = await Promise.all([
+      const [dashboardResponse, productsResponse, storesResponse, salesResponse] = await Promise.all([
         fetch('/api/admin/dashboard'),
         fetch('/api/admin/products/stats'),
-        fetch('/api/admin/stores/stats')
+        fetch('/api/admin/stores/stats'),
+        fetch('/api/admin/sales/analytics') // New API for 7-day sales data
       ])
 
       console.log('API Responses:', {
         dashboard: dashboardResponse.status,
         products: productsResponse.status,
-        stores: storesResponse.status
+        stores: storesResponse.status,
+        sales: salesResponse.status
       })
 
       if (!dashboardResponse.ok) {
@@ -90,22 +92,27 @@ export function AdvancedAnalytics() {
       if (!storesResponse.ok) {
         throw new Error(`Stores API failed: ${storesResponse.status}`)
       }
+      if (!salesResponse.ok) {
+        throw new Error(`Sales API failed: ${salesResponse.status}`)
+      }
 
-      const [dashboardData, productsData, storesData] = await Promise.all([
+      const [dashboardData, productsData, storesData, salesData] = await Promise.all([
         dashboardResponse.json(),
         productsResponse.json(),
-        storesResponse.json()
+        storesResponse.json(),
+        salesResponse.json()
       ])
 
       console.log('✅ All API data received:', {
         dashboard: !!dashboardData,
         products: !!productsData,
-        stores: !!storesData
+        stores: !!storesData,
+        sales: !!salesData
       })
 
       // Transform real data into analytics format
       const analyticsData: AnalyticsData = {
-        salesData: generateSalesDataFromOrders(dashboardData.recentOrders || []),
+        salesData: salesData.dailySales || [], // Use new API data directly
         productData: transformProductsData(productsData),
         storeData: transformStoresData(storesData),
         summaryStats: {
@@ -144,32 +151,6 @@ export function AdvancedAnalytics() {
   useEffect(() => {
     fetchAnalyticsData()
   }, [fetchAnalyticsData])
-
-  // Transform real orders data into sales chart data
-  const generateSalesDataFromOrders = (orders: any[]) => {
-    const days = 7
-    const salesByDate = new Map()
-    
-    // Initialize with last 7 days
-    for (let i = 0; i < days; i++) {
-      const date = format(subDays(new Date(), days - 1 - i), 'yyyy-MM-dd')
-      salesByDate.set(date, { date, sales: 0, orders: 0, revenue: 0 })
-    }
-    
-    // Aggregate orders by date
-    orders.forEach((order: any) => {
-      const orderDate = format(new Date(order.createdAt), 'yyyy-MM-dd')
-      if (salesByDate.has(orderDate)) {
-        const existing = salesByDate.get(orderDate)
-        existing.orders += 1
-        existing.revenue += order.totalAmount
-        // Calculate total quantity from order items
-        existing.sales += order.orderItems?.reduce((acc: number, item: any) => acc + item.quantity, 0) || 1
-      }
-    })
-    
-    return Array.from(salesByDate.values())
-  }
 
   // Transform products stats data
   const transformProductsData = (productsData: any) => {
