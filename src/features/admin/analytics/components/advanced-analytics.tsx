@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   LineChart,
@@ -23,7 +24,7 @@ import {
 } from 'recharts'
 import { format, subDays, parseISO } from 'date-fns'
 import { id } from 'date-fns/locale'
-import { TrendingUp, Package, Users, ShoppingCart, DollarSign } from 'lucide-react'
+import { TrendingUp, Package, Users, ShoppingCart, DollarSign, AlertCircle, RefreshCw } from 'lucide-react'
 
 interface AnalyticsData {
   salesData: Array<{
@@ -58,10 +59,14 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'
 export function AdvancedAnalytics() {
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchAnalyticsData = useCallback(async () => {
     try {
       setLoading(true)
+      setError(null)
+      
+      console.log('🔄 Fetching analytics data from APIs...')
       
       // Fetch real data from multiple API endpoints
       const [dashboardResponse, productsResponse, storesResponse] = await Promise.all([
@@ -70,8 +75,20 @@ export function AdvancedAnalytics() {
         fetch('/api/admin/stores/stats')
       ])
 
-      if (!dashboardResponse.ok || !productsResponse.ok || !storesResponse.ok) {
-        throw new Error('Failed to fetch analytics data')
+      console.log('API Responses:', {
+        dashboard: dashboardResponse.status,
+        products: productsResponse.status,
+        stores: storesResponse.status
+      })
+
+      if (!dashboardResponse.ok) {
+        throw new Error(`Dashboard API failed: ${dashboardResponse.status}`)
+      }
+      if (!productsResponse.ok) {
+        throw new Error(`Products API failed: ${productsResponse.status}`)
+      }
+      if (!storesResponse.ok) {
+        throw new Error(`Stores API failed: ${storesResponse.status}`)
       }
 
       const [dashboardData, productsData, storesData] = await Promise.all([
@@ -80,24 +97,31 @@ export function AdvancedAnalytics() {
         storesResponse.json()
       ])
 
+      console.log('✅ All API data received:', {
+        dashboard: !!dashboardData,
+        products: !!productsData,
+        stores: !!storesData
+      })
+
       // Transform real data into analytics format
       const analyticsData: AnalyticsData = {
-        salesData: generateSalesDataFromOrders(dashboardData.recentOrders),
+        salesData: generateSalesDataFromOrders(dashboardData.recentOrders || []),
         productData: transformProductsData(productsData),
         storeData: transformStoresData(storesData),
         summaryStats: {
-          totalRevenue: dashboardData.stats.totalRevenue, // Use the corrected totalRevenue from dashboard stats
-          totalOrders: dashboardData.stats.totalOrders,
-          totalProducts: dashboardData.stats.totalProducts,
-          totalCustomers: dashboardData.stats.totalUsers,
-          revenueGrowth: dashboardData.stats.orderGrowthRate || 0,
-          ordersGrowth: dashboardData.stats.orderGrowthRate || 0
+          totalRevenue: dashboardData.stats?.totalRevenue || 0,
+          totalOrders: dashboardData.stats?.totalOrders || 0,
+          totalProducts: dashboardData.stats?.totalProducts || 0,
+          totalCustomers: dashboardData.stats?.totalUsers || 0,
+          revenueGrowth: dashboardData.stats?.orderGrowthRate || 0,
+          ordersGrowth: dashboardData.stats?.orderGrowthRate || 0
         }
       }
       
       setData(analyticsData)
     } catch (error) {
-      console.error('Error fetching analytics data:', error)
+      console.error('❌ Error fetching analytics data:', error)
+      setError(error instanceof Error ? error.message : 'Failed to load analytics data')
       // Fallback to empty data structure
       setData({
         salesData: [],
@@ -183,6 +207,24 @@ export function AdvancedAnalytics() {
     
     console.log('Stores data transformed:', transformed)
     return transformed
+  }
+
+  if (error) {
+    return (
+      <Card className="p-8">
+        <CardContent className="text-center">
+          <div className="text-red-500 mb-4">
+            <AlertCircle className="h-12 w-12 mx-auto mb-2" />
+            <h3 className="text-lg font-semibold">Error Loading Analytics</h3>
+          </div>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <Button onClick={fetchAnalyticsData} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
+        </CardContent>
+      </Card>
+    )
   }
 
   if (loading || !data) {
