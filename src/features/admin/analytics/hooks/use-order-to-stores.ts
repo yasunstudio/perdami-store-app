@@ -133,6 +133,8 @@ export const useOrderToStores = (): UseOrderToStoresReturn => {
     setReportError(null);
     
     try {
+      console.log('[Hook] Generating report with filters:', JSON.stringify(filters, null, 2));
+      
       const response = await fetch('/api/admin/analytics/order-to-stores/preview', {
         method: 'POST',
         headers: {
@@ -141,11 +143,16 @@ export const useOrderToStores = (): UseOrderToStoresReturn => {
         body: JSON.stringify({ filters })
       });
       
+      console.log('[Hook] Preview API response status:', response.status);
+      
       if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('[Hook] Preview API error:', errorData);
         throw new Error('Failed to generate report');
       }
       
       const data = await response.json();
+      console.log('[Hook] Report data received:', data);
       setReportData(data.reportData);
     } catch (error) {
       setReportError(error instanceof Error ? error.message : 'Failed to generate report');

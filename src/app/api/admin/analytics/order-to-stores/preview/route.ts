@@ -31,6 +31,13 @@ export async function POST(request: NextRequest) {
         gte: startDate,
         lte: endDate
       };
+      
+      console.log('Date filter applied:', {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
+      });
+    } else {
+      console.log('No date filter applied - using all dates');
     }
 
     // For store filtering, we'll use the relationship properly
@@ -44,6 +51,9 @@ export async function POST(request: NextRequest) {
           }
         }
       };
+      console.log('Store filter applied for stores:', storeIds);
+    } else {
+      console.log('No store filter applied - using all stores');
     }
 
     console.log('Database where clause:', JSON.stringify(whereClause, null, 2));
@@ -85,23 +95,49 @@ export async function POST(request: NextRequest) {
     });
 
     console.log(`Found ${orders.length} orders before filtering`);
+    
+    // Log sample of orders found
+    if (orders.length > 0) {
+      console.log('Sample order data:', {
+        orderId: orders[0].id,
+        createdAt: orders[0].createdAt,
+        totalAmount: orders[0].totalAmount,
+        orderStatus: orders[0].orderStatus,
+        orderItemsCount: orders[0].orderItems.length,
+        firstBundleStore: orders[0].orderItems[0]?.bundle?.store?.name
+      });
+    }
 
     // Apply batch filtering after database query (simpler and more reliable)
     let filteredOrders = orders;
     
     if (batchIds && batchIds.length > 0) {
+      console.log('Applying batch filter for batches:', batchIds);
+      
       filteredOrders = orders.filter(order => {
-        const orderHour = new Date(order.createdAt).getHours();
+        const orderDate = new Date(order.createdAt);
+        const orderHour = orderDate.getHours();
         
-        return batchIds.some((batchId: string) => {
+        console.log(`Order ${order.id} created at ${orderDate.toISOString()}, hour: ${orderHour}`);
+        
+        const matchesBatch = batchIds.some((batchId: string) => {
           if (batchId === 'batch_1') {
-            return orderHour >= 6 && orderHour < 18;
+            const matches = orderHour >= 6 && orderHour < 18;
+            console.log(`  Checking batch_1 (6-18): ${matches}`);
+            return matches;
           } else if (batchId === 'batch_2') {
-            return orderHour >= 18 || orderHour < 6;
+            const matches = orderHour >= 18 || orderHour < 6;
+            console.log(`  Checking batch_2 (18-6): ${matches}`);
+            return matches;
           }
           return false;
         });
+        
+        console.log(`  Order ${order.id} matches selected batches: ${matchesBatch}`);
+        return matchesBatch;
       });
+    } else {
+      console.log('No batch filter applied - using all batches');
     }
 
     console.log(`Found ${filteredOrders.length} orders after batch filtering`);
@@ -112,10 +148,18 @@ export async function POST(request: NextRequest) {
     
     // Get unique stores from the filtered orders
     const storeSet = new Set();
+    const storeDetails: any[] = [];
     filteredOrders.forEach(order => {
       order.orderItems.forEach(item => {
         if (item.bundle?.store) {
-          storeSet.add(item.bundle.store.id);
+          const storeId = item.bundle.store.id;
+          if (!storeSet.has(storeId)) {
+            storeSet.add(storeId);
+            storeDetails.push({
+              id: storeId,
+              name: item.bundle.store.name
+            });
+          }
         }
       });
     });
@@ -123,6 +167,7 @@ export async function POST(request: NextRequest) {
     const averageOrderValue = totalOrders > 0 ? totalValue / totalOrders : 0;
 
     console.log('Summary stats:', { totalOrders, totalValue, storeCount, averageOrderValue });
+    console.log('Stores found:', storeDetails);
 
     // Group orders by store
     const storeGroups: any = {};
