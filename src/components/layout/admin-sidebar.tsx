@@ -163,6 +163,12 @@ const navigation: SidebarItem[] = [
         permission: PERMISSIONS.REPORTS_READ
       },
       {
+        name: 'Order ke Toko',
+        href: '/admin/analytics/order-to-stores',
+        icon: TrendingUp,
+        permission: PERMISSIONS.REPORTS_READ
+      },
+      {
         name: 'Log Aktivitas',
         href: '/admin/audit-logs',
         icon: Activity,
