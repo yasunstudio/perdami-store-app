@@ -100,7 +100,7 @@ export function OrderStatistics({ stats, loading }: OrderStatisticsProps) {
     }).format(value)
   }
 
-  // Helper function to format large numbers
+  // Helper function to format large numbers (for group 2 only)
   function formatNumber(value: number): string {
     if (value >= 1000000) {
       return (value / 1000000).toFixed(1) + 'M'
@@ -108,6 +108,11 @@ export function OrderStatistics({ stats, loading }: OrderStatisticsProps) {
       return (value / 1000).toFixed(0) + 'K'
     }
     return value.toString()
+  }
+
+  // Helper function to format financial numbers (full numbers for group 1)
+  function formatFinancialNumber(value: number): string {
+    return new Intl.NumberFormat('id-ID').format(value)
   }
 
   return (
@@ -123,7 +128,7 @@ export function OrderStatistics({ stats, loading }: OrderStatisticsProps) {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatNumber(stats.totalRevenue)}</div>
+              <div className="text-2xl font-bold">{formatFinancialNumber(stats.totalRevenue)}</div>
               <p className="text-xs text-muted-foreground">
                 <span className="inline-flex items-center text-blue-600">
                   <Receipt className="h-3 w-3 mr-1" />
@@ -141,7 +146,7 @@ export function OrderStatistics({ stats, loading }: OrderStatisticsProps) {
               <Receipt className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatNumber(stats.totalPurchases)}</div>
+              <div className="text-2xl font-bold">{formatFinancialNumber(stats.totalPurchases)}</div>
               <p className="text-xs text-muted-foreground">
                 <span className="inline-flex items-center text-orange-600">
                   <DollarSign className="h-3 w-3 mr-1" />
@@ -158,7 +163,7 @@ export function OrderStatistics({ stats, loading }: OrderStatisticsProps) {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatNumber(stats.productProfit)}</div>
+              <div className="text-2xl font-bold">{formatFinancialNumber(stats.productProfit)}</div>
               <p className="text-xs text-muted-foreground">
                 <span className="inline-flex items-center text-green-600">
                   <TrendingUp className="h-3 w-3 mr-1" />
@@ -175,7 +180,7 @@ export function OrderStatistics({ stats, loading }: OrderStatisticsProps) {
               <Receipt className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatNumber(stats.serviceFeeRevenue)}</div>
+              <div className="text-2xl font-bold">{formatFinancialNumber(stats.serviceFeeRevenue)}</div>
               <p className="text-xs text-muted-foreground">
                 <span className="inline-flex items-center text-purple-600">
                   <DollarSign className="h-3 w-3 mr-1" />
@@ -192,7 +197,7 @@ export function OrderStatistics({ stats, loading }: OrderStatisticsProps) {
               <PiggyBank className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatNumber(stats.grossProfit)}</div>
+              <div className="text-2xl font-bold">{formatFinancialNumber(stats.grossProfit)}</div>
               <p className="text-xs text-muted-foreground">
                 <span className="inline-flex items-center text-green-600">
                   <TrendingUp className="h-3 w-3 mr-1" />
