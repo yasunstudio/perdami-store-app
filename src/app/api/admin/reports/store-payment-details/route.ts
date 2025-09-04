@@ -10,6 +10,8 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get('endDate');
     const batchId = searchParams.get('batchId');
 
+    console.log('Store Payment Details API called with:', { storeId, startDate, endDate, batchId });
+
     // Build where clause
     const whereClause: any = {
       orderStatus: 'CONFIRMED', // Only confirmed orders
@@ -77,6 +79,7 @@ export async function GET(request: NextRequest) {
       if (batchId) {
         const orderHour = new Date(order.createdAt).getHours();
         const orderBatch = orderHour >= 6 && orderHour < 18 ? 'batch_1' : 'batch_2';
+        console.log(`Order ${order.id}: hour=${orderHour}, batch=${orderBatch}, filter=${batchId}`);
         if (orderBatch !== batchId) return;
       }
 

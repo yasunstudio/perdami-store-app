@@ -29,7 +29,7 @@ export const formatDateTime = (date: Date | null): string => {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
-  }).format(new Date(date));
+  }).format(new Date(date)).replace(',', '');
 };
 
 export const calculateSummary = (details: StorePaymentDetail[], storeName: string): StorePaymentSummary => {

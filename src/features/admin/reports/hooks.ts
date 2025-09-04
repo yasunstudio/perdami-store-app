@@ -73,6 +73,13 @@ export const useStorePaymentDetails = () => {
     loadStores();
   }, [loadStores]);
 
+  // Auto-fetch data when filters change (with default dates)
+  useEffect(() => {
+    if (filters.startDate && filters.endDate) {
+      loadPaymentDetails();
+    }
+  }, [loadPaymentDetails, filters.startDate, filters.endDate, filters.storeId, filters.batchId]);
+
   return {
     paymentDetails,
     summary,
