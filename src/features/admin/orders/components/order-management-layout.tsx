@@ -42,8 +42,14 @@ import { OrderWithRelations } from '../types/order.types'
 
 interface OrdersResponse {
   orders: OrderWithRelations[]
-  totalPages: number
-  totalItems: number
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+    hasNext: boolean
+    hasPrev: boolean
+  }
   stats: {
     total: number
     pending: number
@@ -201,7 +207,7 @@ export default function OrderManagementLayout({
 
       const ordersResult = await ordersResponse.json()
       setData(ordersResult)
-      setTotalPages(ordersResult.totalPages || 1)
+      setTotalPages(ordersResult.pagination?.totalPages || 1)
 
       // Fetch stats if not already loaded or if it's the first load
       if (statsResponse.ok && !orderStats) {
@@ -475,7 +481,7 @@ export default function OrderManagementLayout({
             {!loading && data?.orders && data.orders.length > 0 && (
               <div className="flex items-center justify-between pt-4">
                 <div className="text-sm text-muted-foreground">
-                  Halaman {page} dari {totalPages}
+                  Halaman {page} dari {totalPages} • Total: {data?.pagination?.total || 0} pesanan
                 </div>
                 <div className="flex items-center space-x-2">
                   <Button
