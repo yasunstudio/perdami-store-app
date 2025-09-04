@@ -6,6 +6,7 @@ export const fetchStorePaymentDetails = async (filters: StorePaymentFilters): Pr
   if (filters.storeId) params.append('storeId', filters.storeId);
   if (filters.startDate) params.append('startDate', filters.startDate.toISOString());
   if (filters.endDate) params.append('endDate', filters.endDate.toISOString());
+  if (filters.batchId) params.append('batchId', filters.batchId);
 
   const response = await fetch(`/api/admin/reports/store-payment-details?${params.toString()}`);
   
@@ -36,6 +37,7 @@ export const exportStorePaymentDetails = async (
   if (filters.storeId) params.append('storeId', filters.storeId);
   if (filters.startDate) params.append('startDate', filters.startDate.toISOString());
   if (filters.endDate) params.append('endDate', filters.endDate.toISOString());
+  if (filters.batchId) params.append('batchId', filters.batchId);
   params.append('format', format);
 
   const response = await fetch(`/api/admin/reports/store-payment-details/export?${params.toString()}`);

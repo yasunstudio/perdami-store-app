@@ -18,6 +18,7 @@ export interface StorePaymentFilters {
   storeId?: string;
   startDate?: Date;
   endDate?: Date;
+  batchId?: string; // 'batch_1' or 'batch_2'
 }
 
 export interface StorePaymentSummary {
@@ -41,4 +42,11 @@ export interface Store {
   id: string;
   name: string;
   isActive: boolean;
+}
+
+export interface Batch {
+  id: string;
+  name: string;
+  timeRange: string;
+  description: string;
 }

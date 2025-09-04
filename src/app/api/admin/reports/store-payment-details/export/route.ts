@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
     const storeId = searchParams.get('storeId');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    const batchId = searchParams.get('batchId');
     const format = searchParams.get('format') || 'excel';
 
     // Build where clause
@@ -26,6 +27,47 @@ export async function GET(request: NextRequest) {
         const end = new Date(endDate);
         end.setHours(23, 59, 59, 999);
         whereClause.createdAt.lte = end;
+      }
+    }
+
+    // Batch filter - add time-based filtering to where clause
+    if (batchId) {
+      const now = new Date();
+      let batchStart: Date, batchEnd: Date;
+
+      if (batchId === 'batch_1') {
+        // Batch 1: 06:00-18:00
+        const baseDate = startDate ? new Date(startDate) : now;
+        batchStart = new Date(baseDate);
+        batchStart.setHours(6, 0, 0, 0);
+        
+        const endBaseDate = endDate ? new Date(endDate) : now;
+        batchEnd = new Date(endBaseDate);
+        batchEnd.setHours(18, 0, 0, 0);
+
+        if (!startDate && !endDate) {
+          whereClause.createdAt = {
+            gte: batchStart,
+            lt: batchEnd
+          };
+        }
+      } else if (batchId === 'batch_2') {
+        // Batch 2: 18:00-06:00 (spans two days)
+        const baseDate = startDate ? new Date(startDate) : now;
+        batchStart = new Date(baseDate);
+        batchStart.setHours(18, 0, 0, 0);
+
+        const endBaseDate = endDate ? new Date(endDate) : now;
+        batchEnd = new Date(endBaseDate);
+        batchEnd.setDate(batchEnd.getDate() + 1);
+        batchEnd.setHours(6, 0, 0, 0);
+
+        if (!startDate && !endDate) {
+          whereClause.createdAt = {
+            gte: batchStart,
+            lt: batchEnd
+          };
+        }
       }
     }
 
@@ -72,6 +114,13 @@ export async function GET(request: NextRequest) {
     const paymentDetails: any[] = [];
     
     orders.forEach(order => {
+      // Additional batch filtering if both date range and batch are specified
+      if (batchId && (startDate || endDate)) {
+        const orderHour = new Date(order.createdAt).getHours();
+        const orderBatch = orderHour >= 6 && orderHour < 18 ? 'batch_1' : 'batch_2';
+        if (orderBatch !== batchId) return;
+      }
+
       // Filter order items by store if specified
       const relevantItems = storeId 
         ? order.orderItems.filter(item => item.bundle?.store?.id === storeId)
@@ -85,6 +134,12 @@ export async function GET(request: NextRequest) {
           const costPrice = Number(item.bundle.costPrice || 0);
           const totalPrice = costPrice * item.quantity;
 
+          // Determine batch for display
+          const orderHour = new Date(order.createdAt).getHours();
+          const batchName = orderHour >= 6 && orderHour < 18 
+            ? 'Batch 1 - Siang (06:00-18:00)' 
+            : 'Batch 2 - Malam (18:00-06:00)';
+
           paymentDetails.push({
             'Tanggal Order': order.createdAt.toLocaleDateString('id-ID'),
             'Nama Customer': order.user?.name || 'N/A',
@@ -97,6 +152,7 @@ export async function GET(request: NextRequest) {
             'Tanggal Pickup': order.pickupDate ? order.pickupDate.toLocaleDateString('id-ID') : '-',
             'Toko': item.bundle.store.name,
             'Order Number': order.orderNumber,
+            'Batch': batchName,
           });
         }
       });

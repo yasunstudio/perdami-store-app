@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useStorePaymentDetails, usePaymentExport } from './hooks';
-import { formatCurrency, formatDate } from './utils';
+import { formatCurrency, formatDate, getAvailableBatches, getBatchName } from './utils';
 
 export const StorePaymentDetailsPage = () => {
   const {
@@ -54,7 +54,8 @@ export const StorePaymentDetailsPage = () => {
     return date.toISOString().split('T')[0];
   };
 
-  const hasFilters = filters.storeId || filters.startDate || filters.endDate;
+  const availableBatches = getAvailableBatches();
+  const hasFilters = filters.storeId || filters.startDate || filters.endDate || filters.batchId;
   const hasData = paymentDetails.length > 0;
 
   if (error || exportError) {
@@ -108,7 +109,7 @@ export const StorePaymentDetailsPage = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Store Filter */}
             <div className="space-y-2">
               <Label htmlFor="store-select">Pilih Toko</Label>
@@ -132,6 +133,27 @@ export const StorePaymentDetailsPage = () => {
                   {stores.map((store) => (
                     <SelectItem key={store.id} value={store.id}>
                       {store.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Batch Filter */}
+            <div className="space-y-2">
+              <Label htmlFor="batch-select">Pilih Batch</Label>
+              <Select
+                value={filters.batchId || 'all'}
+                onValueChange={(value) => updateFilters({ batchId: value === 'all' ? undefined : value })}
+              >
+                <SelectTrigger id="batch-select">
+                  <SelectValue placeholder="Pilih batch..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Batches</SelectItem>
+                  {availableBatches.map((batch) => (
+                    <SelectItem key={batch.id} value={batch.id}>
+                      {batch.name} ({batch.timeRange})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -275,6 +297,7 @@ export const StorePaymentDetailsPage = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="min-w-[100px]">Tanggal Order</TableHead>
+                    <TableHead className="min-w-[120px]">Batch</TableHead>
                     <TableHead className="min-w-[150px]">Customer</TableHead>
                     <TableHead className="min-w-[120px]">No Telepon</TableHead>
                     <TableHead className="min-w-[200px]">Item</TableHead>
@@ -286,19 +309,33 @@ export const StorePaymentDetailsPage = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paymentDetails.map((detail, index) => (
-                    <TableRow key={`${detail.orderId}-${detail.itemName}-${index}`}>
-                      <TableCell>{formatDate(detail.orderDate)}</TableCell>
-                      <TableCell className="font-medium">{detail.customerName}</TableCell>
-                      <TableCell>{detail.customerPhone || '-'}</TableCell>
-                      <TableCell>{detail.itemName}</TableCell>
-                      <TableCell className="text-right">{detail.quantity}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(detail.unitPrice)}</TableCell>
-                      <TableCell className="text-right font-medium">{formatCurrency(detail.totalPrice)}</TableCell>
-                      <TableCell className="max-w-[200px] truncate">{detail.orderNotes || '-'}</TableCell>
-                      <TableCell>{formatDate(detail.pickupDate)}</TableCell>
-                    </TableRow>
-                  ))}
+                  {paymentDetails.map((detail, index) => {
+                    const orderHour = new Date(detail.orderDate).getHours();
+                    const batchName = orderHour >= 6 && orderHour < 18 ? 'Batch 1' : 'Batch 2';
+                    
+                    return (
+                      <TableRow key={`${detail.orderId}-${detail.itemName}-${index}`}>
+                        <TableCell>{formatDate(detail.orderDate)}</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            batchName === 'Batch 1' 
+                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                              : 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+                          }`}>
+                            {batchName}
+                          </span>
+                        </TableCell>
+                        <TableCell className="font-medium">{detail.customerName}</TableCell>
+                        <TableCell>{detail.customerPhone || '-'}</TableCell>
+                        <TableCell>{detail.itemName}</TableCell>
+                        <TableCell className="text-right">{detail.quantity}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(detail.unitPrice)}</TableCell>
+                        <TableCell className="text-right font-medium">{formatCurrency(detail.totalPrice)}</TableCell>
+                        <TableCell className="max-w-[200px] truncate">{detail.orderNotes || '-'}</TableCell>
+                        <TableCell>{formatDate(detail.pickupDate)}</TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
