@@ -36,6 +36,7 @@ import { Badge } from '@/components/ui/badge'
 import { OrderStatusBadge } from '@/components/ui/order-status-badge'
 import { OrderListTable } from './order-list-table'
 import { OrderGridView } from './order-grid-view'
+import { OrderStatistics } from './order-statistics'
 import { Order } from '@/types'
 import { OrderWithRelations } from '../types/order.types'
 
@@ -50,8 +51,13 @@ interface OrdersResponse {
     ready: number
     completed: number
     cancelled: number
-    pendingPayments: number
-    paidPayments: number
+    totalRevenue: number
+  }
+  paymentStats: {
+    pending: number
+    paid: number
+    failed: number
+    refunded: number
   }
 }
 
@@ -287,6 +293,15 @@ export default function OrderManagementLayout({
           </Button>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Statistics Cards */}
+          {data && (
+            <OrderStatistics 
+              stats={data.stats}
+              paymentStats={data.paymentStats}
+              loading={loading}
+            />
+          )}
+          
           {/* Filter Section */}
           <div className="flex flex-col lg:flex-row gap-4 pb-4 border-b">
             <div className="relative flex-1">

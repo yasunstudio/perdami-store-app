@@ -112,9 +112,14 @@ export async function GET(request: NextRequest) {
       prisma.order.count({ where: { paymentStatus: 'REFUNDED' } })
     ])
 
-    // Calculate total revenue from paid orders
-    const paidOrders = await prisma.order.aggregate({
-      where: { paymentStatus: 'PAID' },
+    // Calculate total revenue from paid orders and confirmed orders
+    const validOrders = await prisma.order.aggregate({
+      where: { 
+        OR: [
+          { paymentStatus: 'PAID' },
+          { orderStatus: 'CONFIRMED' }
+        ]
+      },
       _sum: { totalAmount: true }
     })
 
@@ -184,7 +189,7 @@ export async function GET(request: NextRequest) {
         ready: readyCount,
         completed: completedCount,
         cancelled: cancelledCount,
-        totalRevenue: paidOrders._sum.totalAmount || 0
+        totalRevenue: validOrders._sum.totalAmount || 0
       },
       paymentStats: {
         pending: pendingPayments,
