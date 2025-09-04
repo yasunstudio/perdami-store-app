@@ -120,10 +120,10 @@ export async function GET() {
     const orderGrowthRate = calculateGrowthRate(thisMonthOrders, lastMonthOrders);
     const storeGrowthRate = calculateGrowthRate(thisMonthStores, lastMonthStores);
 
-    // Calculate revenue stats - only from COMPLETED orders
-    const allCompletedOrders = await prisma.order.findMany({
+    // Calculate revenue stats - include both COMPLETED and CONFIRMED orders
+    const allValidOrders = await prisma.order.findMany({
       where: { 
-        orderStatus: 'COMPLETED' 
+        orderStatus: { in: ['COMPLETED', 'CONFIRMED'] }
       },
       select: {
         totalAmount: true,
@@ -131,7 +131,7 @@ export async function GET() {
       }
     });
 
-    const totalRevenue = allCompletedOrders.reduce((sum, order) => sum + parseFloat(order.totalAmount.toString()), 0);
+    const totalRevenue = allValidOrders.reduce((sum, order) => sum + parseFloat(order.totalAmount.toString()), 0);
     
     // Get order status counts for dashboard stats - CONSISTENT LOGIC
     const [pendingOrdersCount, completedOrdersCount, cancelledOrdersCount, todayOrdersCount] = await Promise.all([
@@ -154,7 +154,7 @@ export async function GET() {
     console.log(`Orders: ${thisMonthOrders} vs ${lastMonthOrders} = ${orderGrowthRate.toFixed(1)}%`);
     console.log(`Products: ${thisMonthBundles} vs ${lastMonthBundles} = ${productGrowthRate.toFixed(1)}%`);
     console.log(`Stores: ${thisMonthStores} vs ${lastMonthStores} = ${storeGrowthRate.toFixed(1)}%`);
-    console.log(`💰 Revenue Analysis: Total Revenue from ${allCompletedOrders.length} completed orders = ${totalRevenue}`);
+    console.log(`💰 Revenue Analysis: Total Revenue from ${allValidOrders.length} valid orders = ${totalRevenue}`);
     console.log(`📊 Order Status: Pending=${pendingOrdersCount}, Completed=${completedOrdersCount}, Cancelled=${cancelledOrdersCount}`);
     console.log(`📅 Today's Orders (exclude cancelled): ${todayOrdersCount}`);
 

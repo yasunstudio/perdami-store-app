@@ -69,7 +69,8 @@ export async function GET(request: NextRequest) {
         
         activeBundles.forEach(bundle => {
           bundle.orderItems.forEach(item => {
-            if (item.order && item.order.orderStatus === 'COMPLETED') {
+            // Include both COMPLETED and CONFIRMED orders in revenue calculation
+            if (item.order && (item.order.orderStatus === 'COMPLETED' || item.order.orderStatus === 'CONFIRMED')) {
               uniqueOrders.add(item.order.id)
               totalRevenue += item.totalPrice
             }

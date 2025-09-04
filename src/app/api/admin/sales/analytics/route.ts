@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
           gte: startDate,
           lte: endDate
         },
-        orderStatus: { not: 'CANCELLED' } // Exclude cancelled orders
+        orderStatus: { in: ['COMPLETED', 'CONFIRMED'] } // Include both COMPLETED and CONFIRMED orders
       },
       include: {
         user: {
