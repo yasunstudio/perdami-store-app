@@ -14,6 +14,7 @@ import { ReportPreview } from './report-preview';
 import { ReportSummary } from './report-summary';
 import { ExportOptions } from './export-options';
 import { QuickTemplates } from './quick-templates';
+import { DebugReport } from './debug-report';
 
 export const OrderToStoresMain: React.FC = () => {
   const {
@@ -167,6 +168,14 @@ export const OrderToStoresMain: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Debug Report - Temporary for troubleshooting */}
+      {reportData && (
+        <DebugReport 
+          reportData={reportData}
+          filters={filters}
+        />
+      )}
 
       {/* Report Summary */}
       {reportData && (

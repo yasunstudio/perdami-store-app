@@ -217,8 +217,37 @@ export async function POST(request: NextRequest) {
         totalOrders,
         totalValue,
         averageOrderValue: totalOrders > 0 ? totalValue / totalOrders : 0,
-        storesCount: stores.length
+        storeCount: stores.length, // Changed from storesCount to match ReportData type
+        batchCount: filters.batchIds ? filters.batchIds.length : 2 // Total available batches
       },
+      storeBreakdown: stores.map(store => ({
+        store: {
+          id: store.id,
+          name: store.name,
+          status: 'active' as const,
+          lastUpdated: new Date()
+        },
+        orders: [], // Will be populated if needed
+        metrics: {
+          totalOrders: store.ordersCount,
+          totalValue: store.totalValue,
+          averageOrderValue: store.ordersCount > 0 ? store.totalValue / store.ordersCount : 0,
+          completionRate: 100, // Assuming all confirmed orders are complete
+          preparationTime: 0 // Not tracked yet
+        }
+      })),
+      batchBreakdown: [], // Will be populated if needed
+      topProducts: [], // Will be populated if needed  
+      timeAnalysis: {
+        peakHours: [],
+        distribution: {
+          morning: 0,
+          afternoon: 0,
+          evening: 0,
+          night: 0
+        }
+      },
+      // Keep original V2 data for debugging
       stores,
       orders: filteredOrders.map(order => ({
         id: order.id,

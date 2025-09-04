@@ -166,7 +166,15 @@ export const useOrderToStores = (): UseOrderToStoresReturn => {
       
       const data = await response.json();
       console.log('[Hook] Report data received:', data);
-      setReportData(data.reportData);
+      
+      // Handle both API response formats
+      if (data.reportData) {
+        // Original API format
+        setReportData(data.reportData);
+      } else {
+        // New V2 API format - data is at root level
+        setReportData(data);
+      }
     } catch (error) {
       setReportError(error instanceof Error ? error.message : 'Failed to generate report');
     } finally {
