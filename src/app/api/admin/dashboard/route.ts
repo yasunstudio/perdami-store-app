@@ -70,9 +70,9 @@ export async function GET() {
 
     // Format bundles with actual sales calculation and sort by totalSold
     const formattedBundles = popularBundles.map((bundle) => {
-      // Calculate total sold from completed orders only
+      // Calculate total sold from valid orders (COMPLETED and CONFIRMED)
       const totalSold = bundle.orderItems
-        .filter(item => item.order.orderStatus === 'COMPLETED')
+        .filter(item => item.order.orderStatus === 'COMPLETED' || item.order.orderStatus === 'CONFIRMED')
         .reduce((sum, item) => sum + item.quantity, 0);
       
       const actualRevenue = parseFloat(bundle.sellingPrice.toString()) * totalSold;
