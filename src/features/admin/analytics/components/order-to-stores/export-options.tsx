@@ -290,15 +290,35 @@ export const ExportOptions: React.FC<ExportOptionsProps> = ({
             )}
             
             {exportStatus.downloadUrl && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => window.open(exportStatus.downloadUrl, '_blank')}
-                className="flex items-center gap-2"
-              >
-                <ExternalLink className="w-4 h-4" />
-                Download File
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (exportStatus.downloadUrl) {
+                      const link = document.createElement('a');
+                      link.href = exportStatus.downloadUrl;
+                      link.download = '';
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Download File
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => exportStatus.downloadUrl && window.open(exportStatus.downloadUrl, '_blank')}
+                  className="flex items-center gap-2"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Open in New Tab
+                </Button>
+              </div>
             )}
           </div>
         )}

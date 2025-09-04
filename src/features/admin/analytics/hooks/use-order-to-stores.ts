@@ -152,6 +152,9 @@ export const useOrderToStores = (): UseOrderToStoresReturn => {
     });
     
     try {
+      // Simulate progress
+      setExportStatus(prev => ({ ...prev, progress: 20 }));
+      
       const response = await fetch('/api/admin/analytics/order-to-stores/export', {
         method: 'POST',
         headers: {
@@ -163,12 +166,18 @@ export const useOrderToStores = (): UseOrderToStoresReturn => {
         })
       });
       
+      setExportStatus(prev => ({ ...prev, progress: 60, status: 'generating' }));
+      
       if (!response.ok) {
-        throw new Error('Failed to export report');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to export report');
       }
       
       const data = await response.json();
       
+      setExportStatus(prev => ({ ...prev, progress: 100 }));
+      
+      // Final success state
       setExportStatus({
         isExporting: false,
         progress: 100,
@@ -176,10 +185,7 @@ export const useOrderToStores = (): UseOrderToStoresReturn => {
         downloadUrl: data.downloadUrl
       });
       
-      // Auto download if URL is provided
-      if (data.downloadUrl) {
-        window.open(data.downloadUrl, '_blank');
-      }
+      // Don't auto-download, let user choose from the UI
       
     } catch (error) {
       setExportStatus({
