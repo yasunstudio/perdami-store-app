@@ -65,6 +65,18 @@ export async function GET(request: NextRequest) {
     const allOrders = await prisma.order.count()
     const completionRate = allOrders > 0 ? (totalOrders / allOrders) * 100 : 0
 
+    // Get order status breakdown
+    const orderStatusBreakdown = await Promise.all([
+      prisma.order.count({ where: { orderStatus: 'PENDING' } }),
+      prisma.order.count({ where: { orderStatus: 'CONFIRMED' } }),
+      prisma.order.count({ where: { orderStatus: 'PROCESSING' } }),
+      prisma.order.count({ where: { orderStatus: 'READY' } }),
+      prisma.order.count({ where: { orderStatus: 'COMPLETED' } }),
+      prisma.order.count({ where: { orderStatus: 'CANCELLED' } })
+    ])
+
+    const [pendingOrders, confirmedOrders, processingOrders, readyOrders, completedOrders, cancelledOrders] = orderStatusBreakdown
+
     // Response data
     const stats = {
       totalOrders,
@@ -76,7 +88,16 @@ export async function GET(request: NextRequest) {
       completionRate: Math.round(completionRate * 10) / 10,
       pendingPayments,
       averageOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0,
-      profitMargin: totalRevenue > 0 ? (totalPlatformProfit / totalRevenue) * 100 : 0
+      profitMargin: totalRevenue > 0 ? (totalPlatformProfit / totalRevenue) * 100 : 0,
+      // Order status breakdown
+      orderStatusBreakdown: {
+        pending: pendingOrders,
+        confirmed: confirmedOrders,
+        processing: processingOrders,
+        ready: readyOrders,
+        completed: completedOrders,
+        cancelled: cancelledOrders
+      }
     }
 
     return NextResponse.json({ success: true, data: stats })

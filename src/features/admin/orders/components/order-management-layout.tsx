@@ -72,6 +72,14 @@ interface OrderStatsResponse {
   pendingPayments: number
   averageOrderValue: number
   profitMargin: number
+  orderStatusBreakdown: {
+    pending: number
+    confirmed: number
+    processing: number
+    ready: number
+    completed: number
+    cancelled: number
+  }
 }
 
 interface OrderManagementLayoutProps {

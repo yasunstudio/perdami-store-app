@@ -8,7 +8,11 @@ import {
   Clock,
   TrendingUp,
   Receipt,
-  PiggyBank
+  PiggyBank,
+  AlertTriangle,
+  Package,
+  Truck,
+  XCircle
 } from 'lucide-react'
 
 interface OrderStats {
@@ -22,6 +26,14 @@ interface OrderStats {
   pendingPayments: number
   averageOrderValue: number
   profitMargin: number
+  orderStatusBreakdown: {
+    pending: number
+    confirmed: number
+    processing: number
+    ready: number
+    completed: number
+    cancelled: number
+  }
 }
 
 interface OrderStatisticsProps {
@@ -36,8 +48,8 @@ export function OrderStatistics({ stats, loading }: OrderStatisticsProps) {
         {/* GRUP 1: PEMBAYARAN & PROFIT Loading */}
         <div>
           <div className="h-6 bg-muted animate-pulse rounded w-48 mb-3" />
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            {[1, 2, 3, 4, 5].map((i) => (
               <Card key={i}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
@@ -57,8 +69,8 @@ export function OrderStatistics({ stats, loading }: OrderStatisticsProps) {
         {/* GRUP 2: STATISTIK ORDER Loading */}
         <div>
           <div className="h-6 bg-muted animate-pulse rounded w-32 mb-3" />
-          <div className="grid gap-4 md:grid-cols-2">
-            {[1, 2].map((i) => (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <Card key={i}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
@@ -103,7 +115,7 @@ export function OrderStatistics({ stats, loading }: OrderStatisticsProps) {
       {/* GRUP 1: PEMBAYARAN & PROFIT */}
       <div>
         <h3 className="text-lg font-semibold mb-3 text-gray-800">💰 Pembayaran & Profit</h3>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           {/* 1. Total Revenue */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -139,20 +151,19 @@ export function OrderStatistics({ stats, loading }: OrderStatisticsProps) {
             </CardContent>
           </Card>
 
-          {/* 3. Gross Profit */}
+          {/* 3. Product Profit */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Gross Profit</CardTitle>
-              <PiggyBank className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Product Profit</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatNumber(stats.grossProfit)}</div>
+              <div className="text-2xl font-bold">{formatNumber(stats.productProfit)}</div>
               <p className="text-xs text-muted-foreground">
                 <span className="inline-flex items-center text-green-600">
                   <TrendingUp className="h-3 w-3 mr-1" />
-                  {stats.profitMargin.toFixed(1)}%
+                  From sales
                 </span>
-                {' '}margin
               </p>
             </CardContent>
           </Card>
@@ -173,45 +184,130 @@ export function OrderStatistics({ stats, loading }: OrderStatisticsProps) {
               </p>
             </CardContent>
           </Card>
-        </div>
-      </div>
 
-      {/* GRUP 2: STATISTIK ORDER */}
-      <div>
-        <h3 className="text-lg font-semibold mb-3 text-gray-800">📋 Statistik Order</h3>
-        <div className="grid gap-4 md:grid-cols-2">
-          {/* 1. Total Orders */}
+          {/* 5. Gross Profit */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Gross Profit</CardTitle>
+              <PiggyBank className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalOrders}</div>
+              <div className="text-2xl font-bold">{formatNumber(stats.grossProfit)}</div>
               <p className="text-xs text-muted-foreground">
                 <span className="inline-flex items-center text-green-600">
                   <TrendingUp className="h-3 w-3 mr-1" />
-                  {stats.completionRate}%
+                  {stats.profitMargin.toFixed(1)}%
                 </span>
-                {' '}completion rate
+                {' '}margin
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* GRUP 2: STATISTIK ORDER PER STATUS */}
+      <div>
+        <h3 className="text-lg font-semibold mb-3 text-gray-800">📋 Statistik Order per Status</h3>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {/* 1. Pending Orders */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.orderStatusBreakdown.pending}</div>
+              <p className="text-xs text-muted-foreground">
+                <span className={`inline-flex items-center ${
+                  stats.orderStatusBreakdown.pending > 0 ? 'text-orange-600' : 'text-green-600'
+                }`}>
+                  <Clock className="h-3 w-3 mr-1" />
+                  {stats.orderStatusBreakdown.pending > 0 ? 'Needs payment' : 'All clear'}
+                </span>
               </p>
             </CardContent>
           </Card>
 
-          {/* 2. Pending Payments */}
+          {/* 2. Confirmed Orders */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Payments</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Confirmed</CardTitle>
+              <CheckCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.pendingPayments}</div>
+              <div className="text-2xl font-bold">{stats.orderStatusBreakdown.confirmed}</div>
               <p className="text-xs text-muted-foreground">
-                <span className={`inline-flex items-center ${
-                  stats.pendingPayments > 0 ? 'text-orange-600' : 'text-green-600'
-                }`}>
-                  <Clock className="h-3 w-3 mr-1" />
-                  {stats.pendingPayments > 0 ? 'Needs attention' : 'All clear'}
+                <span className="inline-flex items-center text-blue-600">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Paid & confirmed
+                </span>
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* 3. Processing Orders */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Processing</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.orderStatusBreakdown.processing}</div>
+              <p className="text-xs text-muted-foreground">
+                <span className="inline-flex items-center text-yellow-600">
+                  <Package className="h-3 w-3 mr-1" />
+                  Being prepared
+                </span>
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* 4. Ready Orders */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Ready</CardTitle>
+              <Truck className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.orderStatusBreakdown.ready}</div>
+              <p className="text-xs text-muted-foreground">
+                <span className="inline-flex items-center text-green-600">
+                  <Truck className="h-3 w-3 mr-1" />
+                  Ready for pickup
+                </span>
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* 5. Completed Orders */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Completed</CardTitle>
+              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.orderStatusBreakdown.completed}</div>
+              <p className="text-xs text-muted-foreground">
+                <span className="inline-flex items-center text-green-600">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Successfully delivered
+                </span>
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* 6. Cancelled Orders */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Cancelled</CardTitle>
+              <XCircle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.orderStatusBreakdown.cancelled}</div>
+              <p className="text-xs text-muted-foreground">
+                <span className="inline-flex items-center text-red-600">
+                  <XCircle className="h-3 w-3 mr-1" />
+                  {stats.orderStatusBreakdown.cancelled > 0 ? 'Check issues' : 'No cancellations'}
                 </span>
               </p>
             </CardContent>
