@@ -14,86 +14,26 @@ export async function POST(request: NextRequest) {
 
     const { storeIds, batchIds, dateRange } = filters;
 
+    console.log('Preview filters received:', { storeIds, batchIds, dateRange });
+
     // Build base where clause
     const whereClause: any = {
       orderStatus: 'CONFIRMED'
     };
 
-    // Build date range filter
-    if (dateRange?.startDate) {
+    // Add date range filter if provided
+    if (dateRange?.startDate && dateRange?.endDate) {
+      const startDate = new Date(dateRange.startDate);
+      const endDate = new Date(dateRange.endDate);
+      endDate.setHours(23, 59, 59, 999);
+      
       whereClause.createdAt = {
-        gte: new Date(dateRange.startDate)
-      };
-    }
-    if (dateRange?.endDate) {
-      const end = new Date(dateRange.endDate);
-      end.setHours(23, 59, 59, 999);
-      whereClause.createdAt = {
-        ...whereClause.createdAt,
-        lte: end
+        gte: startDate,
+        lte: endDate
       };
     }
 
-    // Build batch filter if specified
-    if (batchIds && batchIds.length > 0) {
-      const batchConditions = batchIds.map((batchId: string) => {
-        const today = new Date();
-        
-        if (batchId === 'batch_1') {
-          // Batch 1: 06:00-18:00
-          const batchStart = new Date(today);
-          batchStart.setHours(6, 0, 0, 0);
-          const batchEnd = new Date(today);
-          batchEnd.setHours(18, 0, 0, 0);
-          
-          return {
-            AND: [
-              { createdAt: { gte: batchStart } },
-              { createdAt: { lt: batchEnd } }
-            ]
-          };
-        } else if (batchId === 'batch_2') {
-          // Batch 2: 18:00-06:00 (spans midnight)
-          const batchStart = new Date(today);
-          batchStart.setHours(18, 0, 0, 0);
-          const batchEndTomorrow = new Date(today);
-          batchEndTomorrow.setDate(today.getDate() + 1);
-          batchEndTomorrow.setHours(6, 0, 0, 0);
-          
-          // Also include yesterday's evening to today's morning
-          const batchStartYesterday = new Date(today);
-          batchStartYesterday.setDate(today.getDate() - 1);
-          batchStartYesterday.setHours(18, 0, 0, 0);
-          const batchEndToday = new Date(today);
-          batchEndToday.setHours(6, 0, 0, 0);
-          
-          return {
-            OR: [
-              {
-                AND: [
-                  { createdAt: { gte: batchStart } },
-                  { createdAt: { lt: batchEndTomorrow } }
-                ]
-              },
-              {
-                AND: [
-                  { createdAt: { gte: batchStartYesterday } },
-                  { createdAt: { lt: batchEndToday } }
-                ]
-              }
-            ]
-          };
-        }
-        return {};
-      });
-
-      if (batchConditions.length > 0) {
-        whereClause.AND = whereClause.AND || [];
-        whereClause.AND.push({ OR: batchConditions });
-      }
-    }
-
-    // Store filter (through orderItems -> bundle -> store relationship)
+    // For store filtering, we'll use the relationship properly
     if (storeIds && storeIds.length > 0) {
       whereClause.orderItems = {
         some: {
@@ -106,16 +46,33 @@ export async function POST(request: NextRequest) {
       };
     }
 
-    // Fetch orders with related data
+    console.log('Database where clause:', JSON.stringify(whereClause, null, 2));
+
+    // Fetch orders from database
     const orders = await prisma.order.findMany({
       where: whereClause,
       include: {
-        user: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
         orderItems: {
           include: {
             bundle: {
               include: {
-                store: true
+                store: {
+                  select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                    whatsappNumber: true,
+                    contactPerson: true,
+                    isActive: true
+                  }
+                }
               }
             }
           }
@@ -123,24 +80,37 @@ export async function POST(request: NextRequest) {
       },
       orderBy: {
         createdAt: 'desc'
-      }
+      },
+      take: 1000 // Reasonable limit
     });
 
-    // Filter by store if specified
+    console.log(`Found ${orders.length} orders before filtering`);
+
+    // Apply batch filtering after database query (simpler and more reliable)
     let filteredOrders = orders;
-    if (storeIds && storeIds.length > 0) {
-      filteredOrders = orders.filter(order => 
-        order.orderItems.some(item => 
-          item.bundle?.store && storeIds.includes(item.bundle.store.id)
-        )
-      );
+    
+    if (batchIds && batchIds.length > 0) {
+      filteredOrders = orders.filter(order => {
+        const orderHour = new Date(order.createdAt).getHours();
+        
+        return batchIds.some((batchId: string) => {
+          if (batchId === 'batch_1') {
+            return orderHour >= 6 && orderHour < 18;
+          } else if (batchId === 'batch_2') {
+            return orderHour >= 18 || orderHour < 6;
+          }
+          return false;
+        });
+      });
     }
+
+    console.log(`Found ${filteredOrders.length} orders after batch filtering`);
 
     // Calculate summary statistics
     const totalOrders = filteredOrders.length;
     const totalValue = filteredOrders.reduce((sum, order) => sum + Number(order.totalAmount), 0);
     
-    // Get unique stores
+    // Get unique stores from the filtered orders
     const storeSet = new Set();
     filteredOrders.forEach(order => {
       order.orderItems.forEach(item => {
@@ -151,6 +121,8 @@ export async function POST(request: NextRequest) {
     });
     const storeCount = storeSet.size;
     const averageOrderValue = totalOrders > 0 ? totalValue / totalOrders : 0;
+
+    console.log('Summary stats:', { totalOrders, totalValue, storeCount, averageOrderValue });
 
     // Group orders by store
     const storeGroups: any = {};
@@ -166,6 +138,7 @@ export async function POST(request: NextRequest) {
             };
           }
           
+          // Avoid duplicate orders for the same store
           if (!storeGroups[store.id].orderIds.has(order.id)) {
             storeGroups[store.id].orders.push(order);
             storeGroups[store.id].orderIds.add(order.id);
@@ -174,7 +147,9 @@ export async function POST(request: NextRequest) {
       });
     });
 
-    // Calculate store metrics
+    console.log(`Grouped into ${Object.keys(storeGroups).length} stores`);
+
+    // Calculate store breakdown
     const storeBreakdown = Object.values(storeGroups).map((group: any) => {
       const storeOrders = group.orders;
       const storeValue = storeOrders.reduce((sum: number, order: any) => sum + Number(order.totalAmount), 0);
@@ -185,33 +160,35 @@ export async function POST(request: NextRequest) {
           name: group.store.name,
           orderCount: storeOrders.length,
           totalValue: storeValue,
-          status: 'active',
+          status: group.store.isActive ? 'active' : 'inactive',
           address: group.store.description || '',
-          lastUpdated: new Date()
+          lastUpdated: new Date().toISOString()
         },
         orders: storeOrders.map((order: any) => ({
           id: order.id,
-          customerName: order.user?.name || 'N/A',
+          orderNumber: order.orderNumber,
+          customerName: order.user?.name || 'Unknown',
           items: order.orderItems
             .filter((item: any) => item.bundle?.store?.id === group.store.id)
             .map((item: any) => ({
               productId: item.bundleId,
-              productName: item.bundle?.name || 'N/A',
+              productName: item.bundle?.name || 'Unknown Product',
               quantity: item.quantity,
-              unitPrice: Number(item.unitPrice),
-              totalPrice: Number(item.totalPrice)
+              unitPrice: Number(item.unitPrice || 0),
+              totalPrice: Number(item.totalPrice || 0)
             })),
           totalValue: Number(order.totalAmount),
           status: order.orderStatus,
-          pickupTime: order.pickupDate,
-          specialRequests: order.notes
+          pickupTime: order.pickupDate ? order.pickupDate.toISOString() : null,
+          specialRequests: order.notes || null,
+          createdAt: order.createdAt.toISOString()
         })),
         metrics: {
           totalOrders: storeOrders.length,
           totalValue: storeValue,
           averageOrderValue: storeOrders.length > 0 ? storeValue / storeOrders.length : 0,
-          completionRate: 100,
-          preparationTime: 30
+          completionRate: 100, // Assuming confirmed orders are completed
+          preparationTime: 30 // Default preparation time
         }
       };
     });
@@ -320,27 +297,37 @@ export async function POST(request: NextRequest) {
       summary: {
         totalOrders,
         totalValue,
-        averageOrderValue,
+        averageOrderValue: Math.round(averageOrderValue),
         storeCount,
-        batchCount: batchIds?.length || 1
+        batchCount: batchIds?.length || 0
       },
       storeBreakdown: storeBreakdown.sort((a, b) => b.metrics.totalValue - a.metrics.totalValue),
       batchBreakdown,
-      topProducts,
+      topProducts: topProducts || [],
       timeAnalysis: {
-        peakHours,
+        peakHours: peakHours || [],
         distribution: {
-          morning: 0,
-          afternoon: 0,
-          evening: 0,
-          night: 0
+          morning: Math.round((peakHours.filter(p => parseInt(p.hour) >= 6 && parseInt(p.hour) < 12).reduce((sum, p) => sum + p.orderCount, 0) / totalOrders) * 100) || 0,
+          afternoon: Math.round((peakHours.filter(p => parseInt(p.hour) >= 12 && parseInt(p.hour) < 18).reduce((sum, p) => sum + p.orderCount, 0) / totalOrders) * 100) || 0,
+          evening: Math.round((peakHours.filter(p => parseInt(p.hour) >= 18 && parseInt(p.hour) < 24).reduce((sum, p) => sum + p.orderCount, 0) / totalOrders) * 100) || 0,
+          night: Math.round((peakHours.filter(p => parseInt(p.hour) >= 0 && parseInt(p.hour) < 6).reduce((sum, p) => sum + p.orderCount, 0) / totalOrders) * 100) || 0
         }
       }
     };
 
+    console.log('Final report data summary:', {
+      totalOrders: reportData.summary.totalOrders,
+      totalValue: reportData.summary.totalValue,
+      storeCount: reportData.summary.storeCount,
+      storeBreakdownCount: reportData.storeBreakdown.length,
+      batchBreakdownCount: reportData.batchBreakdown.length,
+      topProductsCount: reportData.topProducts.length
+    });
+
     return NextResponse.json({
       success: true,
-      reportData
+      reportData,
+      message: `Found ${totalOrders} orders across ${storeCount} stores`
     });
 
   } catch (error) {
