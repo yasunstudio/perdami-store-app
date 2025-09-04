@@ -14,7 +14,7 @@ import { ReportPreview } from './report-preview';
 import { ReportSummary } from './report-summary';
 import { ExportOptions } from './export-options';
 import { QuickTemplates } from './quick-templates';
-import { DebugReport } from './debug-report';
+import { Suggestions } from './suggestions';
 
 export const OrderToStoresMain: React.FC = () => {
   const {
@@ -169,16 +169,18 @@ export const OrderToStoresMain: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Debug Report - Temporary for troubleshooting */}
-      {reportData && (
-        <DebugReport 
-          reportData={reportData}
-          filters={filters}
+      {/* Suggestions when no data */}
+      {reportData && (reportData as any).suggestions && (
+        <Suggestions 
+          suggestions={(reportData as any).suggestions}
+          onApplySuggestion={(suggestedFilters) => {
+            updateFilters(suggestedFilters);
+          }}
         />
       )}
 
       {/* Report Summary */}
-      {reportData && (
+      {reportData && reportData.summary.totalOrders > 0 && (
         <ReportSummary 
           reportData={reportData}
           filters={filters}
@@ -186,7 +188,7 @@ export const OrderToStoresMain: React.FC = () => {
       )}
 
       {/* Report Preview */}
-      {reportData && (
+      {reportData && reportData.summary.totalOrders > 0 && (
         <ReportPreview 
           reportData={reportData}
           isLoading={isLoading}
@@ -194,7 +196,7 @@ export const OrderToStoresMain: React.FC = () => {
       )}
 
       {/* Export Options */}
-      {reportData && (
+      {reportData && reportData.summary.totalOrders > 0 && (
         <ExportOptions
           onExport={handleExport}
           exportStatus={exportStatus}

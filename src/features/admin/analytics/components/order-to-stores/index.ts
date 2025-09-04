@@ -6,4 +6,4 @@ export * from './report-preview';
 export * from './report-summary';
 export * from './export-options';
 export * from './quick-templates';
-export * from './debug-report';
+export * from './suggestions';

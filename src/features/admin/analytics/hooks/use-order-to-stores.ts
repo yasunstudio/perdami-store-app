@@ -135,8 +135,8 @@ export const useOrderToStores = (): UseOrderToStoresReturn => {
     try {
       console.log('[Hook] Generating report with filters:', JSON.stringify(filters, null, 2));
       
-      // Try the new v2 API first, fallback to original if needed
-      let response = await fetch('/api/admin/analytics/order-to-stores/preview-v2', {
+      // Use simple API endpoint
+      const response = await fetch('/api/admin/analytics/order-to-stores/simple-preview', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -144,37 +144,19 @@ export const useOrderToStores = (): UseOrderToStoresReturn => {
         body: JSON.stringify({ filters })
       });
       
-      // If v2 API doesn't exist, use original
-      if (response.status === 404) {
-        console.log('[Hook] V2 API not found, using original preview API');
-        response = await fetch('/api/admin/analytics/order-to-stores/preview', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ filters })
-        });
-      }
-      
-      console.log('[Hook] Preview API response status:', response.status);
+      console.log('[Hook] API response status:', response.status);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('[Hook] Preview API error:', errorData);
+        console.error('[Hook] API error:', errorData);
         throw new Error('Failed to generate report');
       }
       
       const data = await response.json();
       console.log('[Hook] Report data received:', data);
       
-      // Handle both API response formats
-      if (data.reportData) {
-        // Original API format
-        setReportData(data.reportData);
-      } else {
-        // New V2 API format - data is at root level
-        setReportData(data);
-      }
+      // Data is at root level for simple API
+      setReportData(data);
     } catch (error) {
       setReportError(error instanceof Error ? error.message : 'Failed to generate report');
     } finally {
