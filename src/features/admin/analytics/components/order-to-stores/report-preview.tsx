@@ -8,7 +8,6 @@ import {
   TrendingUp, 
   Store, 
   Clock, 
-  Package,
   Users,
   Star,
   Award
@@ -67,62 +66,6 @@ export const ReportPreview: React.FC<ReportPreviewProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Summary Statistics */}
-        <div>
-          <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">
-            📊 Summary Overview
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-              <div className="flex items-center gap-2 mb-1">
-                <Package className="w-4 h-4 text-blue-600" />
-                <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                  Total Orders
-                </span>
-              </div>
-              <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                {formatNumber(summary.totalOrders)}
-              </p>
-            </div>
-
-            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-              <div className="flex items-center gap-2 mb-1">
-                <TrendingUp className="w-4 h-4 text-green-600" />
-                <span className="text-sm text-green-600 dark:text-green-400 font-medium">
-                  Total Value
-                </span>
-              </div>
-              <p className="text-2xl font-bold text-green-900 dark:text-green-100">
-                {formatCurrency(summary.totalValue)}
-              </p>
-            </div>
-
-            <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
-              <div className="flex items-center gap-2 mb-1">
-                <Store className="w-4 h-4 text-orange-600" />
-                <span className="text-sm text-orange-600 dark:text-orange-400 font-medium">
-                  Stores
-                </span>
-              </div>
-              <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
-                {formatNumber(summary.storeCount)}
-              </p>
-            </div>
-
-            <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
-              <div className="flex items-center gap-2 mb-1">
-                <BarChart3 className="w-4 h-4 text-purple-600" />
-                <span className="text-sm text-purple-600 dark:text-purple-400 font-medium">
-                  Avg Order
-                </span>
-              </div>
-              <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-                {formatCurrency(summary.averageOrderValue)}
-              </p>
-            </div>
-          </div>
-        </div>
-
         {/* Top Performing Stores */}
         <div>
           <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white flex items-center">
