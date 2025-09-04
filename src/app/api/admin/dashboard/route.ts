@@ -89,7 +89,7 @@ export async function GET() {
         isFeatured: bundle.isFeatured // Use actual database value instead of artificial ranking
       };
     })
-    .sort((a, b) => b.totalSold - a.totalSold) // Sort by totalSold descending
+    .sort((a, b) => b.revenue - a.revenue) // Sort by revenue descending (highest revenue first)
     .slice(0, 5); // Take top 5
 
     // Calculate real growth rates from database
