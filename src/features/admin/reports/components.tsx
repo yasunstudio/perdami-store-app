@@ -302,6 +302,7 @@ export const StorePaymentDetailsPage = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="min-w-[120px]">No Order</TableHead>
                     <TableHead className="min-w-[140px]">Tanggal Order</TableHead>
                     <TableHead className="min-w-[120px]">Batch</TableHead>
                     <TableHead className="min-w-[150px]">Customer</TableHead>
@@ -315,15 +316,19 @@ export const StorePaymentDetailsPage = () => {
                 </TableHeader>
                 <TableBody>
                   {paymentDetails.map((detail, index) => {
-                    const orderHour = new Date(detail.orderDate).getHours();
-                    const batchName = orderHour >= 6 && orderHour < 18 ? 'Batch 1' : 'Batch 2';
+                    // Convert to Indonesia timezone (UTC+7) to match backend logic
+                    const orderDate = new Date(detail.orderDate);
+                    const indonesiaTime = new Date(orderDate.getTime() + (7 * 60 * 60 * 1000));
+                    const orderHour = indonesiaTime.getUTCHours();
+                    const batchName = orderHour >= 6 && orderHour < 18 ? 'Batch 1 - Siang' : 'Batch 2 - Malam';
                     
                     return (
                       <TableRow key={`${detail.orderId}-${detail.itemName}-${index}`}>
+                        <TableCell className="font-mono text-sm">{detail.orderNumber}</TableCell>
                         <TableCell>{formatDateTime(detail.orderDate)}</TableCell>
                         <TableCell>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            batchName === 'Batch 1' 
+                            batchName.includes('Siang') 
                               ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
                               : 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
                           }`}>

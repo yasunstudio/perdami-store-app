@@ -3,7 +3,12 @@ import { prisma } from '@/lib/prisma';
 
 // Get batch based on order creation time (matching frontend logic)
 const getBatchFromOrderTime = (orderDate: Date): string => {
-  const hour = orderDate.getHours();
+  // Convert to Indonesia timezone (UTC+7)
+  const indonesiaTime = new Date(orderDate.getTime() + (7 * 60 * 60 * 1000));
+  const hour = indonesiaTime.getUTCHours();
+  
+  console.log(`Original: ${orderDate.toISOString()}, Indonesia: ${indonesiaTime.toISOString()}, Hour: ${hour}`);
+  
   return hour >= 6 && hour < 18 ? 'batch_1' : 'batch_2';
 };
 

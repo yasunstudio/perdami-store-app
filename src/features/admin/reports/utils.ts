@@ -48,7 +48,9 @@ export const calculateSummary = (details: StorePaymentDetail[], storeName: strin
 
 // Get batch based on order creation time
 export const getBatchFromOrderTime = (orderDate: Date): string => {
-  const hour = orderDate.getHours();
+  // Convert to Indonesia timezone (UTC+7)
+  const indonesiaTime = new Date(orderDate.getTime() + (7 * 60 * 60 * 1000));
+  const hour = indonesiaTime.getUTCHours();
   return hour >= 6 && hour < 18 ? 'batch_1' : 'batch_2';
 };
 
