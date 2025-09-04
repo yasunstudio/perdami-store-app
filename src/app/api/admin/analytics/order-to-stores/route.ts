@@ -49,9 +49,18 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Calculate summary statistics
+    // Calculate summary statistics based on cost price (what we pay to stores)
     const totalOrders = orders.length;
-    const totalValue = orders.reduce((sum, order) => sum + Number(order.totalAmount), 0);
+    
+    // Calculate total value based on cost price
+    let totalValue = 0;
+    orders.forEach(order => {
+      order.orderItems.forEach(item => {
+        if (item.bundle?.costPrice) {
+          totalValue += Number(item.bundle.costPrice) * item.quantity;
+        }
+      });
+    });
     
     // Get unique stores from order items
     const storeSet = new Set();
@@ -88,10 +97,19 @@ export async function GET(request: NextRequest) {
       });
     });
 
-    // Calculate store metrics
+    // Calculate store metrics based on cost price (what we pay to stores)
     const storeBreakdown = Object.values(storeGroups).map((group: any) => {
       const storeOrders = group.orders;
-      const storeValue = storeOrders.reduce((sum: number, order: any) => sum + Number(order.totalAmount), 0);
+      
+      // Calculate store value based on cost price of items for this store
+      let storeValue = 0;
+      storeOrders.forEach((order: any) => {
+        order.orderItems.forEach((item: any) => {
+          if (item.bundle?.store?.id === group.store.id && item.bundle?.costPrice) {
+            storeValue += Number(item.bundle.costPrice) * item.quantity;
+          }
+        });
+      });
       
       return {
         store: {
@@ -103,23 +121,35 @@ export async function GET(request: NextRequest) {
           address: group.store.address,
           lastUpdated: new Date()
         },
-        orders: storeOrders.map((order: any) => ({
-          id: order.id,
-          customerName: order.user?.name || 'N/A',
-          items: order.orderItems
+        orders: storeOrders.map((order: any) => {
+          // Calculate order value for this store based on cost price
+          let orderValueForStore = 0;
+          const storeItems = order.orderItems
             .filter((item: any) => item.bundle?.store?.id === group.store.id)
-            .map((item: any) => ({
-              productId: item.bundleId,
-              productName: item.bundle?.name || 'N/A',
-              quantity: item.quantity,
-              unitPrice: Number(item.unitPrice),
-              totalPrice: Number(item.totalPrice)
-            })),
-          totalValue: Number(order.totalAmount),
-          status: order.orderStatus,
-          pickupTime: order.pickupDate,
-          specialRequests: order.notes
-        })),
+            .map((item: any) => {
+              const costPrice = Number(item.bundle?.costPrice || 0);
+              const totalCostPrice = costPrice * item.quantity;
+              orderValueForStore += totalCostPrice;
+              
+              return {
+                productId: item.bundleId,
+                productName: item.bundle?.name || 'N/A',
+                quantity: item.quantity,
+                unitPrice: costPrice, // Use cost price instead of selling price
+                totalPrice: totalCostPrice // Total cost price for this item
+              };
+            });
+          
+          return {
+            id: order.id,
+            customerName: order.user?.name || 'N/A',
+            items: storeItems,
+            totalValue: orderValueForStore, // Total amount to pay to this store
+            status: order.orderStatus,
+            pickupTime: order.pickupDate,
+            specialRequests: order.notes
+          };
+        }),
         metrics: {
           totalOrders: storeOrders.length,
           totalValue: storeValue,
@@ -130,7 +160,7 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // Calculate top products
+    // Calculate top products based on cost price
     const productStats: any = {};
     orders.forEach(order => {
       order.orderItems.forEach(item => {
@@ -146,7 +176,9 @@ export async function GET(request: NextRequest) {
             };
           }
           productStats[key].totalQuantity += item.quantity;
-          productStats[key].totalValue += Number(item.totalPrice);
+          // Use cost price instead of selling price
+          const costPrice = Number(item.bundle.costPrice || 0);
+          productStats[key].totalValue += costPrice * item.quantity;
           if (item.bundle.store) {
             productStats[key].storeCount.add(item.bundle.store.id);
           }

@@ -67,10 +67,10 @@ export const OrderToStoresMain: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Order ke Toko
+            Laporan Pembayaran ke Toko
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Generate laporan pesanan berdasarkan batch dan toko
+            Laporan pembayaran yang harus dibayar ke toko berdasarkan cost price produk
           </p>
         </div>
         <Button 

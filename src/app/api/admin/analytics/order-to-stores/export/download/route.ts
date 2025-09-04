@@ -156,6 +156,14 @@ export async function GET(request: NextRequest) {
         const store = order.orderItems[0]?.bundle?.store;
         const totalItems = order.orderItems.reduce((sum, item) => sum + item.quantity, 0);
         
+        // Calculate total value based on cost price (what we pay to stores)
+        let totalCostValue = 0;
+        order.orderItems.forEach(item => {
+          if (item.bundle?.costPrice) {
+            totalCostValue += Number(item.bundle.costPrice) * item.quantity;
+          }
+        });
+        
         // Determine batch based on creation time
         const createdHour = new Date(order.createdAt).getHours();
         const batchName = createdHour >= 6 && createdHour < 18 
@@ -165,7 +173,7 @@ export async function GET(request: NextRequest) {
         return {
           orderNumber: order.orderNumber || `ORD-${String(index + 1).padStart(3, '0')}`,
           storeName: store?.name || 'Unknown Store',
-          totalValue: order.totalAmount,
+          totalValue: totalCostValue, // Use cost price total instead of selling price
           itemCount: totalItems,
           batchName,
           createdAt: order.createdAt.toISOString(),
