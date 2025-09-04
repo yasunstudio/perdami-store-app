@@ -133,10 +133,10 @@ export const ReportPreview: React.FC<ReportPreviewProps> = ({
             {storeBreakdown.slice(0, 5).map((storeData, index) => (
               <div
                 key={storeData.store.id}
-                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden"
               >
-                <div className="flex items-center gap-3">
-                  <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold flex-shrink-0 ${
                     index === 0 ? 'bg-yellow-100 text-yellow-800' :
                     index === 1 ? 'bg-gray-100 text-gray-800' :
                     index === 2 ? 'bg-orange-100 text-orange-800' :
@@ -144,20 +144,20 @@ export const ReportPreview: React.FC<ReportPreviewProps> = ({
                   }`}>
                     {index + 1}
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-gray-900 dark:text-white truncate">
                       {storeData.store.name}
                     </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
                       {storeData.metrics.completionRate.toFixed(1)}% completion rate
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold text-gray-900 dark:text-white">
+                <div className="text-right flex-shrink-0 ml-2">
+                  <p className="font-semibold text-gray-900 dark:text-white text-sm whitespace-nowrap">
                     {formatNumber(storeData.metrics.totalOrders)} orders
                   </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
                     {formatCurrency(storeData.metrics.totalValue)}
                   </p>
                 </div>
@@ -176,21 +176,21 @@ export const ReportPreview: React.FC<ReportPreviewProps> = ({
             {topProducts.slice(0, 5).map((product, index) => (
               <div
                 key={product.productId}
-                className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded"
+                className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded overflow-hidden"
               >
-                <div className="flex items-center gap-3">
-                  <Badge variant="outline" className="text-xs w-8 justify-center">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <Badge variant="outline" className="text-xs w-8 justify-center flex-shrink-0">
                     {index + 1}
                   </Badge>
-                  <span className="font-medium text-gray-900 dark:text-white">
+                  <span className="font-medium text-gray-900 dark:text-white truncate">
                     {product.productName}
                   </span>
                 </div>
-                <div className="text-right text-sm">
-                  <span className="font-semibold text-gray-900 dark:text-white">
+                <div className="text-right text-sm flex-shrink-0 ml-2">
+                  <span className="font-semibold text-gray-900 dark:text-white whitespace-nowrap">
                     {formatNumber(product.totalQuantity)} units
                   </span>
-                  <span className="text-gray-500 dark:text-gray-400 ml-2">
+                  <span className="text-gray-500 dark:text-gray-400 ml-2 whitespace-nowrap">
                     ({product.storeCount} stores)
                   </span>
                 </div>

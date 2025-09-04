@@ -149,7 +149,7 @@ export const StoreSelector: React.FC<StoreSelectorProps> = ({
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <div>
+                      <div className="min-w-0 flex-1 mr-2">
                         <p className="font-medium text-gray-900 dark:text-white truncate">
                           {store.name}
                         </p>
@@ -160,11 +160,11 @@ export const StoreSelector: React.FC<StoreSelectorProps> = ({
                         )}
                       </div>
                       
-                      <div className="flex items-center gap-2 text-xs">
-                        <Badge variant={store.status === 'active' ? 'default' : 'secondary'}>
+                      <div className="flex items-center gap-2 text-xs flex-shrink-0">
+                        <Badge variant={store.status === 'active' ? 'default' : 'secondary'} className="whitespace-nowrap">
                           {store.orderCount} orders
                         </Badge>
-                        <span className="text-gray-500 dark:text-gray-400">
+                        <span className="text-gray-500 dark:text-gray-400 whitespace-nowrap">
                           Rp {store.totalValue.toLocaleString('id-ID')}
                         </span>
                       </div>
