@@ -172,7 +172,7 @@ const navigation: SidebarItem[] = [
   },
   {
     name: 'Laporan Detail',
-    href: '/admin/reports',
+    href: '/admin/reports-overview',
     icon: FileText,
     permission: PERMISSIONS.REPORTS_READ,
     children: [
@@ -184,7 +184,7 @@ const navigation: SidebarItem[] = [
       },
       {
         name: 'Laporan Penjualan',
-        href: '/admin/reports',
+        href: '/admin/reports/sales-summary',
         icon: FileText,
         permission: PERMISSIONS.REPORTS_READ
       }
