@@ -1,11 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
+ * Check if current time is past order cutoff (September 6, 2025 20:00 WIB)
+ */
+function isPastOrderCutoff(): boolean {
+  const now = new Date()
+  
+  // Convert to WIB (UTC+7)
+  const wibTime = new Date(now.getTime() + (7 * 60 * 60 * 1000))
+  
+  // Cutoff: September 6, 2025 20:00 WIB
+  const cutoffDate = new Date('2025-09-06T20:00:00+07:00')
+  
+  return wibTime >= cutoffDate
+}
+
+/**
  * Simple maintenance status check without database dependency
  * Uses environment variable as fallback for Edge Runtime compatibility
  */
 async function getMaintenanceStatus(): Promise<boolean> {
   try {
+    // First check if we're past the order cutoff time
+    if (isPastOrderCutoff()) {
+      console.log('🕐 Past order cutoff time, enabling maintenance mode')
+      return true
+    }
+
     // Try API endpoint for dynamic status
     const baseUrl = 'https://dharma-wanita-perdami.vercel.app'
     const response = await fetch(new URL('/api/maintenance', baseUrl), {

@@ -74,6 +74,17 @@ export async function POST(request: NextRequest) {
     const validatedData = createOrderSchema.parse(body)
     console.log('✅ Data validation passed')
 
+    // Validate pickup date - only September 7, 2025 is allowed
+    const allowedPickupDate = '2025-09-07'
+    if (validatedData.pickupDate !== allowedPickupDate) {
+      console.log(`❌ Invalid pickup date: ${validatedData.pickupDate}, only ${allowedPickupDate} is allowed`)
+      return NextResponse.json(
+        { error: 'Pickup hanya tersedia pada tanggal 7 September 2025' },
+        { status: 400 }
+      )
+    }
+    console.log('✅ Pickup date validation passed')
+
     // Validate bundles exist and calculate total
     const bundleIds = validatedData.items.map(item => item.bundleId)
     console.log('🔍 Looking for bundles:', bundleIds)
