@@ -128,18 +128,28 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const notificationId = searchParams.get('id')
+    const body = await request.json()
+    const { notificationId } = body
 
     if (!notificationId) {
       return NextResponse.json({ error: 'Notification ID required' }, { status: 400 })
     }
 
-    // await notificationService.deleteNotification(notificationId, session.user.id)
-    console.log('Delete notification not implemented yet')
+    // Delete the notification for this user
+    const deletedNotification = await prisma.inAppNotification.deleteMany({
+      where: { 
+        id: notificationId,
+        userId: session.user.id
+      }
+    })
+
+    if (deletedNotification.count === 0) {
+      return NextResponse.json({ error: 'Notification not found' }, { status: 404 })
+    }
+
     await auditLog.notificationRead(session.user.id, notificationId, { action: 'delete' })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, message: 'Notification deleted successfully' })
   } catch (error) {
     console.error('Error deleting notification:', error)
     return NextResponse.json(

@@ -134,13 +134,9 @@ export async function PATCH(request: NextRequest) {
           isRead: false,
           type: { 
             in: [
-              'NEW_ORDER', 
-              'PAYMENT_RECEIVED', 
-              'PAYMENT_VERIFICATION_NEEDED',
-              'ORDER_DELAYED',
-              'STOCK_LOW',
-              'SYSTEM_ERROR',
-              'NEW_USER_REGISTERED'
+              'ORDER_UPDATE', 
+              'PAYMENT_REMINDER', 
+              'GENERAL'
             ] 
           }
         },
@@ -153,13 +149,9 @@ export async function PATCH(request: NextRequest) {
           id: notificationId,
           type: { 
             in: [
-              'NEW_ORDER', 
-              'PAYMENT_RECEIVED', 
-              'PAYMENT_VERIFICATION_NEEDED',
-              'ORDER_DELAYED',
-              'STOCK_LOW',
-              'SYSTEM_ERROR',
-              'NEW_USER_REGISTERED'
+              'ORDER_UPDATE', 
+              'PAYMENT_REMINDER', 
+              'GENERAL'
             ] 
           }
         },
@@ -172,6 +164,46 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error updating admin notification:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE - Delete admin notification
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await auth()
+    
+    if (!session?.user || (session.user.role !== 'ADMIN' && session.user.role !== 'STAFF')) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const body = await request.json()
+    const { notificationId } = body
+
+    if (!notificationId) {
+      return NextResponse.json({ error: 'Notification ID required' }, { status: 400 })
+    }
+
+    // Delete specific notification
+    const deletedNotification = await prisma.inAppNotification.delete({
+      where: { 
+        id: notificationId
+      }
+    })
+
+    if (!deletedNotification) {
+      return NextResponse.json({ error: 'Notification not found' }, { status: 404 })
+    }
+
+    return NextResponse.json({ success: true, message: 'Notification deleted successfully' })
+  } catch (error) {
+    console.error('Error deleting admin notification:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -192,13 +224,9 @@ function getOrderStatusLabel(status: string): string {
 
 function getNotificationTypeMapping(notificationType: string): 'new_order' | 'payment_received' | 'status_change' | 'stock_alert' | 'system_alert' {
   const typeMapping: Record<string, 'new_order' | 'payment_received' | 'status_change' | 'stock_alert' | 'system_alert'> = {
-    'NEW_ORDER': 'new_order',
-    'PAYMENT_RECEIVED': 'payment_received',
-    'PAYMENT_VERIFICATION_NEEDED': 'payment_received',
-    'ORDER_DELAYED': 'status_change',
-    'STOCK_LOW': 'stock_alert',
-    'SYSTEM_ERROR': 'system_alert',
-    'NEW_USER_REGISTERED': 'system_alert'
+    'ORDER_UPDATE': 'status_change',
+    'PAYMENT_REMINDER': 'payment_received',
+    'GENERAL': 'system_alert'
   }
   return typeMapping[notificationType] || 'system_alert'
 }

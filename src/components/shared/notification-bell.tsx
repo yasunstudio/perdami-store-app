@@ -135,8 +135,10 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
 
   const deleteNotification = async (notificationId: string) => {
     try {
-      const response = await fetch(`/api/notifications?id=${notificationId}`, {
-        method: 'DELETE'
+      const response = await fetch(apiEndpoint, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notificationId })
       })
 
       if (response.ok) {
@@ -236,7 +238,7 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
                 size="sm" 
                 onClick={markAllAsRead}
                 disabled={isLoading}
-                className="text-xs hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
+                className="text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
               >
                 {isLoading ? 'Loading...' : 'Tandai Semua Dibaca'}
               </Button>
