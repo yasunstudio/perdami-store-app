@@ -30,7 +30,7 @@ export const exportOrdersToExcel = ({ allOrders, storeOrders }: ExportOrdersToEx
         'Email': customer.email || 'N/A',
         'Jumlah Item': order.items?.length || 0,
         'Item': (order.items || [])
-          .map((item) => `${item.bundle?.name || 'Unknown'} (${item.quantity}x)`)
+          .map((item) => item.bundle?.name || 'Unknown')
           .join(', '),
         'Subtotal': order.subtotalAmount || 0,
         'Biaya Layanan': order.serviceFee || 0,
