@@ -62,8 +62,20 @@ export const NavigationItem: React.FC<NavigationItemProps & {
 
   const isActiveItem = (href: string) => {
     if (!pathname) return false;
-    if (href === '/admin' && pathname === '/admin') return true;
-    if (href !== '/admin' && pathname.startsWith(href)) return true;
+    if (href === '/admin') {
+      return pathname === '/admin';
+    }
+    
+    // For exact match
+    if (pathname === href) return true;
+    
+    // For parent-child relationships, only match if current path is a sub-path with a trailing segment
+    if (pathname.startsWith(href)) {
+      const remainingPath = pathname.slice(href.length);
+      // Only consider it active if there's a meaningful sub-path (starts with /)
+      return remainingPath.startsWith('/') && remainingPath.length > 1;
+    }
+    
     return false;
   };
 

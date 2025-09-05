@@ -312,6 +312,7 @@ export default function OrderDetailPage() {
               id: order.id,
               orderNumber: order.orderNumber,
               createdAt: order.createdAt,
+              pickupDate: order.pickupDate ?? undefined,
               orderStatus: order.orderStatus,
               paymentStatus: order.paymentStatus,
               notes: order.notes ?? undefined,

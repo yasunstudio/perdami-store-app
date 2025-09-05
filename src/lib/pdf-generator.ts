@@ -6,6 +6,7 @@ export interface InvoiceData {
   customerPhone?: string
   customerEmail?: string
   orderDate: string
+  pickupDate?: string
   orderStatus: string
   paymentStatus: string
   paymentNotes?: string
@@ -162,7 +163,12 @@ export class PDFInvoiceGenerator {
     
     this.currentY += 8
     this.pdf.setFont('helvetica', 'normal')
-    this.pdf.text(`Date: ${data.orderDate}`, rightColumnX, this.currentY)
+    this.pdf.text(`Order Date: ${data.orderDate}`, rightColumnX, this.currentY)
+    
+    if (data.pickupDate) {
+      this.currentY += 6
+      this.pdf.text(`Pickup Date: ${data.pickupDate}`, rightColumnX, this.currentY)
+    }
     
     this.currentY += 6
     this.pdf.text(`Status: ${data.orderStatus}`, rightColumnX, this.currentY)
@@ -382,7 +388,8 @@ export async function generateOrderPDF(orderData: any): Promise<void> {
             <div class="info-box">
               <h3>Informasi Pesanan</h3>
               <p><strong>No. Invoice:</strong> ${orderData.orderNumber}</p>
-              <p><strong>Tanggal:</strong> ${formatDate(orderData.createdAt)}</p>
+              <p><strong>Tanggal Order:</strong> ${formatDate(orderData.createdAt)}</p>
+              ${orderData.pickupDate ? `<p><strong>Tanggal Pickup:</strong> ${formatDate(orderData.pickupDate)}</p>` : ''}
               <p><strong>Status:</strong> ${orderData.orderStatus}</p>
               <p><strong>Pembayaran:</strong> ${orderData.payment?.method || 'Transfer Bank'}</p>
             </div>
