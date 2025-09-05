@@ -4,6 +4,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AdminPageLayout } from '@/components/admin/admin-page-layout';
 import { Loader2, RefreshCw, FileText, Download, FileSpreadsheet } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -35,12 +36,6 @@ export const StorePaymentDetailsPage = () => {
     clearExportError
   } = usePaymentExport();
 
-  const handleRefresh = async () => {
-    clearError();
-    clearExportError();
-    await refreshData();
-  };
-
   const handleExport = async (format: 'excel' | 'pdf') => {
     await exportPaymentDetails(filters, format);
   };
@@ -58,45 +53,34 @@ export const StorePaymentDetailsPage = () => {
 
   if (error || exportError) {
     return (
-      <div className="container mx-auto py-6 px-4 space-y-4">
+      <AdminPageLayout 
+        title="Laporan Detail Pembayaran ke Toko"
+        description="Detail pembayaran per item berdasarkan cost price produk"
+      >
         <Alert variant="destructive">
           <AlertDescription>
             {error || exportError}
           </AlertDescription>
         </Alert>
-        <Button onClick={handleRefresh} variant="outline">
+        <Button onClick={() => {
+          clearError();
+          clearExportError();
+          refreshData();
+        }} variant="outline">
           <RefreshCw className="w-4 h-4 mr-2" />
           Retry
         </Button>
-      </div>
+      </AdminPageLayout>
     );
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 space-y-8">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Laporan Detail Pembayaran ke Toko
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Detail pembayaran per item berdasarkan cost price produk
-          </p>
-        </div>
-        <Button 
-          onClick={handleRefresh} 
-          variant="outline" 
-          disabled={isLoading || isLoadingStores}
-        >
-          {isLoading || isLoadingStores ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <RefreshCw className="w-4 h-4 mr-2" />
-          )}
-          Refresh Data
-        </Button>
-      </div>
+    <AdminPageLayout 
+      title="Laporan Detail Pembayaran ke Toko"
+      description="Detail pembayaran per item berdasarkan cost price produk"
+      loading={isLoading || isLoadingStores}
+      onRefresh={refreshData}
+    >
 
       {/* Filter Section */}
       <Card className="shadow-sm">
@@ -419,6 +403,6 @@ export const StorePaymentDetailsPage = () => {
           </CardContent>
         </Card>
       )}
-    </div>
+    </AdminPageLayout>
   );
 };
