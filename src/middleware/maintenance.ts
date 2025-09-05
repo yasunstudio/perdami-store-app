@@ -6,23 +6,32 @@ import { isProtectedRoute } from '@/lib/maintenance'
  */
 async function getMaintenanceStatus(): Promise<boolean> {
   try {
+    // Determine base URL for API call
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}`
+      : process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    
+    console.log('🔧 Maintenance: Fetching status from', `${baseUrl}/api/maintenance`)
+    
     // Use API endpoint instead of direct database access
-    const response = await fetch(new URL('/api/maintenance', process.env.NEXTAUTH_URL || 'http://localhost:3000'), {
+    const response = await fetch(`${baseUrl}/api/maintenance`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
-      }
+      },
+      cache: 'no-store' // Prevent caching for real-time status
     })
     
     if (response.ok) {
       const data = await response.json()
+      console.log('🔧 Maintenance: Status received', data)
       return data.isMaintenanceMode ?? false
     }
     
-    console.warn('Failed to fetch maintenance status, defaulting to false')
+    console.warn('🔧 Maintenance: Failed to fetch maintenance status, defaulting to false', response.status)
     return false
   } catch (error) {
-    console.error('Error fetching maintenance status:', error)
+    console.error('🔧 Maintenance: Error fetching maintenance status:', error)
     return false
   }
 }
@@ -32,6 +41,8 @@ async function getMaintenanceStatus(): Promise<boolean> {
  */
 export async function maintenanceMiddleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  
+  console.log('🔧 Maintenance: Processing request for', pathname)
   
   try {
     // Skip maintenance check for certain paths
@@ -45,10 +56,12 @@ export async function maintenanceMiddleware(request: NextRequest) {
       pathname === '/maintenance' ||
       pathname === '/maintenance/'
     ) {
+      console.log('🔧 Maintenance: Skipping check for system path', pathname)
       return NextResponse.next()
     }
     
     // Get maintenance status with timeout
+    console.log('🔧 Maintenance: Checking maintenance status...')
     const isMaintenanceMode = await Promise.race([
       getMaintenanceStatus(),
       new Promise<boolean>((_, reject) => 
@@ -56,8 +69,11 @@ export async function maintenanceMiddleware(request: NextRequest) {
       )
     ])
     
+    console.log('🔧 Maintenance: Mode status =', isMaintenanceMode, 'for path', pathname)
+    
     // If not in maintenance mode, continue normally
     if (!isMaintenanceMode) {
+      console.log('🔧 Maintenance: Not in maintenance mode, continuing normally')
       return NextResponse.next()
     }
     
@@ -69,7 +85,7 @@ export async function maintenanceMiddleware(request: NextRequest) {
     
     // Check if route is protected (shopping routes)
     if (isProtectedRoute(pathname)) {
-      console.log('🔧 Maintenance: Redirecting protected route', pathname)
+      console.log('🔧 Maintenance: Redirecting protected route', pathname, 'to /maintenance')
       // Redirect to maintenance page
       const maintenanceUrl = new URL('/maintenance', request.url)
       return NextResponse.redirect(maintenanceUrl)
