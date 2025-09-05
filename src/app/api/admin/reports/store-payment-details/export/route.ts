@@ -202,8 +202,64 @@ export async function GET(request: NextRequest) {
     });
 
     if (format === 'excel') {
-      // Create Excel file
-      const worksheet = XLSX.utils.json_to_sheet(paymentDetails);
+      // Get store name for header
+      let storeNameForHeader = 'Semua Toko';
+      if (storeId && paymentDetails.length > 0) {
+        // Get store name from first payment detail
+        const storeData = await prisma.store.findUnique({
+          where: { id: storeId },
+          select: { name: true }
+        });
+        storeNameForHeader = storeData?.name || `Store ${storeId}`;
+      }
+
+      // Format date range for header
+      let dateRangeForHeader = 'Semua Tanggal';
+      if (startDate && endDate) {
+        const startDateFormatted = new Date(startDate).toLocaleDateString('id-ID');
+        const endDateFormatted = new Date(endDate).toLocaleDateString('id-ID');
+        dateRangeForHeader = `${startDateFormatted} - ${endDateFormatted}`;
+      } else if (startDate) {
+        dateRangeForHeader = `Mulai ${new Date(startDate).toLocaleDateString('id-ID')}`;
+      } else if (endDate) {
+        dateRangeForHeader = `Sampai ${new Date(endDate).toLocaleDateString('id-ID')}`;
+      }
+
+      // Create worksheet with header information
+      const worksheet = XLSX.utils.aoa_to_sheet([
+        ['LAPORAN DETAIL PEMBAYARAN KE TOKO'],
+        [''],
+        [`Nama Toko: ${storeNameForHeader}`],
+        [`Tanggal: ${dateRangeForHeader}`],
+        [''],
+        // Header row for data
+        ['Tanggal Order', 'Nama Customer', 'No Telepon', 'Paket', 'Item dalam Paket', 'Jumlah', 'Harga Satuan', 'Total', 'Tanggal Pickup']
+      ]);
+
+      // Add data rows starting from row 7 (index 6)
+      XLSX.utils.sheet_add_json(worksheet, paymentDetails, { 
+        origin: 'A7',
+        skipHeader: true 
+      });
+
+      // Set column widths for better readability
+      worksheet['!cols'] = [
+        { width: 12 }, // Tanggal Order
+        { width: 20 }, // Nama Customer
+        { width: 15 }, // No Telepon
+        { width: 25 }, // Paket
+        { width: 50 }, // Item dalam Paket
+        { width: 8 },  // Jumlah
+        { width: 15 }, // Harga Satuan
+        { width: 15 }, // Total
+        { width: 12 }  // Tanggal Pickup
+      ];
+
+      // Merge cells for title
+      worksheet['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } } // Merge title across all columns
+      ];
+
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Payment Details');
 
