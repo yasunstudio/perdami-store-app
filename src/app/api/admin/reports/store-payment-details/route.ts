@@ -28,16 +28,16 @@ export async function GET(request: NextRequest) {
       orderStatus: 'CONFIRMED', // Only confirmed orders
     };
 
-    // Date range filter
+    // Date range filter based on pickup date
     if (startDate || endDate) {
-      whereClause.createdAt = {};
+      whereClause.pickupDate = {};
       if (startDate) {
-        whereClause.createdAt.gte = new Date(startDate);
+        whereClause.pickupDate.gte = new Date(startDate);
       }
       if (endDate) {
         const end = new Date(endDate);
         end.setHours(23, 59, 59, 999);
-        whereClause.createdAt.lte = end;
+        whereClause.pickupDate.lte = end;
       }
     }
 

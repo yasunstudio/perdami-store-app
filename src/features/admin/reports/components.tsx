@@ -141,7 +141,7 @@ export const StorePaymentDetailsPage = () => {
             {/* Start Date */}
             <div className="space-y-2">
               <Label htmlFor="start-date" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Tanggal Mulai
+                Tanggal Pickup Mulai
               </Label>
               <Input
                 id="start-date"
@@ -158,7 +158,7 @@ export const StorePaymentDetailsPage = () => {
             {/* End Date */}
             <div className="space-y-2">
               <Label htmlFor="end-date" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Tanggal Akhir
+                Tanggal Pickup Akhir
               </Label>
               <Input
                 id="end-date"
