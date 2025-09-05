@@ -3,9 +3,18 @@ import { isProtectedRoute } from '@/lib/maintenance'
 
 /**
  * Get maintenance status via API call (Edge Runtime compatible)
+ * Fallback to environment variable if API fails
  */
 async function getMaintenanceStatus(): Promise<boolean> {
   try {
+    // TEMPORARY: For debugging, always return true to test middleware flow
+    console.log('🔧 DEBUG: Hardcoded maintenance mode = true')
+    return true
+    
+    // First try environment variable for immediate response
+    const envMaintenanceMode = process.env.MAINTENANCE_MODE === 'true'
+    console.log('🔧 Environment maintenance mode:', envMaintenanceMode)
+    
     // For debugging: use hardcoded production URL
     const baseUrl = 'https://dharma-wanita-perdami.vercel.app'
     
@@ -22,14 +31,17 @@ async function getMaintenanceStatus(): Promise<boolean> {
     if (response.ok) {
       const data = await response.json()
       console.log('🔧 Maintenance status:', data)
-      return data.isMaintenanceMode ?? false
+      return data.isMaintenanceMode ?? envMaintenanceMode
     }
     
-    console.warn('Failed to fetch maintenance status, defaulting to false')
-    return false
+    console.warn('Failed to fetch maintenance status, using environment fallback:', envMaintenanceMode)
+    return envMaintenanceMode
   } catch (error) {
     console.error('Error fetching maintenance status:', error)
-    return false
+    // Fallback to environment variable
+    const envMaintenanceMode = process.env.MAINTENANCE_MODE === 'true'
+    console.log('🔧 Using environment fallback:', envMaintenanceMode)
+    return envMaintenanceMode
   }
 }
 
