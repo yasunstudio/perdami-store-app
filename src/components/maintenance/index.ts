@@ -1,3 +1,3 @@
 // Component exports
 export { MaintenancePage } from './maintenance-page'
-export { MaintenanceBanner } from './maintenance-banner'
+// Note: MaintenanceBanner is client component and should be imported directly where needed

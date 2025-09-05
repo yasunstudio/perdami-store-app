@@ -1,3 +1,5 @@
+'use client'
+
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { AlertTriangle, Settings, RefreshCw } from 'lucide-react'

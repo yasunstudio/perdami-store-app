@@ -3,7 +3,7 @@
 import { AdminSidebar, SidebarProvider, useSidebar } from '@/components/layout/admin-sidebar';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminRouteGuard } from '@/components/guards/admin-route-guard';
-import { MaintenanceBanner } from '@/components/maintenance';
+import { MaintenanceBanner } from '@/components/maintenance/maintenance-banner';
 
 import { Toaster } from 'sonner';
 import { cn } from '@/lib/utils';

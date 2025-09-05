@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getMaintenanceStatus, isAdminUser, isProtectedRoute } from '@/lib/maintenance'
-import { auth } from '@/lib/auth'
+import { getMaintenanceStatus, isProtectedRoute } from '@/lib/maintenance'
 
 /**
  * Maintenance middleware logic with comprehensive error handling
@@ -36,22 +35,9 @@ export async function maintenanceMiddleware(request: NextRequest) {
       return NextResponse.next()
     }
     
-    // Check if user is admin (admin bypass)
-    let session = null
-    try {
-      session = await Promise.race([
-        auth(),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Auth check timeout')), 2000)
-        )
-      ])
-    } catch (authError) {
-      console.warn('Auth check failed during maintenance:', authError)
-      // Continue without admin privileges
-    }
-    
-    if (isAdminUser(session)) {
-      console.log('🔧 Maintenance: Admin user bypassed for', pathname)
+    // Simple admin bypass - check if path is admin related
+    if (pathname.startsWith('/admin')) {
+      console.log('🔧 Maintenance: Admin route bypassed for', pathname)
       return NextResponse.next()
     }
     
