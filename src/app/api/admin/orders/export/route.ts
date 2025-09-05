@@ -91,6 +91,7 @@ export async function GET(request: NextRequest) {
         totalAmount, 
         pickupDate, 
         createdAt, 
+        notes,
         orderItems,
         user 
       } = order
@@ -105,6 +106,7 @@ export async function GET(request: NextRequest) {
         totalAmount,
         pickupDate,
         createdAt,
+        notes,
         user,
         items: orderItems.map(item => ({
           bundle: item.bundle ? {
