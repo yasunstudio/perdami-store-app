@@ -41,7 +41,7 @@ Terima kasih atas kesabaran Anda! 🙏`
                 �️ Order Tutup Sementara
               </CardTitle>
               <p className="text-lg text-gray-600 dark:text-gray-300">
-                Perdami Store Event 2025
+                Event PIT Perdami 2025 - Bandung
               </p>
             </div>
           </CardHeader>
