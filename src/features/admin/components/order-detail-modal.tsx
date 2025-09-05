@@ -249,11 +249,17 @@ export function OrderDetailModal({ order, isOpen, onClose, onUpdate }: OrderDeta
                       size="sm"
                       variant="outline"
                       onClick={handleNotifyCustomer}
-                      className="flex items-center gap-2 bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                      className="flex items-center gap-2 bg-green-50 border-green-200 text-green-700 hover:bg-green-100 dark:bg-green-900 dark:border-green-700 dark:text-green-300"
                     >
                       <MessageCircle className="h-4 w-4" />
                       Notifikasi WhatsApp
                     </Button>
+                  )}
+                  {/* Debug info - remove after testing */}
+                  {process.env.NODE_ENV === 'development' && (
+                    <div className="text-xs text-gray-500">
+                      Phone: {order.customer?.phone || order.user?.phone || 'none'} | Status: {order.orderStatus}
+                    </div>
                   )}
                 </div>
               </CardHeader>
