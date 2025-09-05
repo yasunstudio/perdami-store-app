@@ -6,10 +6,8 @@ import { isProtectedRoute } from '@/lib/maintenance'
  */
 async function getMaintenanceStatus(): Promise<boolean> {
   try {
-    // Determine the base URL based on environment
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    // For debugging: use hardcoded production URL
+    const baseUrl = 'https://dharma-wanita-perdami.vercel.app'
     
     // Use API endpoint instead of direct database access
     const response = await fetch(new URL('/api/maintenance', baseUrl), {
