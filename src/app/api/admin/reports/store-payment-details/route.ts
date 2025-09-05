@@ -41,6 +41,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    console.log('WHERE CLAUSE:', JSON.stringify(whereClause, null, 2));
+
     // Note: Batch filtering will be applied after data retrieval
 
     // Fetch orders with all related data
@@ -83,6 +85,13 @@ export async function GET(request: NextRequest) {
       },
       orderBy: {
         pickupDate: 'asc'
+      }
+    });
+
+    console.log(`RAW ORDERS FOUND: ${orders.length}`);
+    orders.forEach((order, index) => {
+      if (index < 3) { // Log first 3 for debugging
+        console.log(`Order ${index + 1}: ${order.orderNumber}, pickup: ${order.pickupDate?.toISOString()}, status: ${order.orderStatus}`);
       }
     });
 
