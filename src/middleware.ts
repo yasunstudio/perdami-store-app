@@ -10,6 +10,18 @@ const adminRoutes = ['/admin']
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  console.log('🔍 MIDDLEWARE CALLED FOR:', pathname)
+  
+  // IMMEDIATE MAINTENANCE TEST - redirect all non-admin routes
+  if (!pathname.startsWith('/admin') && 
+      !pathname.startsWith('/api') && 
+      !pathname.startsWith('/_next') && 
+      !pathname.startsWith('/favicon') && 
+      pathname !== '/maintenance') {
+    console.log('🔧 REDIRECTING TO MAINTENANCE:', pathname)
+    return NextResponse.redirect(new URL('/maintenance', request.url))
+  }
+
   // First, check maintenance mode (highest priority)
   const maintenanceResponse = await maintenanceMiddleware(request)
   if (maintenanceResponse.status === 302) {
