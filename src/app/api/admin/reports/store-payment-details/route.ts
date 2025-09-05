@@ -32,11 +32,15 @@ export async function GET(request: NextRequest) {
     if (startDate || endDate) {
       whereClause.pickupDate = {};
       if (startDate) {
-        whereClause.pickupDate.gte = new Date(startDate);
+        // Ensure we start from the beginning of the day in UTC
+        const start = new Date(startDate);
+        start.setUTCHours(0, 0, 0, 0);
+        whereClause.pickupDate.gte = start;
       }
       if (endDate) {
+        // Ensure we include the entire end day in UTC
         const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
+        end.setUTCHours(23, 59, 59, 999);
         whereClause.pickupDate.lte = end;
       }
     }
