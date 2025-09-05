@@ -62,8 +62,20 @@ export const NavigationItem: React.FC<NavigationItemProps & {
 
   const isActiveItem = (href: string) => {
     if (!pathname) return false;
+    
+    // Exact match for admin root
     if (href === '/admin' && pathname === '/admin') return true;
-    if (href !== '/admin' && pathname.startsWith(href)) return true;
+    
+    // For non-admin paths, use exact matching or strict prefix matching
+    if (href !== '/admin') {
+      // Exact match
+      if (pathname === href) return true;
+      
+      // Strict prefix match - only if the pathname starts with href + '/'
+      // This prevents false positives like /admin/reports matching /admin/reports/store-payment-details
+      if (pathname.startsWith(href + '/')) return true;
+    }
+    
     return false;
   };
 
