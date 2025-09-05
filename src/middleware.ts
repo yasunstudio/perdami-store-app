@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
+import { maintenanceMiddleware } from './middleware/maintenance'
 
 // Define protected routes
 const protectedRoutes = ['/admin', '/profile', '/orders', '/cart', '/checkout']
@@ -9,9 +10,17 @@ const adminRoutes = ['/admin']
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  console.log('🔍 MIDDLEWARE DISABLED FOR DEBUGGING:', pathname)
+  // First, check maintenance mode (highest priority)
+  const maintenanceResponse = await maintenanceMiddleware(request)
+  if (maintenanceResponse.status === 302) {
+    return maintenanceResponse
+  }
   
-  // Temporarily allow all requests to pass through
+  // Continue with existing auth logic
+  console.log('🔍 Middleware processing:', pathname)
+  
+  // For now, allow all requests to pass through
+  // TODO: Re-enable auth middleware after maintenance is tested
   return NextResponse.next()
 }
 
