@@ -1,5 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getMaintenanceStatus, isProtectedRoute } from '@/lib/maintenance'
+import { isProtectedRoute } from '@/lib/maintenance'
+
+/**
+ * Get maintenance status via API call (Edge Runtime compatible)
+ */
+async function getMaintenanceStatus(): Promise<boolean> {
+  try {
+    // Use API endpoint instead of direct database access
+    const response = await fetch(new URL('/api/maintenance', process.env.NEXTAUTH_URL || 'http://localhost:3000'), {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      return data.isMaintenanceMode ?? false
+    }
+    
+    console.warn('Failed to fetch maintenance status, defaulting to false')
+    return false
+  } catch (error) {
+    console.error('Error fetching maintenance status:', error)
+    return false
+  }
+}
 
 /**
  * Maintenance middleware logic with comprehensive error handling
@@ -11,7 +37,7 @@ export async function maintenanceMiddleware(request: NextRequest) {
     // Skip maintenance check for certain paths
     if (
       pathname.startsWith('/_next') ||
-      pathname.startsWith('/api/_next') ||
+      pathname.startsWith('/api') ||
       pathname.startsWith('/favicon.ico') ||
       pathname.startsWith('/icons') ||
       pathname.startsWith('/images') ||
@@ -26,7 +52,7 @@ export async function maintenanceMiddleware(request: NextRequest) {
     const isMaintenanceMode = await Promise.race([
       getMaintenanceStatus(),
       new Promise<boolean>((_, reject) => 
-        setTimeout(() => reject(new Error('Maintenance check timeout')), 3000)
+        setTimeout(() => reject(new Error('Maintenance check timeout')), 5000)
       )
     ])
     
