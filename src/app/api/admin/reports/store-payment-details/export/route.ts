@@ -212,11 +212,8 @@ export async function GET(request: NextRequest) {
           const costPrice = Number(item.bundle.costPrice || 0);
           const totalPrice = costPrice * item.quantity;
 
-          // Calculate total order amount from all order items
-          const orderTotalAmount = order.orderItems.reduce((sum, orderItem) => {
-            const itemCostPrice = Number(orderItem.bundle?.costPrice || 0);
-            return sum + (itemCostPrice * orderItem.quantity);
-          }, 0);
+          // Use order's totalAmount as the amount customer needs to transfer
+          const jumlahTransfer = Number(order.totalAmount || 0);
 
           // Determine batch for display
           const orderHour = new Date(order.createdAt).getHours();
@@ -234,7 +231,7 @@ export async function GET(request: NextRequest) {
             'Harga Satuan': costPrice,
             'Total': totalPrice,
             'Tanggal Pickup': formatDate(order.pickupDate),
-            'Order Total Amount': orderTotalAmount,
+            'Jumlah Transfer': jumlahTransfer,
             'Store Name': item.bundle.store.name, // Add store name for grouping
           });
         }
@@ -317,7 +314,7 @@ export async function GET(request: NextRequest) {
           worksheetData.push([`=== ${storeName} ===`]);
           
           // Add column headers
-          worksheetData.push(['Tanggal Order', 'Nama Customer', 'No Telepon', 'Paket', 'Item dalam Paket', 'Jumlah', 'Harga Satuan', 'Total', 'Tanggal Pickup', 'Order Total Amount']);
+          worksheetData.push(['Tanggal Order', 'Nama Customer', 'No Telepon', 'Paket', 'Item dalam Paket', 'Jumlah', 'Harga Satuan', 'Total', 'Tanggal Pickup', 'Jumlah Transfer']);
           
           // Add store data
           storeData.forEach(detail => {
@@ -331,7 +328,7 @@ export async function GET(request: NextRequest) {
               detail['Harga Satuan'],
               detail['Total'],
               detail['Tanggal Pickup'],
-              detail['Order Total Amount']
+              detail['Jumlah Transfer']
             ]);
           });
 
@@ -390,7 +387,7 @@ export async function GET(request: NextRequest) {
           [`Tanggal: ${dateRangeForHeader}`],
           [''],
           // Header row for data
-          ['Tanggal Order', 'Nama Customer', 'No Telepon', 'Paket', 'Item dalam Paket', 'Jumlah', 'Harga Satuan', 'Total', 'Tanggal Pickup', 'Order Total Amount']
+          ['Tanggal Order', 'Nama Customer', 'No Telepon', 'Paket', 'Item dalam Paket', 'Jumlah', 'Harga Satuan', 'Total', 'Tanggal Pickup', 'Jumlah Transfer']
         ]);
 
         // Add data rows starting from row 7 (index 6)
