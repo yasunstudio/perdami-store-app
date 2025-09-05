@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { PROTECTED_ROUTES, ADMIN_ROUTES, DEFAULT_MAINTENANCE_MESSAGE } from './constants'
+import { isMaintenanceProtectedRoute } from '@/config/maintenance-routes'
 import type { MaintenanceSettings } from './types'
 
 /**
@@ -11,17 +12,10 @@ export const isAdminUser = (session: any): boolean => {
 
 /**
  * Check if route is protected (shopping routes only)
+ * Uses the new configuration-based approach
  */
 export const isProtectedRoute = (pathname: string): boolean => {
-  // Admin routes are never protected
-  if (ADMIN_ROUTES.some(route => pathname.startsWith(route))) {
-    return false
-  }
-  
-  // Check if it's a protected route
-  return PROTECTED_ROUTES.some(route => 
-    pathname === route || pathname.startsWith(route + '/')
-  )
+  return isMaintenanceProtectedRoute(pathname)
 }
 
 /**
