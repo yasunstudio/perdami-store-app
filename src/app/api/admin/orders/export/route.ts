@@ -30,15 +30,12 @@ export async function GET(request: NextRequest) {
       where.paymentStatus = paymentStatus as PaymentStatus
     }
 
-    // Fetch all orders with full relations, sorted by pickup date
+    // Fetch all orders with full relations, sorted by pickup date ascending
     const orders = await prisma.order.findMany({
       where,
       orderBy: [
         {
-          pickupDate: {
-            sort: sortDirection as Prisma.SortOrder,
-            nulls: 'last' // Orders without pickup date will be at the end
-          }
+          pickupDate: 'asc' // Orders sorted by pickup date ascending (earliest first)
         },
         {
           createdAt: 'desc' // Secondary sort by creation date for orders with same pickup date
