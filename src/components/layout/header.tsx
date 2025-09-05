@@ -9,20 +9,25 @@ import { ShoppingCart, Package, Store, Grid3X3, Menu, Sun, Moon } from 'lucide-r
 import { useCartStore } from '@/stores/cart-store'
 import { UserMenu, MobileUserMenu } from '@/features/auth/components'
 import { formatPrice } from '@/lib/utils'
-import { useTheme } from 'next-themes'
+import { useTheme } from '@/components/providers/theme-provider'
 import { NotificationBell } from '@/components/shared/notification-bell'
 import { useAppSettings } from '@/hooks/use-app-settings'
 
 export function Header() {
   const cart = useCartStore((state) => state.cart)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const { settings } = useAppSettings()
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  const toggleTheme = () => {
+    const newTheme = resolvedTheme === 'dark' ? 'light' : 'dark'
+    setTheme(newTheme)
+  }
 
   const navigationLinks = [
     { href: '/', icon: Grid3X3, label: 'Beranda' },
@@ -67,11 +72,11 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                onClick={toggleTheme}
                 className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                title={resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
               >
-                {theme === 'dark' ? (
+                {resolvedTheme === 'dark' ? (
                   <Sun className="h-[1.2rem] w-[1.2rem] text-amber-500" />
                 ) : (
                   <Moon className="h-[1.2rem] w-[1.2rem] text-blue-600" />
@@ -102,11 +107,11 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                onClick={toggleTheme}
                 className="h-10 w-10 p-0 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                title={theme === 'dark' ? 'Mode terang' : 'Mode gelap'}
+                title={resolvedTheme === 'dark' ? 'Mode terang' : 'Mode gelap'}
               >
-                {theme === 'dark' ? (
+                {resolvedTheme === 'dark' ? (
                   <Sun className="h-5 w-5 text-amber-500" />
                 ) : (
                   <Moon className="h-5 w-5 text-blue-600" />

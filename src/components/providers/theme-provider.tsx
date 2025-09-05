@@ -35,8 +35,11 @@ export function ThemeProvider({
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(defaultTheme)
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light')
+  const [mounted, setMounted] = useState(false)
 
+  // Handle hydration
   useEffect(() => {
+    setMounted(true)
     const stored = localStorage.getItem(storageKey) as Theme
     if (stored) {
       setTheme(stored)
@@ -44,8 +47,9 @@ export function ThemeProvider({
   }, [storageKey])
 
   useEffect(() => {
+    if (!mounted) return
+    
     const root = window.document.documentElement
-
     root.classList.remove('light', 'dark')
 
     let systemTheme: 'light' | 'dark' = 'light'
@@ -60,7 +64,21 @@ export function ThemeProvider({
 
     root.classList.add(systemTheme)
     setResolvedTheme(systemTheme)
-  }, [theme])
+
+    // Listen for system theme changes
+    if (theme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+      const handleChange = (e: MediaQueryListEvent) => {
+        const newSystemTheme = e.matches ? 'dark' : 'light'
+        root.classList.remove('light', 'dark')
+        root.classList.add(newSystemTheme)
+        setResolvedTheme(newSystemTheme)
+      }
+      
+      mediaQuery.addEventListener('change', handleChange)
+      return () => mediaQuery.removeEventListener('change', handleChange)
+    }
+  }, [theme, mounted])
 
   const value = {
     theme,
@@ -69,6 +87,11 @@ export function ThemeProvider({
       setTheme(theme)
     },
     resolvedTheme
+  }
+
+  // Prevent hydration mismatch
+  if (!mounted) {
+    return <>{children}</>
   }
 
   return (
