@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { AlertTriangle, Clock, Wrench, RefreshCw, Home } from 'lucide-react'
+import { AlertTriangle, Clock, ShoppingBag, RefreshCw, Home } from 'lucide-react'
 import Link from 'next/link'
 
 interface MaintenancePageProps {
@@ -10,11 +10,16 @@ interface MaintenancePageProps {
 }
 
 export function MaintenancePage({ message }: MaintenancePageProps) {
-  const defaultMessage = `Mohon maaf, aplikasi Perdami Store sedang dalam tahap pemeliharaan untuk meningkatkan layanan. 
+  const defaultMessage = `🔧 Order Tutup Sementara - Dibuka Besok Pagi
 
-Silakan coba lagi dalam beberapa saat.
+Mohon maaf, sistem pemesanan Perdami Store ditutup sementara untuk persiapan event.
 
-Untuk informasi lebih lanjut, hubungi tim organizer event.`
+📅 Order akan dibuka kembali: BESOK PAGI
+⏰ Estimasi waktu: Sekitar pukul 08:00 WIB
+
+Kami sedang mempersiapkan segala sesuatu agar proses pemesanan berjalan lancar di hari event.
+
+Terima kasih atas kesabaran Anda! 🙏`
 
   const handleRefresh = () => {
     window.location.reload()
@@ -27,13 +32,13 @@ Untuk informasi lebih lanjut, hubungi tim organizer event.`
           <CardHeader className="text-center space-y-6 pb-4">
             {/* Icon */}
             <div className="mx-auto w-20 h-20 bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30 rounded-full flex items-center justify-center shadow-lg">
-              <Wrench className="w-10 h-10 text-orange-600 dark:text-orange-400" />
+              <ShoppingBag className="w-10 h-10 text-orange-600 dark:text-orange-400" />
             </div>
             
             {/* Title */}
             <div className="space-y-2">
               <CardTitle className="text-3xl font-bold text-gray-900 dark:text-white">
-                🔧 Sistem Dalam Pemeliharaan
+                �️ Order Tutup Sementara
               </CardTitle>
               <p className="text-lg text-gray-600 dark:text-gray-300">
                 Perdami Store Event 2025
@@ -50,17 +55,17 @@ Untuk informasi lebih lanjut, hubungi tim organizer event.`
             </div>
             
             {/* Time Estimate Card */}
-            <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 border border-blue-200 dark:border-blue-700 rounded-xl p-4 shadow-sm">
+            <div className="bg-gradient-to-r from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-800/30 border border-green-200 dark:border-green-700 rounded-xl p-4 shadow-sm">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-200 dark:bg-blue-800 rounded-lg">
-                  <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <div className="p-2 bg-green-200 dark:bg-green-800 rounded-lg">
+                  <Clock className="w-5 h-5 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">
-                    Estimasi Waktu Pemeliharaan
+                  <p className="text-sm font-semibold text-green-900 dark:text-green-100">
+                    📅 Order Dibuka Kembali
                   </p>
-                  <p className="text-sm text-blue-700 dark:text-blue-300">
-                    Biasanya selesai dalam 15-30 menit
+                  <p className="text-sm text-green-700 dark:text-green-300">
+                    Besok pagi sekitar pukul 08:00 WIB
                   </p>
                 </div>
               </div>
@@ -83,11 +88,11 @@ Untuk informasi lebih lanjut, hubungi tim organizer event.`
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
-                      Tidak ada transaksi yang hilang
+                      Sistem sedang dipersiapkan untuk hari event
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
-                      Silakan coba akses kembali setelah pemeliharaan selesai
+                      Order dibuka kembali besok pagi untuk memastikan kelancaran
                     </li>
                   </ul>
                 </div>

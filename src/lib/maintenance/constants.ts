@@ -22,10 +22,14 @@ export const API_ROUTES = [
 
 // Default maintenance message
 export const DEFAULT_MAINTENANCE_MESSAGE = `
-🔧 Sistem sedang dalam pemeliharaan
+🔧 Order Tutup Sementara - Dibuka Besok Pagi
 
-Mohon maaf, aplikasi Perdami Store sedang dalam tahap pemeliharaan untuk meningkatkan layanan. 
-Silakan coba lagi dalam beberapa saat.
+Mohon maaf, sistem pemesanan Perdami Store ditutup sementara untuk persiapan event.
 
-Untuk informasi lebih lanjut, hubungi tim organizer event.
+📅 Order akan dibuka kembali: BESOK PAGI
+⏰ Estimasi waktu: Sekitar pukul 08:00 WIB
+
+Kami sedang mempersiapkan segala sesuatu agar proses pemesanan berjalan lancar di hari event.
+
+Terima kasih atas kesabaran Anda! 🙏
 `
