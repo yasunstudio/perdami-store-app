@@ -10,7 +10,10 @@ interface ExportOrdersToExcelOptions {
 
 export const exportOrdersToExcel = ({ allOrders, storeOrders }: ExportOrdersToExcelOptions) => {
   try {
-    console.log('Starting Excel export...', { allOrdersCount: allOrders?.length })
+    console.log('Starting Excel export...', { 
+      allOrdersCount: allOrders?.length,
+      version: 'v2.0-improved-format'
+    })
     
     if (!allOrders || allOrders.length === 0) {
       throw new Error('No orders data provided for export')
@@ -126,8 +129,9 @@ export const exportOrdersToExcel = ({ allOrders, storeOrders }: ExportOrdersToEx
     // Convert array buffer to blob
     const blob = new Blob([wbout], { type: 'application/octet-stream' })
 
-    // Create download link
-    const fileName = `orders-export-${format(new Date(), 'yyyy-MM-dd-HH-mm-ss')}.xlsx`
+    // Create download link with timestamp for cache busting
+    const timestamp = Date.now()
+    const fileName = `orders-export-v2-${format(new Date(), 'yyyy-MM-dd-HH-mm-ss')}-${timestamp}.xlsx`
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
