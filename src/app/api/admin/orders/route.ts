@@ -17,6 +17,8 @@ export async function GET(request: NextRequest) {
     const orderStatus = searchParams.get('orderStatus')
     const paymentStatus = searchParams.get('paymentStatus')
     const search = searchParams.get('search')
+    const sortField = searchParams.get('sortField') || 'createdAt'
+    const sortDirection = searchParams.get('sortDirection') || 'desc'
 
     const offset = (page - 1) * limit
 
@@ -85,7 +87,7 @@ export async function GET(request: NextRequest) {
           }
         }
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { [sortField]: sortDirection },
       skip: offset,
       take: limit
     })

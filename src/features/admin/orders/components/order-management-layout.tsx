@@ -241,7 +241,7 @@ export default function OrderManagementLayout({
       setLoading(true)
       const params = new URLSearchParams({
         page: page.toString(),
-        perPage: '10',
+        limit: '10',
         sortField: sort.field,
         sortDirection: sort.direction,
         ...(filters.search && { search: filters.search }),
@@ -260,6 +260,11 @@ export default function OrderManagementLayout({
       }
 
       const ordersResult = await ordersResponse.json()
+      console.log('API Response:', {
+        ordersCount: ordersResult.orders?.length,
+        pagination: ordersResult.pagination,
+        totalPages: ordersResult.pagination?.totalPages
+      })
       setData(ordersResult)
       setTotalPages(ordersResult.pagination?.totalPages || 1)
 

@@ -27,6 +27,9 @@ export function OrderGridView({
   getQuickActions,
   needsPaymentVerification
 }: OrderGridViewProps) {
+  // Debug logging
+  console.log('OrderGridView received orders count:', orders.length)
+  
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {orders.map((order) => (
