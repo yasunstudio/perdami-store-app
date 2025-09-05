@@ -234,8 +234,8 @@ export async function GET(request: NextRequest) {
             'Jumlah': item.quantity,
             'Harga Satuan': costPrice,
             'Total': totalPrice,
-            'Order Total Amount': orderTotalAmount,
             'Tanggal Pickup': formatDate(order.pickupDate),
+            'Order Total Amount': orderTotalAmount,
             'Store Name': item.bundle.store.name, // Add store name for grouping
           });
         }
@@ -318,7 +318,7 @@ export async function GET(request: NextRequest) {
           worksheetData.push([`=== ${storeName} ===`]);
           
           // Add column headers
-          worksheetData.push(['Tanggal Order', 'Nama Customer', 'No Telepon', 'Paket', 'Item dalam Paket', 'Jumlah', 'Harga Satuan', 'Total', 'Order Total Amount', 'Tanggal Pickup']);
+          worksheetData.push(['Tanggal Order', 'Nama Customer', 'No Telepon', 'Paket', 'Item dalam Paket', 'Jumlah', 'Harga Satuan', 'Total', 'Tanggal Pickup', 'Order Total Amount']);
           
           // Add store data
           storeData.forEach(detail => {
@@ -331,8 +331,8 @@ export async function GET(request: NextRequest) {
               detail['Jumlah'],
               detail['Harga Satuan'],
               detail['Total'],
-              detail['Order Total Amount'],
-              detail['Tanggal Pickup']
+              detail['Tanggal Pickup'],
+              detail['Order Total Amount']
             ]);
           });
 
@@ -391,7 +391,7 @@ export async function GET(request: NextRequest) {
           [`Tanggal: ${dateRangeForHeader}`],
           [''],
           // Header row for data
-          ['Tanggal Order', 'Nama Customer', 'No Telepon', 'Paket', 'Item dalam Paket', 'Jumlah', 'Harga Satuan', 'Total', 'Order Total Amount', 'Tanggal Pickup']
+          ['Tanggal Order', 'Nama Customer', 'No Telepon', 'Paket', 'Item dalam Paket', 'Jumlah', 'Harga Satuan', 'Total', 'Tanggal Pickup', 'Order Total Amount']
         ]);
 
         // Add data rows starting from row 7 (index 6)
