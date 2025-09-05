@@ -30,7 +30,7 @@ export const fetchStores = async (): Promise<Store[]> => {
 
 export const exportStorePaymentDetails = async (
   filters: StorePaymentFilters,
-  format: 'excel' | 'pdf' = 'excel'
+  format: 'excel' = 'excel'
 ): Promise<Blob> => {
   const params = new URLSearchParams();
   

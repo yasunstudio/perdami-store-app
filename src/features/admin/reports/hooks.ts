@@ -106,7 +106,7 @@ export const usePaymentExport = () => {
 
   const exportPaymentDetails = useCallback(async (
     filters: StorePaymentFilters, 
-    format: 'excel' | 'pdf' = 'excel'
+    format: 'excel' = 'excel'
   ) => {
     try {
       setIsExporting(true);
@@ -122,9 +122,8 @@ export const usePaymentExport = () => {
       const dateRange = filters.startDate && filters.endDate 
         ? `${filters.startDate.toISOString().split('T')[0]}_to_${filters.endDate.toISOString().split('T')[0]}`
         : 'all-dates';
-      const extension = format === 'excel' ? 'xlsx' : 'pdf';
       
-      link.download = `store-payment-details_${storeName}_${dateRange}.${extension}`;
+      link.download = `store-payment-details_${storeName}_${dateRange}.xlsx`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
