@@ -18,7 +18,7 @@ export const exportOrdersToExcel = ({ allOrders, storeOrders }: ExportOrdersToEx
 
     const workbook = XLSX.utils.book_new()
 
-    // Sheet 1: All Orders
+    // Sheet 1: All Orders (Semua Pesanan)
     const allOrdersData = allOrders.map((order) => {
       const customer = order.user || order.customer || {}
       return {
@@ -127,7 +127,7 @@ export const exportOrdersToExcel = ({ allOrders, storeOrders }: ExportOrdersToEx
     const blob = new Blob([wbout], { type: 'application/octet-stream' })
 
     // Create download link
-    const fileName = `orders-export-${format(new Date(), 'yyyy-MM-dd-HH-mm')}.xlsx`
+    const fileName = `orders-export-${format(new Date(), 'yyyy-MM-dd-HH-mm-ss')}.xlsx`
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
