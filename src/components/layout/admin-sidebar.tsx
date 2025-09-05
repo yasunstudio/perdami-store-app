@@ -225,6 +225,17 @@ export function AdminSidebar() {
   const { hasAnyPermission } = usePermissions();
   const { data: session } = useSession();
 
+  // Auto-expand parent menu when child is active
+  React.useEffect(() => {
+    if (pathname) {
+      const activeParents = getActiveParents(navigation, pathname);
+      setExpandedItems(prev => {
+        const newExpanded = [...new Set([...prev, ...activeParents])];
+        return newExpanded;
+      });
+    }
+  }, [pathname]);
+
   // Navigation handler
   const handleNavigate = useCallback(async (href: string) => {
     console.log('AdminSidebar: Navigating to:', href);

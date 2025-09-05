@@ -9,8 +9,16 @@ import { SidebarItem } from '@/types/sidebar';
  */
 export const isActiveNavItem = (href: string, pathname: string): boolean => {
   if (!pathname) return false;
+  
+  // Exact match for admin root
   if (href === '/admin' && pathname === '/admin') return true;
-  if (href !== '/admin' && pathname.startsWith(href)) return true;
+  
+  // For non-admin paths, use exact matching only
+  // This prevents parent menus from being active when their children are selected
+  if (href !== '/admin') {
+    return pathname === href;
+  }
+  
   return false;
 };
 
