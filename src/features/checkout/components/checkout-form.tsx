@@ -94,13 +94,8 @@ export function CheckoutForm({ onSubmit, isProcessing, userEmail, userName, user
     loadBanks()
   }, [])
 
-  // Auto-select pickup date (only option is September 7, 2025)
-  useEffect(() => {
-    const defaultPickupDate = '2025-09-07'
-    if (!selectedPickupDate) {
-      setValue('pickupDate', defaultPickupDate)
-    }
-  }, [selectedPickupDate, setValue])
+  // Don't auto-select pickup date since user now has 2 options (Sept 6 & 7)
+  // Let user choose between the available dates
 
   const selectedBank = banks?.find(bank => bank.id === selectedBankId)
 

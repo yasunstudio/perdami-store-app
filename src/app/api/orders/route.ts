@@ -74,12 +74,12 @@ export async function POST(request: NextRequest) {
     const validatedData = createOrderSchema.parse(body)
     console.log('✅ Data validation passed')
 
-    // Validate pickup date - only September 7, 2025 is allowed
-    const allowedPickupDate = '2025-09-07'
-    if (validatedData.pickupDate !== allowedPickupDate) {
-      console.log(`❌ Invalid pickup date: ${validatedData.pickupDate}, only ${allowedPickupDate} is allowed`)
+    // Validate pickup date - only September 6 and 7, 2025 are allowed
+    const allowedPickupDates = ['2025-09-06', '2025-09-07']
+    if (!allowedPickupDates.includes(validatedData.pickupDate)) {
+      console.log(`❌ Invalid pickup date: ${validatedData.pickupDate}, only ${allowedPickupDates.join(' or ')} are allowed`)
       return NextResponse.json(
-        { error: 'Pickup hanya tersedia pada tanggal 7 September 2025' },
+        { error: 'Pickup hanya tersedia pada tanggal 6 atau 7 September 2025' },
         { status: 400 }
       )
     }

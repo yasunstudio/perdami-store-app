@@ -20,9 +20,14 @@ interface PickupDateSelectorProps {
 }
 
 export function PickupDateSelector({ selectedDate, onDateSelect, className }: PickupDateSelectorProps) {
-  // Only allow pickup on the last day of event (September 7, 2025)
-  // This ensures sufficient processing time for vendors
+  // Allow pickup on September 6 and 7, 2025 (last 2 days of event)
+  // This allows sufficient processing time while providing flexibility
   const pickupDates: PickupDateOption[] = [
+    {
+      date: '2025-09-06',
+      label: 'Sabtu, 6 September 2025',
+      description: 'Hari kedua acara Perdami - Pickup tersedia'
+    },
     {
       date: '2025-09-07',
       label: 'Minggu, 7 September 2025',
@@ -38,7 +43,7 @@ export function PickupDateSelector({ selectedDate, onDateSelect, className }: Pi
           Pilih Tanggal Pickup
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Pickup tersedia pada hari terakhir event (7 September) untuk memastikan semua pesanan siap
+          Pickup tersedia pada 2 hari terakhir event (6-7 September) untuk memastikan semua pesanan siap
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
