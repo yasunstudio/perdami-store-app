@@ -37,11 +37,11 @@ export function ContactInfoManager() {
 
   const getColorByType = (type: string) => {
     switch (type) {
-      case 'EMAIL': return 'bg-blue-100 text-blue-800'
-      case 'PHONE': return 'bg-green-100 text-green-800'
-      case 'WHATSAPP': return 'bg-green-100 text-green-800'
-      case 'SOCIAL_MEDIA': return 'bg-purple-100 text-purple-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'EMAIL': return 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200'
+      case 'PHONE': return 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200'
+      case 'WHATSAPP': return 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200'
+      case 'SOCIAL_MEDIA': return 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200'
+      default: return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'
     }
   }
 
@@ -170,25 +170,25 @@ export function ContactInfoManager() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {getContactsByType('EMAIL').length}
               </div>
               <div className="text-sm text-muted-foreground">Email</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                 {getContactsByType('PHONE').length}
               </div>
               <div className="text-sm text-muted-foreground">Telepon</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                 {getContactsByType('WHATSAPP').length}
               </div>
               <div className="text-sm text-muted-foreground">WhatsApp</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
+              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                 {getContactsByType('SOCIAL_MEDIA').length}
               </div>
               <div className="text-sm text-muted-foreground">Media Sosial</div>

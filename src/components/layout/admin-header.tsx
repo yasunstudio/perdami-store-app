@@ -28,7 +28,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen
 } from 'lucide-react';
-import { useTheme } from 'next-themes';
+import { useTheme } from '@/hooks/use-theme';
 import { useRouter } from 'next/navigation';
 import { useSidebar } from '@/components/layout/admin-sidebar';
 import { cn } from '@/lib/utils';
@@ -50,7 +50,7 @@ const breadcrumbMap: Record<string, { title: string; parent?: string }> = {
 export function AdminHeader() {
   const { data: session } = useSession();
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const router = useRouter();
   const { isCollapsed, setIsCollapsed } = useSidebar();
   const [mounted, setMounted] = useState(false);
@@ -113,14 +113,14 @@ export function AdminHeader() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
             className="hidden sm:flex h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           >
-            {theme === 'dark' ? (
-              <Sun className="h-3 w-3 text-amber-500" />
+            {resolvedTheme === 'dark' ? (
+              <Sun className="h-3 w-3 text-amber-500 dark:text-amber-400" />
             ) : (
-              <Moon className="h-3 w-3 text-blue-600" />
+              <Moon className="h-3 w-3 text-blue-600 dark:text-blue-400" />
             )}
           </Button>
         )}

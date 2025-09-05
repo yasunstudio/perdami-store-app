@@ -220,10 +220,10 @@ export function SettingsContainer() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center space-y-4">
-          <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
+          <AlertCircle className="h-12 w-12 text-destructive mx-auto" />
           <div className="space-y-2">
-            <h3 className="text-lg font-medium text-red-900">Gagal Memuat Pengaturan</h3>
-            <p className="text-sm text-red-700">
+            <h3 className="text-lg font-medium text-destructive">Gagal Memuat Pengaturan</h3>
+            <p className="text-sm text-destructive/80">
               Terjadi kesalahan saat memuat pengaturan aplikasi
             </p>
             <Button onClick={() => window.location.reload()} size="sm">
@@ -238,7 +238,7 @@ export function SettingsContainer() {
   return (
     <div className="space-y-6">
       {/* Save/Reset Controls */}
-      <Card className={`transition-all duration-300 ${hasChanges ? 'border-orange-200 bg-orange-50/50' : ''}`}>
+      <Card className={`transition-all duration-300 ${hasChanges ? 'border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/20' : ''}`}>
         <CardHeader className="pb-4">
           <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0 sm:space-x-4">
             <div className="space-y-1">
@@ -246,8 +246,8 @@ export function SettingsContainer() {
                 <Settings2 className="h-5 w-5 text-primary" />
                 <CardTitle className="text-lg">Pengaturan Aplikasi</CardTitle>
                 {hasChanges && (
-                  <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200">
-                    <div className="w-2 h-2 rounded-full bg-orange-500 mr-1.5 animate-pulse" />
+                  <Badge variant="secondary" className="bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-200 border-orange-200 dark:border-orange-800">
+                    <div className="w-2 h-2 rounded-full bg-orange-500 dark:bg-orange-400 mr-1.5 animate-pulse" />
                     Ada Perubahan
                   </Badge>
                 )}
@@ -276,19 +276,19 @@ export function SettingsContainer() {
                 <DialogContent className="w-[95vw] max-w-md mx-4 sm:mx-0">
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-                      <AlertCircle className="h-5 w-5 text-orange-500" />
+                      <AlertCircle className="h-5 w-5 text-orange-500 dark:text-orange-400" />
                       Konfirmasi Reset Perubahan
                     </DialogTitle>
                     <DialogDescription className="space-y-2 pt-2">
                       <p className="text-sm">
                         Apakah Anda yakin ingin mereset semua perubahan yang belum disimpan?
                       </p>
-                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mt-3">
+                      <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3 mt-3">
                         <div className="flex items-start gap-2">
-                          <AlertTriangle className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
-                          <div className="text-sm text-orange-800">
+                          <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
+                          <div className="text-sm text-orange-800 dark:text-orange-200">
                             <p className="font-medium">Tindakan ini tidak dapat dibatalkan</p>
-                            <p className="text-orange-700 mt-1">
+                            <p className="text-orange-700 dark:text-orange-300 mt-1">
                               Semua perubahan yang Anda buat akan hilang dan kembali ke pengaturan terakhir yang disimpan.
                             </p>
                           </div>
@@ -354,13 +354,13 @@ export function SettingsContainer() {
 
       {/* Maintenance Mode Warning */}
       {settings.isMaintenanceMode && (
-        <Card className="border-orange-200 bg-orange-50">
+        <Card className="border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/20">
           <CardContent className="pt-6">
             <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-3">
-              <AlertTriangle className="h-5 w-5 text-orange-600 flex-shrink-0" />
+              <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0" />
               <div className="space-y-1">
-                <p className="font-medium text-orange-800">Mode Maintenance Aktif</p>
-                <p className="text-sm text-orange-700">
+                <p className="font-medium text-orange-800 dark:text-orange-200">Mode Maintenance Aktif</p>
+                <p className="text-sm text-orange-700 dark:text-orange-300">
                   Aplikasi saat ini dalam mode maintenance. User tidak dapat mengakses aplikasi.
                 </p>
               </div>
