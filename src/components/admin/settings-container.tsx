@@ -37,6 +37,7 @@ import {
   Shield
 } from 'lucide-react'
 import { ContactInfoManager } from './contact-info-manager'
+import { ThemeSettings } from './theme-settings'
 
 interface AppSettings {
   id: string
@@ -600,6 +601,13 @@ export function SettingsContainer() {
               checked={settings.isActive}
               onCheckedChange={(checked: boolean) => handleChange('isActive', checked)}
             />
+          </div>
+
+          <Separator />
+
+          {/* Theme Settings */}
+          <div className="p-4 border rounded-lg">
+            <ThemeSettings />
           </div>
         </CardContent>
       </Card>
