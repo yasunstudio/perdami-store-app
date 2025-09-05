@@ -65,7 +65,7 @@ Terima kasih atas kesabaran Anda! 🙏`
                     📅 Order Dibuka Kembali
                   </p>
                   <p className="text-sm text-green-700 dark:text-green-300">
-                    Besok pagi sekitar pukul 08:00 WIB
+                    Besok pagi sekitar pukul 07:00 WIB
                   </p>
                 </div>
               </div>

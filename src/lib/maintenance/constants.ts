@@ -27,7 +27,7 @@ export const DEFAULT_MAINTENANCE_MESSAGE = `
 Mohon maaf, sistem pemesanan Perdami Store ditutup sementara untuk persiapan event.
 
 📅 Order akan dibuka kembali: BESOK PAGI
-⏰ Estimasi waktu: Sekitar pukul 08:00 WIB
+⏰ Estimasi waktu: Sekitar pukul 07:00 WIB
 
 Kami sedang mempersiapkan segala sesuatu agar proses pemesanan berjalan lancar di hari event.
 
