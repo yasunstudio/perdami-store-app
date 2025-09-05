@@ -1,5 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+/**
+ * Simple maintenance status check without database dependency
+ * Uses environment variable as fallback for Edge Runtime compatibility
+ */
+async function getMaintenanceStatus(): Promise<boolean> {
+  try {
+    // Try API endpoint for dynamic status
+    const baseUrl = 'https://dharma-wanita-perdami.vercel.app'
+    const response = await fetch(new URL('/api/maintenance', baseUrl), {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      // Quick timeout for Edge Runtime
+      signal: AbortSignal.timeout(3000)
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      return data.isMaintenanceMode ?? false
+    }
+  } catch (error) {
+    console.warn('Maintenance API call failed, using fallback:', error)
+  }
+  
+  // Fallback to environment variable
+  return process.env.MAINTENANCE_MODE === 'true'
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -13,18 +40,26 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Allow admin routes
-  if (pathname.startsWith('/admin')) {
-    return NextResponse.next()
-  }
-
   // Allow maintenance page itself
   if (pathname === '/maintenance' || pathname.startsWith('/maintenance/')) {
     return NextResponse.next()
   }
 
-  // Redirect everything else to maintenance
-  return NextResponse.redirect(new URL('/maintenance', request.url))
+  // Allow admin routes (bypass maintenance)
+  if (pathname.startsWith('/admin')) {
+    return NextResponse.next()
+  }
+
+  // Check maintenance mode
+  const isMaintenanceMode = await getMaintenanceStatus()
+  
+  if (isMaintenanceMode) {
+    // Redirect all other routes to maintenance
+    return NextResponse.redirect(new URL('/maintenance', request.url))
+  }
+
+  // If not in maintenance mode, continue normally
+  return NextResponse.next()
 }
 
 export const config = {
