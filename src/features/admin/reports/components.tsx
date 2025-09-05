@@ -331,13 +331,31 @@ export const StorePaymentDetailsPage = () => {
                           return contents;
                         }
                         if (Array.isArray(contents)) {
-                          return contents.join(', ');
+                          // Handle array of objects with name and quantity
+                          return contents.map((item: any) => {
+                            if (typeof item === 'string') {
+                              return item;
+                            }
+                            if (typeof item === 'object' && item.name) {
+                              // Format: "Item Name (qty: 2)" or just "Item Name" if qty is 1
+                              const quantity = item.quantity || 1;
+                              return quantity > 1 ? `${item.name} (qty: ${quantity})` : item.name;
+                            }
+                            return String(item);
+                          }).join(', ');
                         }
                         if (typeof contents === 'object') {
                           if (contents.items && Array.isArray(contents.items)) {
-                            return contents.items.map((item: any) => 
-                              typeof item === 'string' ? item : item.name || item.description || JSON.stringify(item)
-                            ).join(', ');
+                            return contents.items.map((item: any) => {
+                              if (typeof item === 'string') {
+                                return item;
+                              }
+                              if (typeof item === 'object' && item.name) {
+                                const quantity = item.quantity || 1;
+                                return quantity > 1 ? `${item.name} (qty: ${quantity})` : item.name;
+                              }
+                              return item.name || item.description || String(item);
+                            }).join(', ');
                           }
                           return JSON.stringify(contents).replace(/[{}"]/g, '').replace(/,/g, ', ');
                         }
