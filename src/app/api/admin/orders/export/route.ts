@@ -14,8 +14,8 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const sortField = searchParams.get('sortField') || 'createdAt'
-    const sortDirection = searchParams.get('sortDirection') || 'desc'
+    const sortField = searchParams.get('sortField') || 'pickupDate'
+    const sortDirection = searchParams.get('sortDirection') || 'asc'
     const orderStatus = searchParams.get('orderStatus')
     const paymentStatus = searchParams.get('paymentStatus')
 
@@ -30,12 +30,20 @@ export async function GET(request: NextRequest) {
       where.paymentStatus = paymentStatus as PaymentStatus
     }
 
-    // Fetch all orders with full relations
+    // Fetch all orders with full relations, sorted by pickup date
     const orders = await prisma.order.findMany({
       where,
-      orderBy: {
-        [sortField]: sortDirection as Prisma.SortOrder
-      },
+      orderBy: [
+        {
+          pickupDate: {
+            sort: sortDirection as Prisma.SortOrder,
+            nulls: 'last' // Orders without pickup date will be at the end
+          }
+        },
+        {
+          createdAt: 'desc' // Secondary sort by creation date for orders with same pickup date
+        }
+      ],
       include: {
         user: {
           select: {
