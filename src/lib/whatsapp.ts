@@ -101,6 +101,50 @@ Terima kasih!
 }
 
 /**
+ * Generate WhatsApp message for customer pickup notification
+ */
+export function generateCustomerPickupMessage(order: any): string {
+  // Handle different order item structures
+  const items = order.orderItems || order.items || []
+  
+  // Format items list
+  const itemsList = items
+    .map((item: any) => `- ${item.quantity}x ${item.bundle?.name || 'Item'}`)
+    .join('\n')
+
+  // Format pickup date
+  const pickupDate = order.pickupDate 
+    ? format(new Date(order.pickupDate), 'dd MMMM yyyy HH:mm', { locale: id })
+    : 'Akan dikonfirmasi'
+
+  const customerName = order.user?.name || order.customer?.name || 'Customer'
+
+  const message = `🎉 *Pesanan Anda Sudah Siap!*
+
+Halo *${customerName}*,
+
+Pesanan #*${order.orderNumber}* Anda sudah siap untuk diambil!
+
+📋 *Detail Pesanan:*
+${itemsList}
+
+💰 *Total: Rp ${order.totalAmount.toLocaleString('id-ID')}*
+
+📍 *Lokasi Pickup:*
+Booth Perdami 2025
+
+⏰ *Jadwal Pickup:*
+📅 ${pickupDate}
+
+Silakan datang sesuai jadwal ya! 
+
+Terima kasih 🙏
+_Tim Dharma Wanita Perdami_`
+
+  return message
+}
+
+/**
  * Generate WhatsApp URL with pre-filled message
  */
 export function generateWhatsAppURL(phoneNumber: string, message: string): string {

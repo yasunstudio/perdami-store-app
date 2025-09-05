@@ -9,11 +9,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Eye, /* Edit, */ Trash2 } from 'lucide-react'
+import { MoreHorizontal, Eye, Trash2, MessageCircle } from 'lucide-react'
 import { OrderWithRelations } from '../types/order.types'
 import { formatPrice } from '@/lib/utils'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
+import { generateCustomerPickupMessage, openWhatsApp, validateIndonesianPhone } from '@/lib/whatsapp'
+import { toast } from 'sonner'
 
 interface OrderListTableProps {
   orders: OrderWithRelations[]
@@ -34,6 +36,32 @@ export function OrderListTable({
   getStatusBadge,
   getPaymentStatusBadge
 }: OrderListTableProps) {
+
+  // Handle WhatsApp notification to customer
+  const handleNotifyCustomer = (order: OrderWithRelations) => {
+    try {
+      const customerPhone = order.customer?.phone || order.user?.phone
+      const customerName = order.customer?.name || order.user?.name
+
+      if (!customerPhone) {
+        toast.error('Nomor telepon customer tidak tersedia')
+        return
+      }
+
+      if (!validateIndonesianPhone(customerPhone)) {
+        toast.error('Format nomor telepon tidak valid')
+        return
+      }
+
+      const message = generateCustomerPickupMessage(order)
+      openWhatsApp(customerPhone, message)
+      toast.success(`WhatsApp terbuka untuk notifikasi ke ${customerName}`)
+    } catch (error) {
+      console.error('Error opening WhatsApp:', error)
+      toast.error('Gagal membuka WhatsApp')
+    }
+  }
+
   return (
     <div className="rounded-md border">
       <div className="relative w-full overflow-auto">
@@ -134,6 +162,13 @@ export function OrderListTable({
                         <Eye className="mr-2 h-4 w-4" />
                         Lihat Detail
                       </DropdownMenuItem>
+                      {/* WhatsApp notification - show if customer has phone and order is ready */}
+                      {(order.customer?.phone || order.user?.phone) && order.orderStatus === 'READY' && (
+                        <DropdownMenuItem onClick={() => handleNotifyCustomer(order)}>
+                          <MessageCircle className="mr-2 h-4 w-4" />
+                          Notifikasi WhatsApp
+                        </DropdownMenuItem>
+                      )}
                       {/* Edit option disabled - use View Details instead
                       <DropdownMenuItem onClick={() => onEdit(order)}>
                         <Edit className="mr-2 h-4 w-4" />
