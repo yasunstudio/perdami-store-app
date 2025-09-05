@@ -16,11 +16,43 @@ export async function middleware(request: NextRequest) {
     return maintenanceResponse
   }
   
-  // Continue with existing auth logic
+  // Continue with auth logic for protected routes
   console.log('🔍 Middleware processing:', pathname)
   
-  // For now, allow all requests to pass through
-  // TODO: Re-enable auth middleware after maintenance is tested
+  try {
+    // Get session for auth-protected routes
+    if (protectedRoutes.some(route => pathname.startsWith(route))) {
+      const session = await auth()
+      
+      // Check if user is trying to access admin routes
+      if (adminRoutes.some(route => pathname.startsWith(route))) {
+        if (!session?.user || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN')) {
+          console.log('🚫 Unauthorized admin access attempt:', pathname)
+          return NextResponse.redirect(new URL('/auth/login?callbackUrl=' + encodeURIComponent(pathname), request.url))
+        }
+      }
+      
+      // For non-admin protected routes, just check if user is logged in
+      else if (!session?.user) {
+        console.log('🔒 Redirecting to login for protected route:', pathname)
+        return NextResponse.redirect(new URL('/auth/login?callbackUrl=' + encodeURIComponent(pathname), request.url))
+      }
+    }
+
+    // Redirect logged-in users away from auth pages
+    if (authRoutes.some(route => pathname.startsWith(route))) {
+      const session = await auth()
+      if (session?.user) {
+        console.log('🔄 Redirecting logged-in user away from auth page:', pathname)
+        return NextResponse.redirect(new URL('/', request.url))
+      }
+    }
+
+  } catch (error) {
+    console.error('Auth middleware error:', error)
+    // On auth errors, allow access but log the issue
+  }
+  
   return NextResponse.next()
 }
 

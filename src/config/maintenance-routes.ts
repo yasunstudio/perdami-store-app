@@ -15,6 +15,13 @@ export const MAINTENANCE_PROTECTED_ROUTES = [
   // User account areas (non-admin)
   '/profile',
   '/orders',
+  '/notifications',
+  '/pickup',
+  
+  // Authentication and user flows (block during maintenance)
+  '/auth/login',
+  '/auth/register', 
+  '/quick-login',
   
   // Additional shopping-related routes
   '/search',
@@ -23,19 +30,21 @@ export const MAINTENANCE_PROTECTED_ROUTES = [
 
 // Routes that should always be accessible during maintenance
 export const MAINTENANCE_ALLOWED_ROUTES = [
-  // Admin routes
+  // Admin routes (always accessible)
   '/admin',
-  
-  // Authentication routes
-  '/auth',
-  '/login',
-  '/register',
   
   // System routes
   '/maintenance',
   '/api',
   
-  // Legal/informational pages
+  // Static content and assets
+  '/_next',
+  '/favicon.ico',
+  '/icons',
+  '/images',
+  '/screenshots',
+  
+  // Legal/informational pages (keep accessible)
   '/privacy',
   '/terms',
   '/about',
@@ -49,7 +58,7 @@ export const MAINTENANCE_ALLOWED_ROUTES = [
 export function isMaintenanceProtectedRoute(pathname: string): boolean {
   // First check if it's explicitly allowed
   const isAllowed = MAINTENANCE_ALLOWED_ROUTES.some(route => 
-    pathname === route || pathname.startsWith(route + '/')
+    pathname === route || pathname.startsWith(route + '/') || pathname.startsWith(route)
   )
   
   if (isAllowed) {
@@ -61,5 +70,11 @@ export function isMaintenanceProtectedRoute(pathname: string): boolean {
     pathname === route || pathname.startsWith(route + '/')
   )
   
-  return isProtected
+  if (isProtected) {
+    return true
+  }
+  
+  // Default: protect all routes during maintenance except explicitly allowed ones
+  // This ensures any new routes are automatically protected
+  return true
 }
