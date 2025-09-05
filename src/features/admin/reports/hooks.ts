@@ -12,16 +12,13 @@ export const useStorePaymentDetails = () => {
   const [isLoadingStores, setIsLoadingStores] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Initialize with broader date range for better initial data visibility
-  const today = new Date();
-  const weekAgo = new Date();
-  weekAgo.setDate(today.getDate() - 7);
-  const weekAhead = new Date();
-  weekAhead.setDate(today.getDate() + 7);
+  // Initialize with specific 3-day pickup date range where data exists
+  const startDate = new Date('2025-09-05'); // Start of pickup period
+  const endDate = new Date('2025-09-07');   // End of pickup period
   
   const [filters, setFilters] = useState<StorePaymentFilters>({
-    startDate: weekAgo,
-    endDate: weekAhead
+    startDate: startDate,
+    endDate: endDate
   });
 
   const updateFilters = useCallback((newFilters: Partial<StorePaymentFilters>) => {
@@ -29,14 +26,12 @@ export const useStorePaymentDetails = () => {
   }, []);
 
   const clearFilters = useCallback(() => {
-    const today = new Date();
-    const weekAgo = new Date();
-    weekAgo.setDate(today.getDate() - 7);
-    const weekAhead = new Date();
-    weekAhead.setDate(today.getDate() + 7);
+    // Reset to the same 3-day pickup period default
+    const defaultStartDate = new Date('2025-09-05');
+    const defaultEndDate = new Date('2025-09-07');
     setFilters({
-      startDate: weekAgo,
-      endDate: weekAhead
+      startDate: defaultStartDate,
+      endDate: defaultEndDate
     });
   }, []);
 
