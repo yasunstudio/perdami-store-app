@@ -87,16 +87,16 @@ export default function CheckoutPage() {
       <div className="py-8 px-4">
         <div className="container mx-auto max-w-6xl">
           <div className="max-w-2xl mx-auto text-center">
-            <div className="w-24 h-24 mx-auto bg-muted rounded-full flex items-center justify-center mb-6">
-              <ShoppingBag className="h-12 w-12 text-muted-foreground" />
+            <div className="w-24 h-24 mx-auto bg-muted/50 dark:bg-muted/20 rounded-full flex items-center justify-center mb-6 border border-border/50 dark:border-border/30">
+              <ShoppingBag className="h-12 w-12 text-muted-foreground dark:text-muted-foreground/80" />
             </div>
-            <h1 className="text-3xl font-bold text-foreground mb-4">
+            <h1 className="text-3xl font-bold text-foreground dark:text-foreground mb-4">
               Keranjang Kosong
             </h1>
-            <p className="text-muted-foreground mb-8">
+            <p className="text-muted-foreground dark:text-muted-foreground/90 mb-8">
               Tidak ada produk di keranjang Anda untuk checkout.
             </p>
-            <Button asChild size="lg">
+            <Button asChild size="lg" className="bg-primary hover:bg-primary/90 dark:bg-primary dark:hover:bg-primary/90">
               <Link href="/bundles">
                 Mulai Berbelanja
               </Link>
@@ -211,14 +211,14 @@ export default function CheckoutPage() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="max-w-7xl mx-auto">
           <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-muted rounded w-48"></div>
+            <div className="h-8 bg-muted dark:bg-muted/50 rounded w-48"></div>
             <div className="grid lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-6">
-                <div className="h-96 bg-muted rounded"></div>
-                <div className="h-64 bg-muted rounded"></div>
+                <div className="h-96 bg-muted dark:bg-muted/50 rounded border border-border/50 dark:border-border/30"></div>
+                <div className="h-64 bg-muted dark:bg-muted/50 rounded border border-border/50 dark:border-border/30"></div>
               </div>
               <div className="lg:col-span-1">
-                <div className="h-80 bg-muted rounded"></div>
+                <div className="h-80 bg-muted dark:bg-muted/50 rounded border border-border/50 dark:border-border/30"></div>
               </div>
             </div>
           </div>
@@ -228,17 +228,17 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="py-8 px-4">
+    <div className="py-8 px-4 bg-background dark:bg-background">
       <div className="container mx-auto max-w-6xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Checkout</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="text-3xl font-bold text-foreground dark:text-foreground">Checkout</h1>
+            <p className="text-muted-foreground dark:text-muted-foreground/90 mt-1">
               Lengkapi informasi untuk menyelesaikan pesanan Anda
             </p>
           </div>
-          <Button variant="outline" asChild>
+          <Button variant="outline" asChild className="border-border/50 dark:border-border/30 hover:bg-muted/50 dark:hover:bg-muted/20">
             <Link href="/cart">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Kembali ke Keranjang
