@@ -125,11 +125,11 @@ export function generateCustomerPickupMessage(order: any): string {
 
   const customerName = order.user?.name || order.customer?.name || 'Customer'
 
-  const message = `*Pesanan Bapak/Ibu Sudah Siap!*
+  const message = `*Pesanan Sudah Siap!*
 
 Halo Bapak/Ibu *${customerName}*,
 
-Pesanan #*${order.orderNumber}* Bapak/Ibu sudah siap untuk diambil!
+Pesanan #*${order.orderNumber}* sudah siap untuk diambil!
 
 *Detail Pesanan:*
 ${itemsList || 'Data pesanan tidak tersedia'}
@@ -138,12 +138,13 @@ ${itemsList || 'Data pesanan tidak tersedia'}
 
 *Lokasi Pickup:*
 Booth PIT Perdami 2025
+Depan Ballroom Lantai 3
 
 *Tanggal Pickup:*
 ${pickupDate}
 
 Terima kasih 🙏
-_Tim Dharma Wanita Perdami_`
+_Tim Dharma Wanita PIT Perdami 2025_`
 
   return message
 }
