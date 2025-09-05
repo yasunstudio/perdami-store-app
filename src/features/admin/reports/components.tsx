@@ -337,9 +337,9 @@ export const StorePaymentDetailsPage = () => {
                               return item;
                             }
                             if (typeof item === 'object' && item.name) {
-                              // Format: "Item Name (qty: 2)" or just "Item Name" if qty is 1
+                              // Format: "Item Name (quantity)" - always show quantity
                               const quantity = item.quantity || 1;
-                              return quantity > 1 ? `${item.name} (qty: ${quantity})` : item.name;
+                              return `${item.name} (${quantity})`;
                             }
                             return String(item);
                           }).join(', ');
@@ -352,7 +352,7 @@ export const StorePaymentDetailsPage = () => {
                               }
                               if (typeof item === 'object' && item.name) {
                                 const quantity = item.quantity || 1;
-                                return quantity > 1 ? `${item.name} (qty: ${quantity})` : item.name;
+                                return `${item.name} (${quantity})`;
                               }
                               return item.name || item.description || String(item);
                             }).join(', ');
