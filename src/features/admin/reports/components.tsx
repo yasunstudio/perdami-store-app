@@ -153,6 +153,9 @@ export const StorePaymentDetailsPage = () => {
                   updateFilters({ startDate: value ? new Date(value) : undefined });
                 }}
               />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Filter berdasarkan tanggal pickup order
+              </p>
             </div>
 
             {/* End Date */}
@@ -193,6 +196,9 @@ export const StorePaymentDetailsPage = () => {
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Batch berdasarkan waktu pembuatan order: Batch 1 (06:00-18:00), Batch 2 (18:00-06:00)
+              </p>
             </div>
           </div>
           

@@ -12,11 +12,16 @@ export const useStorePaymentDetails = () => {
   const [isLoadingStores, setIsLoadingStores] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Initialize with today's date as default
+  // Initialize with broader date range for better initial data visibility
   const today = new Date();
+  const weekAgo = new Date();
+  weekAgo.setDate(today.getDate() - 7);
+  const weekAhead = new Date();
+  weekAhead.setDate(today.getDate() + 7);
+  
   const [filters, setFilters] = useState<StorePaymentFilters>({
-    startDate: today,
-    endDate: today
+    startDate: weekAgo,
+    endDate: weekAhead
   });
 
   const updateFilters = useCallback((newFilters: Partial<StorePaymentFilters>) => {
@@ -25,9 +30,13 @@ export const useStorePaymentDetails = () => {
 
   const clearFilters = useCallback(() => {
     const today = new Date();
+    const weekAgo = new Date();
+    weekAgo.setDate(today.getDate() - 7);
+    const weekAhead = new Date();
+    weekAhead.setDate(today.getDate() + 7);
     setFilters({
-      startDate: today,
-      endDate: today
+      startDate: weekAgo,
+      endDate: weekAhead
     });
   }, []);
 
