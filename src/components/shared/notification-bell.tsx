@@ -28,11 +28,42 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
   useEffect(() => {
     if (session?.user) {
       fetchNotifications()
-      // Poll for new notifications every 30 seconds
-      const interval = setInterval(fetchNotifications, 30000)
-      return () => clearInterval(interval)
+      
+      // Set up real-time notifications for admin users
+      if (isAdmin) {
+        const eventSource = new EventSource('/api/admin/notifications/sse')
+        
+        eventSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data)
+            
+            if (data.type === 'notifications') {
+              setNotifications(data.notifications)
+              setUnreadCount(data.unreadCount)
+            }
+          } catch (error) {
+            console.error('Error parsing SSE data:', error)
+          }
+        }
+
+        eventSource.onerror = (error) => {
+          console.error('SSE Error:', error)
+          eventSource.close()
+          // Fallback to polling if SSE fails
+          const interval = setInterval(fetchNotifications, 30000)
+          return () => clearInterval(interval)
+        }
+
+        return () => {
+          eventSource.close()
+        }
+      } else {
+        // For non-admin users, use regular polling
+        const interval = setInterval(fetchNotifications, 30000)
+        return () => clearInterval(interval)
+      }
     }
-  }, [session?.user, apiEndpoint])
+  }, [session?.user, apiEndpoint, isAdmin])
 
   // Close dropdown when clicking outside
   useEffect(() => {

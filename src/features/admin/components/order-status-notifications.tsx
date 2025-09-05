@@ -9,6 +9,7 @@ import { formatPrice } from '@/lib/utils'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
 import { OrderStatus, PaymentStatus } from '@/types'
+import { toast } from 'sonner'
 import { 
   Bell, 
   Package, 
@@ -44,9 +45,35 @@ export function OrderStatusNotifications({ onViewOrder }: OrderStatusNotificatio
 
   useEffect(() => {
     fetchNotifications()
-    // Set up polling for real-time updates
-    const interval = setInterval(fetchNotifications, 30000) // Poll every 30 seconds
-    return () => clearInterval(interval)
+    
+    // Set up real-time notifications with SSE
+    const eventSource = new EventSource('/api/admin/notifications/sse')
+    
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        
+        if (data.type === 'notifications') {
+          setNotifications(data.notifications)
+          setUnreadCount(data.unreadCount)
+          setIsLoading(false)
+        }
+      } catch (error) {
+        console.error('Error parsing SSE data:', error)
+      }
+    }
+
+    eventSource.onerror = (error) => {
+      console.error('SSE Error:', error)
+      eventSource.close()
+      // Fallback to polling if SSE fails
+      const interval = setInterval(fetchNotifications, 30000)
+      return () => clearInterval(interval)
+    }
+
+    return () => {
+      eventSource.close()
+    }
   }, [])
 
   const fetchNotifications = async () => {
@@ -99,6 +126,35 @@ export function OrderStatusNotifications({ onViewOrder }: OrderStatusNotificatio
       setUnreadCount(0)
     } catch (error) {
       console.error('Error marking all notifications as read:', error)
+    }
+  }
+
+  const handleQuickApprove = async (orderId: string) => {
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderStatus: 'CONFIRMED' })
+      })
+
+      if (response.ok) {
+        // Update notification status
+        setNotifications(prev => 
+          prev.map(notif => 
+            notif.id === orderId 
+              ? { ...notif, orderStatus: 'CONFIRMED' as OrderStatus, isRead: true }
+              : notif
+          )
+        )
+        // Refresh notifications to get latest data
+        fetchNotifications()
+        toast.success('Pesanan berhasil disetujui!')
+      } else {
+        toast.error('Gagal menyetujui pesanan')
+      }
+    } catch (error) {
+      console.error('Error approving order:', error)
+      toast.error('Terjadi kesalahan saat menyetujui pesanan')
     }
   }
 
@@ -238,6 +294,7 @@ export function OrderStatusNotifications({ onViewOrder }: OrderStatusNotificatio
                           <span className="text-sm font-medium">
                             {formatPrice(notification.totalAmount)}
                           </span>
+                        <div className="flex items-center gap-2">
                           <Button
                             size="sm"
                             variant="outline"
@@ -247,9 +304,22 @@ export function OrderStatusNotifications({ onViewOrder }: OrderStatusNotificatio
                                 markAsRead(notification.id)
                               }
                             }}
+                            className="h-7 px-2"
                           >
-                            <Eye className="h-3 w-3" />
+                            <Eye className="h-3 w-3 mr-1" />
+                            Lihat
                           </Button>
+                          {notification.type === 'new_order' && (
+                            <Button
+                              size="sm"
+                              className="h-7 px-2 bg-green-600 hover:bg-green-700"
+                              onClick={() => handleQuickApprove(notification.id)}
+                            >
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Setujui
+                            </Button>
+                          )}
+                        </div>
                         </div>
                       </div>
                     </div>

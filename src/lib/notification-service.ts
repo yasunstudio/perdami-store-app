@@ -57,7 +57,12 @@ export class NotificationService {
       const order = await prisma.order.findUnique({
         where: { id: orderId },
         include: {
-          user: { select: { name: true, email: true } }
+          user: { select: { name: true, email: true, phone: true } },
+          orderItems: {
+            include: {
+              bundle: { select: { name: true } }
+            }
+          }
         }
       })
 
@@ -65,11 +70,23 @@ export class NotificationService {
         throw new Error('Order not found')
       }
 
+      const itemsText = order.orderItems.length > 1 
+        ? `${order.orderItems.length} items` 
+        : order.orderItems[0]?.bundle?.name || 'Item'
+
       return await this.createAdminNotification({
         type: 'ORDER_UPDATE',
-        title: 'Pesanan Baru',
-        message: `Pesanan baru #${order.orderNumber} dari ${order.user.name} sebesar Rp ${order.totalAmount.toLocaleString('id-ID')}`,
-        data: { orderId: order.id, orderNumber: order.orderNumber }
+        title: '🆕 Pesanan Baru Masuk!',
+        message: `Pesanan #${order.orderNumber} dari ${order.user.name} (${itemsText}) - Total: Rp ${order.totalAmount.toLocaleString('id-ID')}`,
+        data: { 
+          orderId: order.id, 
+          orderNumber: order.orderNumber,
+          customerName: order.user.name,
+          customerEmail: order.user.email,
+          customerPhone: order.user.phone,
+          totalAmount: order.totalAmount,
+          itemCount: order.orderItems.length
+        }
       })
     } catch (error) {
       console.error('Failed to notify new order:', error)

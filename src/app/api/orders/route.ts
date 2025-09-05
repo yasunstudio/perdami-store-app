@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { PaymentMethod, OrderStatus, PaymentStatus } from '@prisma/client'
 import { auditLog } from '@/lib/audit'
-import { notificationService } from '@/lib/notification'
+import { NotificationService } from '@/lib/notification-service'
 import { SERVICE_FEE, calculateServiceFeePerStore } from '@/lib/service-fee'
 
 const createOrderSchema = z.object({
@@ -235,8 +235,7 @@ export async function POST(request: NextRequest) {
     // Send notifications for order creation
     try {
       console.log(`🔔 About to send notification for order: ${result.order.orderNumber}`)
-      // await notificationService.notifyNewOrder(result.order.id)
-      console.log(`Notification skipped for order: ${result.order.orderNumber}`)
+      await NotificationService.notifyNewOrder(result.order.id)
       console.log(`✅ Notification sent for order: ${result.order.orderNumber}`)
     } catch (error) {
       console.error('❌ Failed to send order creation notifications:', error)
