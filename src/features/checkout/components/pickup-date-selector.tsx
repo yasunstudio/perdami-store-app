@@ -52,7 +52,7 @@ export function PickupDateSelector({ selectedDate, onDateSelect, className }: Pi
           Pilih Tanggal Pickup
         </CardTitle>
         <p className="text-sm text-gray-600 dark:text-gray-300">
-          Pickup tersedia pada 2 hari terakhir event (6-7 September) untuk memastikan semua pesanan siap
+          Pickup tersedia pada hari terakhir event (7 September) untuk memastikan semua pesanan siap
         </p>
       </CardHeader>
       <CardContent className="space-y-3 p-6 bg-card dark:bg-gray-800">

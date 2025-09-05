@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
-import { AlertTriangle, Save, X, User, Mail, Phone, CreditCard, Calendar, Building, Eye, Edit } from 'lucide-react'
+import { AlertTriangle, Save, X, User, Mail, Phone, CreditCard, Calendar, Building, Eye, Edit, Upload, FileText } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
@@ -33,7 +33,7 @@ interface OrderData {
   createdAt: string
   updatedAt: string
   paymentMethod: string
-  paymentProof?: string
+  paymentProofUrl?: string
   user: {
     id: string
     name: string
@@ -88,11 +88,14 @@ export default function AdminOrderEditPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isEditing, setIsEditing] = useState(true) // Always in edit mode
+  const [uploading, setUploading] = useState(false)
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   
   const [formData, setFormData] = useState({
     orderStatus: '',
     paymentStatus: '',
-    notes: ''
+    notes: '',
+    paymentProofUrl: ''
   })
 
   useEffect(() => {
@@ -146,7 +149,8 @@ export default function AdminOrderEditPage() {
       setFormData({
         orderStatus: data.orderStatus || 'PENDING',
         paymentStatus: data.paymentStatus || 'PENDING',
-        notes: data.notes || ''
+        notes: data.notes || '',
+        paymentProofUrl: data.paymentProofUrl || ''
       })
     } catch (error) {
       console.error('❌ Error fetching order for edit:', error)
@@ -188,8 +192,78 @@ export default function AdminOrderEditPage() {
   }
 
   const handleViewPaymentProof = () => {
-    if (order?.paymentProof) {
-      window.open(order.paymentProof, '_blank')
+    if (order?.paymentProofUrl) {
+      window.open(order.paymentProofUrl, '_blank')
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf']
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Format file tidak didukung. Gunakan JPEG, PNG, WebP, atau PDF')
+        return
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Ukuran file terlalu besar. Maksimal 5MB')
+        return
+      }
+      
+      setUploadedFile(file)
+    }
+  }
+
+  const handleUploadPaymentProof = async () => {
+    if (!uploadedFile) {
+      toast.error('Pilih file terlebih dahulu')
+      return
+    }
+
+    try {
+      setUploading(true)
+      
+      const formData = new FormData()
+      formData.append('file', uploadedFile)
+      formData.append('orderId', orderId)
+      
+      const response = await fetch('/api/admin/orders/upload-payment-proof', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      })
+      
+      if (!response.ok) {
+        throw new Error('Gagal mengupload bukti pembayaran')
+      }
+      
+      const { url } = await response.json()
+      
+      // Update form data with new payment proof URL
+      setFormData(prev => ({ ...prev, paymentProofUrl: url }))
+      
+      // Update order state
+      if (order) {
+        setOrder(prev => prev ? { ...prev, paymentProofUrl: url } : null)
+      }
+      
+      toast.success('Bukti pembayaran berhasil diupload')
+      setUploadedFile(null)
+      
+      // Reset the file input
+      const fileInput = document.getElementById('paymentProofFile') as HTMLInputElement
+      if (fileInput) {
+        fileInput.value = ''
+      }
+      
+    } catch (error) {
+      console.error('Error uploading payment proof:', error)
+      toast.error('Gagal mengupload bukti pembayaran')
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -461,7 +535,7 @@ export default function AdminOrderEditPage() {
                   </div>
                 )}
 
-                {order.paymentProof && (
+                {order.paymentProofUrl && (
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-muted-foreground">Bukti Pembayaran</Label>
                     <div className="flex flex-col sm:flex-row gap-2">
@@ -477,6 +551,56 @@ export default function AdminOrderEditPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Upload Payment Proof Section */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-muted-foreground">
+                    {order.paymentProofUrl ? 'Update Bukti Pembayaran' : 'Upload Bukti Pembayaran'}
+                  </Label>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="paymentProofFile"
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={handleFileChange}
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleUploadPaymentProof}
+                        disabled={!uploadedFile || uploading}
+                        size="sm"
+                        className="min-w-[100px]"
+                      >
+                        {uploading ? (
+                          <>
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                            <span className="ml-2">Upload...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4" />
+                            <span className="ml-2">Upload</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    
+                    {uploadedFile && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <FileText className="h-4 w-4" />
+                        <span>
+                          {uploadedFile.name} ({(uploadedFile.size / 1024 / 1024).toFixed(2)} MB)
+                        </span>
+                      </div>
+                    )}
+                    
+                    <p className="text-xs text-muted-foreground">
+                      Format yang didukung: JPEG, PNG, WebP, PDF. Maksimal 5MB.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <Separator />
