@@ -3,6 +3,7 @@
 import { AdminSidebar, SidebarProvider, useSidebar } from '@/components/layout/admin-sidebar';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminRouteGuard } from '@/components/guards/admin-route-guard';
+import { MaintenanceBanner } from '@/components/maintenance';
 
 import { Toaster } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -45,6 +46,10 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
                 <div className={cn(
                   "w-full max-w-full transition-all duration-300 h-full"
                 )}>
+                  {/* Maintenance Banner */}
+                  <div className="p-4 pb-0">
+                    <MaintenanceBanner />
+                  </div>
                   {children}
                 </div>
               </div>
