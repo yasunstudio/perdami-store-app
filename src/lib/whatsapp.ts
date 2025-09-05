@@ -125,11 +125,11 @@ export function generateCustomerPickupMessage(order: any): string {
 
   const customerName = order.user?.name || order.customer?.name || 'Customer'
 
-  const message = `*Pesanan Anda Sudah Siap!*
+  const message = `*Pesanan Bapak/Ibu Sudah Siap!*
 
 Halo Bapak/Ibu *${customerName}*,
 
-Pesanan #*${order.orderNumber}* Anda sudah siap untuk diambil!
+Pesanan #*${order.orderNumber}* Bapak/Ibu sudah siap untuk diambil!
 
 *Detail Pesanan:*
 ${itemsList || 'Data pesanan tidak tersedia'}
