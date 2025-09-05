@@ -10,13 +10,20 @@ import { SidebarItem } from '@/types/sidebar';
 export const isActiveNavItem = (href: string, pathname: string): boolean => {
   if (!pathname) return false;
   
+  console.log('isActiveNavItem:', { href, pathname });
+  
   // Exact match for admin root
-  if (href === '/admin' && pathname === '/admin') return true;
+  if (href === '/admin' && pathname === '/admin') {
+    console.log('Admin root match');
+    return true;
+  }
   
   // For non-admin paths, use exact matching only
   // This prevents parent menus from being active when their children are selected
   if (href !== '/admin') {
-    return pathname === href;
+    const isExactMatch = pathname === href;
+    console.log('Non-admin path:', { href, pathname, isExactMatch });
+    return isExactMatch;
   }
   
   return false;
