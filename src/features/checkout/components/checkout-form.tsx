@@ -17,6 +17,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { CreditCard, Building2, User, Mail, Phone, MessageSquare, Loader2, Copy } from 'lucide-react'
 import { type Bank } from '@/types'
 import { PickupDateSelector } from './pickup-date-selector'
+import { useTheme } from '@/components/providers/theme-provider'
 import { cn } from '@/lib/utils'
 
 const checkoutSchema = z.object({
@@ -44,6 +45,7 @@ export function CheckoutForm({ onSubmit, isProcessing, userEmail, userName, user
   const [banks, setBanks] = useState<Bank[]>([])
   const [loadingBanks, setLoadingBanks] = useState(false)
   const [singleBankMode, setSingleBankMode] = useState(false)
+  const { resolvedTheme } = useTheme()
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
@@ -113,29 +115,37 @@ export function CheckoutForm({ onSubmit, isProcessing, userEmail, userName, user
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4 sm:space-y-6">
       {/* Customer Information */}
-      <Card className="border-border/50 dark:border-border/30 bg-card dark:bg-card">
-        <CardHeader className="bg-muted/30 dark:bg-muted/10">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg text-foreground dark:text-foreground">
+      <Card className={cn(
+        "border-border dark:border-gray-700 bg-card dark:bg-gray-800 shadow-sm",
+        "transition-colors duration-200"
+      )}>
+        <CardHeader className={cn(
+          "bg-muted/50 dark:bg-gray-700/50 border-b border-border dark:border-gray-600",
+          "transition-colors duration-200"
+        )}>
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg text-foreground dark:text-gray-100">
             <User className="h-4 w-4 sm:h-5 sm:w-5 text-primary dark:text-primary" />
             Informasi Pemesan
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 p-6">
+        <CardContent className="space-y-4 p-6 bg-card dark:bg-gray-800">
           <div className="space-y-2">
-            <Label htmlFor="customerName" className="text-foreground dark:text-foreground">Nama Lengkap *</Label>
+            <Label htmlFor="customerName" className="text-foreground dark:text-gray-200 font-medium">Nama Lengkap *</Label>
             <Input
               id="customerName"
               {...register('customerName')}
               placeholder="Masukkan nama lengkap"
               className={cn(
-                "border-border/50 dark:border-border/30 bg-background dark:bg-background",
-                "placeholder:text-muted-foreground/60 dark:placeholder:text-muted-foreground/50",
-                "focus:ring-primary dark:focus:ring-primary",
+                "border-gray-300 dark:border-gray-600 bg-background dark:bg-gray-700",
+                "placeholder:text-gray-500 dark:placeholder:text-gray-400",
+                "text-foreground dark:text-gray-100",
+                "focus:ring-2 focus:ring-primary dark:focus:ring-blue-500 focus:border-primary dark:focus:border-blue-500",
+                "transition-all duration-200",
                 errors.customerName ? 'border-red-500 dark:border-red-400' : ''
               )}
             />
             {userName && (
-              <p className="text-xs text-muted-foreground dark:text-muted-foreground/80">✓ Diambil dari profil Anda</p>
+              <p className="text-xs text-green-600 dark:text-green-400">✓ Diambil dari profil Anda</p>
             )}
             {errors.customerName && (
               <p className="text-sm text-red-500 dark:text-red-400">{errors.customerName.message}</p>
@@ -143,25 +153,27 @@ export function CheckoutForm({ onSubmit, isProcessing, userEmail, userName, user
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="customerEmail" className="text-foreground dark:text-foreground">Email *</Label>
+            <Label htmlFor="customerEmail" className="text-foreground dark:text-gray-200 font-medium">Email *</Label>
             <div className="relative">
-              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground dark:text-muted-foreground/80" />
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-500 dark:text-gray-400" />
               <Input
                 id="customerEmail"
                 type="email"
                 {...register('customerEmail')}
                 placeholder="nama@email.com"
                 className={cn(
-                  "pl-10 border-border/50 dark:border-border/30 bg-background dark:bg-background",
-                  "placeholder:text-muted-foreground/60 dark:placeholder:text-muted-foreground/50",
-                  "focus:ring-primary dark:focus:ring-primary",
+                  "pl-10 border-gray-300 dark:border-gray-600 bg-background dark:bg-gray-700",
+                  "placeholder:text-gray-500 dark:placeholder:text-gray-400",
+                  "text-foreground dark:text-gray-100",
+                  "focus:ring-2 focus:ring-primary dark:focus:ring-blue-500 focus:border-primary dark:focus:border-blue-500",
+                  "transition-all duration-200",
                   errors.customerEmail ? 'border-red-500 dark:border-red-400' : ''
                 )}
                 readOnly
               />
             </div>
             {userEmail && (
-              <p className="text-xs text-muted-foreground dark:text-muted-foreground/80">✓ Diambil dari akun Anda</p>
+              <p className="text-xs text-green-600 dark:text-green-400">✓ Diambil dari akun Anda</p>
             )}
             {errors.customerEmail && (
               <p className="text-sm text-red-500 dark:text-red-400">{errors.customerEmail.message}</p>
@@ -169,27 +181,29 @@ export function CheckoutForm({ onSubmit, isProcessing, userEmail, userName, user
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="customerPhone" className="text-foreground dark:text-foreground">Nomor HP/WhatsApp *</Label>
+            <Label htmlFor="customerPhone" className="text-foreground dark:text-gray-200 font-medium">Nomor HP/WhatsApp *</Label>
             <div className="relative">
-              <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground dark:text-muted-foreground/80" />
+              <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-500 dark:text-gray-400" />
               <Input
                 id="customerPhone"
                 type="tel"
                 {...register('customerPhone')}
                 placeholder="081234567890"
                 className={cn(
-                  "pl-10 border-border/50 dark:border-border/30 bg-background dark:bg-background",
-                  "placeholder:text-muted-foreground/60 dark:placeholder:text-muted-foreground/50",
-                  "focus:ring-primary dark:focus:ring-primary",
+                  "pl-10 border-gray-300 dark:border-gray-600 bg-background dark:bg-gray-700",
+                  "placeholder:text-gray-500 dark:placeholder:text-gray-400",
+                  "text-foreground dark:text-gray-100",
+                  "focus:ring-2 focus:ring-primary dark:focus:ring-blue-500 focus:border-primary dark:focus:border-blue-500",
+                  "transition-all duration-200",
                   errors.customerPhone ? 'border-red-500 dark:border-red-400' : ''
                 )}
               />
             </div>
             {userPhone && (
-              <p className="text-xs text-muted-foreground dark:text-muted-foreground/80">✓ Diambil dari profil Anda</p>
+              <p className="text-xs text-green-600 dark:text-green-400">✓ Diambil dari profil Anda</p>
             )}
             {!userPhone && (
-              <p className="text-xs text-amber-600 dark:text-amber-500">⚠ Nomor HP belum ada di profil, silakan isi manual</p>
+              <p className="text-xs text-amber-600 dark:text-amber-400">⚠ Nomor HP belum ada di profil, silakan isi manual</p>
             )}
             {errors.customerPhone && (
               <p className="text-sm text-red-500 dark:text-red-400">{errors.customerPhone.message}</p>
@@ -199,22 +213,31 @@ export function CheckoutForm({ onSubmit, isProcessing, userEmail, userName, user
       </Card>
 
       {/* Payment Method */}
-      <Card className="border-border/50 dark:border-border/30 bg-card dark:bg-card">
-        <CardHeader className="bg-muted/30 dark:bg-muted/10">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg text-foreground dark:text-foreground">
-            <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-primary dark:text-primary" />
+      <Card className={cn(
+        "border-border dark:border-gray-700 bg-card dark:bg-gray-800 shadow-sm",
+        "transition-colors duration-200"
+      )}>
+        <CardHeader className={cn(
+          "bg-muted/50 dark:bg-gray-700/50 border-b border-border dark:border-gray-600",
+          "transition-colors duration-200"
+        )}>
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg text-foreground dark:text-gray-100">
+            <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-primary dark:text-blue-500" />
             Metode Pembayaran
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center space-x-3 border border-border/50 dark:border-border/30 rounded-lg p-3 sm:p-4 bg-muted/50 dark:bg-muted/20">
+        <CardContent className="space-y-4 p-6 bg-card dark:bg-gray-800">
+          <div className={cn(
+            "flex items-center space-x-3 border border-gray-300 dark:border-gray-600 rounded-lg p-3 sm:p-4",
+            "bg-green-50 dark:bg-green-900/20 transition-colors duration-200"
+          )}>
             <div className="flex items-center gap-3 flex-1">
               <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
               <div className="min-w-0">
-                <Label className="font-medium text-sm sm:text-base text-foreground dark:text-foreground">
+                <Label className="font-medium text-sm sm:text-base text-foreground dark:text-gray-100">
                   Transfer Bank
                 </Label>
-                <p className="text-xs sm:text-sm text-muted-foreground dark:text-muted-foreground/80">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
                   Transfer ke rekening bank yang tersedia dan upload bukti transfer
                 </p>
               </div>
@@ -227,31 +250,34 @@ export function CheckoutForm({ onSubmit, isProcessing, userEmail, userName, user
               // Single Bank Mode - Show bank info directly
               banks.length > 0 && (
                 <div className="space-y-2">
-                  <Label className="text-foreground dark:text-foreground">Bank Transfer</Label>
-                  <div className="bg-muted/50 dark:bg-muted/20 border border-border/50 dark:border-border/30 rounded-lg p-3 sm:p-4 space-y-2">
+                  <Label className="text-foreground dark:text-gray-200 font-medium">Bank Transfer</Label>
+                  <div className={cn(
+                    "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3 sm:p-4 space-y-2",
+                    "transition-colors duration-200"
+                  )}>
                     <div className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-primary dark:text-primary" />
-                      <span className="font-medium text-foreground dark:text-foreground">{banks[0].name} ({banks[0].code})</span>
+                      <Building2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <span className="font-medium text-foreground dark:text-gray-100">{banks[0].name} ({banks[0].code})</span>
                     </div>
                     <div className="space-y-1 text-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground dark:text-muted-foreground/80">Nomor Rekening:</span>
+                        <span className="text-gray-600 dark:text-gray-300">Nomor Rekening:</span>
                         <div className="flex items-center gap-2">
-                          <span className="font-mono font-medium text-foreground dark:text-foreground">{banks[0].accountNumber}</span>
+                          <span className="font-mono font-medium text-foreground dark:text-gray-100">{banks[0].accountNumber}</span>
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="h-6 w-6 p-0 hover:bg-muted/50 dark:hover:bg-muted/30"
+                            className="h-6 w-6 p-0 hover:bg-blue-100 dark:hover:bg-blue-800/50 transition-colors duration-200"
                             onClick={() => copyToClipboard(banks[0].accountNumber)}
                           >
-                            <Copy className="h-3 w-3 text-muted-foreground dark:text-muted-foreground/80" />
+                            <Copy className="h-3 w-3 text-gray-600 dark:text-gray-300" />
                           </Button>
                         </div>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground dark:text-muted-foreground/80">Nama Rekening:</span>
-                        <span className="font-medium text-foreground dark:text-foreground">{banks[0].accountName}</span>
+                        <span className="text-gray-600 dark:text-gray-300">Nama Rekening:</span>
+                        <span className="font-medium text-foreground dark:text-gray-100">{banks[0].accountName}</span>
                       </div>
                     </div>
                   </div>
@@ -260,8 +286,8 @@ export function CheckoutForm({ onSubmit, isProcessing, userEmail, userName, user
             ) : (
               // Multiple Bank Mode - Show selection dropdown
               <div className="space-y-2">
-                <Label className="text-foreground dark:text-foreground">Pilih Bank (Opsional)</Label>
-                <p className="text-xs text-muted-foreground dark:text-muted-foreground/80">
+                <Label className="text-foreground dark:text-gray-200 font-medium">Pilih Bank (Opsional)</Label>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
                   Anda dapat memilih bank sekarang atau nanti setelah pesanan dibuat
                 </p>
                 <Select 
@@ -345,22 +371,30 @@ export function CheckoutForm({ onSubmit, isProcessing, userEmail, userName, user
       )}
 
       {/* Additional Notes */}
-      <Card className="border-border/50 dark:border-border/30 bg-card dark:bg-card">
-        <CardHeader className="bg-muted/30 dark:bg-muted/10">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg text-foreground dark:text-foreground">
-            <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-primary dark:text-primary" />
+      <Card className={cn(
+        "border-border dark:border-gray-700 bg-card dark:bg-gray-800 shadow-sm",
+        "transition-colors duration-200"
+      )}>
+        <CardHeader className={cn(
+          "bg-muted/50 dark:bg-gray-700/50 border-b border-border dark:border-gray-600",
+          "transition-colors duration-200"
+        )}>
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg text-foreground dark:text-gray-100">
+            <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-primary dark:text-blue-500" />
             Catatan Tambahan
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
+        <CardContent className="space-y-2 p-6 bg-card dark:bg-gray-800">
           <Textarea
             {...register('notes')}
             placeholder="Tambahkan catatan untuk pesanan Anda (opsional)"
             className={cn(
               "min-h-[80px] sm:min-h-[100px]",
-              "border-border/50 dark:border-border/30 bg-background dark:bg-background",
-              "placeholder:text-muted-foreground/60 dark:placeholder:text-muted-foreground/50",
-              "focus:ring-primary dark:focus:ring-primary"
+              "border-gray-300 dark:border-gray-600 bg-background dark:bg-gray-700",
+              "placeholder:text-gray-500 dark:placeholder:text-gray-400",
+              "text-foreground dark:text-gray-100",
+              "focus:ring-2 focus:ring-primary dark:focus:ring-blue-500 focus:border-primary dark:focus:border-blue-500",
+              "transition-all duration-200"
             )}
           />
         </CardContent>
@@ -368,21 +402,25 @@ export function CheckoutForm({ onSubmit, isProcessing, userEmail, userName, user
 
       {/* Error Alert */}
       {error && (
-        <Alert variant="destructive" className="border-destructive/50 dark:border-destructive/30 bg-destructive/10 dark:bg-destructive/5">
-          <AlertDescription className="text-destructive dark:text-destructive">{error}</AlertDescription>
+        <Alert variant="destructive" className="border-red-500 dark:border-red-400 bg-red-50 dark:bg-red-900/20">
+          <AlertDescription className="text-red-600 dark:text-red-400">{error}</AlertDescription>
         </Alert>
       )}
 
       {/* Submit Button */}
-      <Card className="border-border/50 dark:border-border/30 bg-card dark:bg-card">
-        <CardContent className="pt-4 sm:pt-6">
-          <Separator className="mb-4 bg-border/50 dark:bg-border/30" />
+      <Card className={cn(
+        "border-border dark:border-gray-700 bg-card dark:bg-gray-800 shadow-sm",
+        "transition-colors duration-200"
+      )}>
+        <CardContent className="pt-4 sm:pt-6 p-6 bg-card dark:bg-gray-800">
+          <Separator className="mb-4 bg-gray-300 dark:bg-gray-600" />
           <Button 
             type="submit" 
             size="lg" 
             className={cn(
-              "w-full bg-primary hover:bg-primary/90 dark:bg-primary dark:hover:bg-primary/90",
-              "text-primary-foreground dark:text-primary-foreground"
+              "w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700",
+              "text-white dark:text-white transition-colors duration-200",
+              "shadow-md hover:shadow-lg"
             )}
             disabled={isProcessing}
           >

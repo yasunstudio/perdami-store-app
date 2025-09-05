@@ -6,6 +6,7 @@ import { formatPrice, cn } from '@/lib/utils'
 import { SERVICE_FEE, calculateServiceFeePerStore } from '@/lib/service-fee'
 import { toast } from 'sonner'
 import { Package2, Store, CreditCard, Copy } from 'lucide-react'
+import { useTheme } from '@/components/providers/theme-provider'
 import type { Cart } from '@/types'
 
 interface OrderSummaryProps {
@@ -14,6 +15,7 @@ interface OrderSummaryProps {
 
 export function OrderSummary({ cart }: OrderSummaryProps) {
   const { stores, subtotal, serviceFee, total, itemCount } = cart
+  const { resolvedTheme } = useTheme()
   
   // Calculate store count for display
   const storeCount = stores.filter(store => store.items.length > 0).length
@@ -25,36 +27,45 @@ export function OrderSummary({ cart }: OrderSummaryProps) {
   }
 
   return (
-    <Card className="sticky top-6 border-border/50 dark:border-border/30 bg-card dark:bg-card">
-      <CardHeader className="bg-muted/30 dark:bg-muted/10">
-        <CardTitle className="flex items-center gap-2 text-foreground dark:text-foreground">
-          <Package2 className="h-5 w-5 text-primary dark:text-primary" />
+    <Card className={cn(
+      "sticky top-6 border-border dark:border-gray-700 bg-card dark:bg-gray-800 shadow-sm",
+      "transition-colors duration-200"
+    )}>
+      <CardHeader className={cn(
+        "bg-muted/50 dark:bg-gray-700/50 border-b border-border dark:border-gray-600",
+        "transition-colors duration-200"
+      )}>
+        <CardTitle className="flex items-center gap-2 text-foreground dark:text-gray-100">
+          <Package2 className="h-5 w-5 text-primary dark:text-blue-500" />
           Ringkasan Pesanan
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 p-6 bg-card dark:bg-gray-800">
         {/* Store Summary */}
         <div className="space-y-3">
           {stores.map((store) => (
-            <div key={store.storeId} className="border border-border/50 dark:border-border/30 rounded-lg p-3 bg-muted/20 dark:bg-muted/10">
+            <div key={store.storeId} className={cn(
+              "border border-gray-300 dark:border-gray-600 rounded-lg p-3",
+              "bg-gray-50 dark:bg-gray-700/50 transition-colors duration-200"
+            )}>
               <div className="flex items-center gap-2 mb-2">
-                <Store className="h-4 w-4 text-muted-foreground dark:text-muted-foreground/80" />
-                <span className="font-medium text-sm text-foreground dark:text-foreground">{store.storeName}</span>
+                <Store className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                <span className="font-medium text-sm text-foreground dark:text-gray-100">{store.storeName}</span>
               </div>
               <div className="space-y-1">
                 {store.items.map((item, index) => (
                   <div key={`${store.storeId}-${item.productId || item.name}-${index}`} className="flex justify-between text-sm">
-                    <span className="text-muted-foreground dark:text-muted-foreground/80">
+                    <span className="text-gray-600 dark:text-gray-300">
                       {item.name} × {item.quantity}
                     </span>
-                    <span className="text-foreground dark:text-foreground">{formatPrice(item.sellingPrice * item.quantity)}</span>
+                    <span className="text-foreground dark:text-gray-100">{formatPrice(item.sellingPrice * item.quantity)}</span>
                   </div>
                 ))}
               </div>
-              <Separator className="my-2 bg-border/50 dark:bg-border/30" />
+              <Separator className="my-2 bg-gray-300 dark:bg-gray-600" />
               <div className="flex justify-between text-sm font-medium">
-                <span className="text-foreground dark:text-foreground">Subtotal {store.storeName}</span>
-                <span className="text-foreground dark:text-foreground">{formatPrice(store.items.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0))}</span>
+                <span className="text-foreground dark:text-gray-100">Subtotal {store.storeName}</span>
+                <span className="text-foreground dark:text-gray-100">{formatPrice(store.items.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0))}</span>
               </div>
             </div>
           ))}
