@@ -213,6 +213,12 @@ export async function GET(request: NextRequest) {
           const costPrice = Number(item.bundle.costPrice || 0);
           const totalPrice = costPrice * item.quantity;
 
+          // Calculate total order amount from all order items
+          const orderTotalAmount = order.orderItems.reduce((sum, orderItem) => {
+            const itemCostPrice = Number(orderItem.bundle?.costPrice || 0);
+            return sum + (itemCostPrice * orderItem.quantity);
+          }, 0);
+
           // Determine batch for display
           const orderHour = new Date(order.createdAt).getHours();
           const batchName = orderHour >= 6 && orderHour < 18 
@@ -228,6 +234,7 @@ export async function GET(request: NextRequest) {
             'Jumlah': item.quantity,
             'Harga Satuan': costPrice,
             'Total': totalPrice,
+            'Order Total Amount': orderTotalAmount,
             'Tanggal Pickup': formatDate(order.pickupDate),
             'Store Name': item.bundle.store.name, // Add store name for grouping
           });
@@ -258,6 +265,22 @@ export async function GET(request: NextRequest) {
       } else if (endDate) {
         dateRangeForHeader = `Sampai ${formatDate(new Date(endDate))}`;
       }
+
+      // Calculate total amount from all payment details
+      const totalAmount = paymentDetails.reduce((sum, detail) => {
+        const total = typeof detail['Total'] === 'number' ? detail['Total'] : 0;
+        return sum + total;
+      }, 0);
+
+      // Format total amount as currency
+      const formatCurrency = (amount: number): string => {
+        return new Intl.NumberFormat('id-ID', {
+          style: 'currency',
+          currency: 'IDR',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        }).format(amount);
+      };
 
       let worksheet: any;
       let workbook = XLSX.utils.book_new();
@@ -295,7 +318,7 @@ export async function GET(request: NextRequest) {
           worksheetData.push([`=== ${storeName} ===`]);
           
           // Add column headers
-          worksheetData.push(['Tanggal Order', 'Nama Customer', 'No Telepon', 'Paket', 'Item dalam Paket', 'Jumlah', 'Harga Satuan', 'Total', 'Tanggal Pickup']);
+          worksheetData.push(['Tanggal Order', 'Nama Customer', 'No Telepon', 'Paket', 'Item dalam Paket', 'Jumlah', 'Harga Satuan', 'Total', 'Order Total Amount', 'Tanggal Pickup']);
           
           // Add store data
           storeData.forEach(detail => {
@@ -308,15 +331,29 @@ export async function GET(request: NextRequest) {
               detail['Jumlah'],
               detail['Harga Satuan'],
               detail['Total'],
+              detail['Order Total Amount'],
               detail['Tanggal Pickup']
             ]);
           });
+
+          // Calculate store subtotal
+          const storeSubtotal = storeData.reduce((sum, detail) => {
+            const total = typeof detail['Total'] === 'number' ? detail['Total'] : 0;
+            return sum + total;
+          }, 0);
+          
+          // Add subtotal row for this store
+          worksheetData.push(['', '', '', '', '', '', `Subtotal ${storeName}:`, formatCurrency(storeSubtotal), '', '']);
           
           // Add empty row between stores
           if (storeIndex < Object.keys(groupedByStore).length - 1) {
             worksheetData.push(['']);
           }
         });
+
+        // Add grand total at the end
+        worksheetData.push(['']);
+        worksheetData.push(['', '', '', '', '', '', 'GRAND TOTAL:', formatCurrency(totalAmount), '', '']);
 
         worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
 
@@ -330,12 +367,13 @@ export async function GET(request: NextRequest) {
           { width: 8 },  // Jumlah
           { width: 15 }, // Harga Satuan
           { width: 15 }, // Total
+          { width: 18 }, // Order Total Amount
           { width: 12 }  // Tanggal Pickup
         ];
 
         // Merge cells for title
         worksheet['!merges'] = [
-          { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } } // Merge title across all columns
+          { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } } // Merge title across all columns
         ];
 
       } else {
@@ -353,7 +391,7 @@ export async function GET(request: NextRequest) {
           [`Tanggal: ${dateRangeForHeader}`],
           [''],
           // Header row for data
-          ['Tanggal Order', 'Nama Customer', 'No Telepon', 'Paket', 'Item dalam Paket', 'Jumlah', 'Harga Satuan', 'Total', 'Tanggal Pickup']
+          ['Tanggal Order', 'Nama Customer', 'No Telepon', 'Paket', 'Item dalam Paket', 'Jumlah', 'Harga Satuan', 'Total', 'Order Total Amount', 'Tanggal Pickup']
         ]);
 
         // Add data rows starting from row 7 (index 6)
@@ -361,6 +399,11 @@ export async function GET(request: NextRequest) {
           origin: 'A7',
           skipHeader: true 
         });
+
+        // Add total row after all data
+        const totalRow = ['', '', '', '', '', '', 'TOTAL:', formatCurrency(totalAmount), '', ''];
+        const totalRowIndex = 6 + cleanPaymentDetails.length; // Header rows + data rows
+        XLSX.utils.sheet_add_aoa(worksheet, [totalRow], { origin: `A${totalRowIndex + 1}` });
 
         // Set column widths for better readability
         worksheet['!cols'] = [
@@ -372,12 +415,13 @@ export async function GET(request: NextRequest) {
           { width: 8 },  // Jumlah
           { width: 15 }, // Harga Satuan
           { width: 15 }, // Total
+          { width: 18 }, // Order Total Amount
           { width: 12 }  // Tanggal Pickup
         ];
 
         // Merge cells for title
         worksheet['!merges'] = [
-          { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } } // Merge title across all columns
+          { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } } // Merge title across all columns
         ];
       }
 

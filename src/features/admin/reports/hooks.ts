@@ -12,16 +12,18 @@ export const useStorePaymentDetails = () => {
   const [isLoadingStores, setIsLoadingStores] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Initialize with more practical date range for payment reports
+  // Initialize with specific date range for payment reports
   const today = new Date();
   const startOfToday = new Date(today);
   startOfToday.setHours(0, 0, 0, 0); // Start of today
-  const endOfToday = new Date(today);
-  endOfToday.setHours(23, 59, 59, 999); // End of today
+  
+  // Set end date to 7 September 2025
+  const endDate = new Date('2025-09-07');
+  endDate.setHours(23, 59, 59, 999); // End of September 7, 2025
   
   const [filters, setFilters] = useState<StorePaymentFilters>({
     startDate: startOfToday,
-    endDate: endOfToday
+    endDate: endDate
   });
 
   const updateFilters = useCallback((newFilters: Partial<StorePaymentFilters>) => {
@@ -32,11 +34,14 @@ export const useStorePaymentDetails = () => {
     const today = new Date();
     const startOfToday = new Date(today);
     startOfToday.setHours(0, 0, 0, 0); // Start of today
-    const endOfToday = new Date(today);
-    endOfToday.setHours(23, 59, 59, 999); // End of today
+    
+    // Set end date to 7 September 2025
+    const endDate = new Date('2025-09-07');
+    endDate.setHours(23, 59, 59, 999); // End of September 7, 2025
+    
     setFilters({
       startDate: startOfToday,
-      endDate: endOfToday
+      endDate: endDate
     });
   }, []);
 

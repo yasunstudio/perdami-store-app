@@ -241,21 +241,6 @@ export const StorePaymentDetailsPage = () => {
                   )}
                   Export Excel
                 </Button>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleExport('pdf')}
-                  disabled={isLoading || isExporting}
-                  className="h-10 px-4"
-                >
-                  {isExporting ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <FileText className="w-4 h-4 mr-2" />
-                  )}
-                  Export PDF
-                </Button>
               </div>
             )}
           </div>
