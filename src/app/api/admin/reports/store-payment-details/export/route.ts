@@ -126,15 +126,14 @@ export async function GET(request: NextRequest) {
           return contents;
         }
         if (Array.isArray(contents)) {
-          // Handle array of objects with name and quantity
+          // Handle array of objects with name only (without quantity)
           return contents.map((item: any) => {
             if (typeof item === 'string') {
               return item;
             }
             if (typeof item === 'object' && item.name) {
-              // Format: "Item Name (quantity)" - always show quantity
-              const quantity = item.quantity || 1;
-              return `${item.name} (${quantity})`;
+              // Format: "Item Name" - only show name without quantity
+              return item.name;
             }
             return String(item);
           }).join(', ');
@@ -146,8 +145,8 @@ export async function GET(request: NextRequest) {
                 return item;
               }
               if (typeof item === 'object' && item.name) {
-                const quantity = item.quantity || 1;
-                return `${item.name} (${quantity})`;
+                // Format: "Item Name" - only show name without quantity
+                return item.name;
               }
               return item.name || item.description || String(item);
             }).join(', ');
