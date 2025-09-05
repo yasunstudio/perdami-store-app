@@ -225,6 +225,7 @@ export async function GET(request: NextRequest) {
             'Harga Satuan': costPrice,
             'Total': totalPrice,
             'Tanggal Pickup': formatDate(order.pickupDate),
+            'Store Name': item.bundle.store.name, // Add store name for grouping
           });
         }
       });
@@ -254,43 +255,129 @@ export async function GET(request: NextRequest) {
         dateRangeForHeader = `Sampai ${formatDate(new Date(endDate))}`;
       }
 
-      // Create worksheet with header information
-      const worksheet = XLSX.utils.aoa_to_sheet([
-        ['LAPORAN DETAIL ORDER KE TOKO'],
-        [''],
-        [`Nama Toko: ${storeNameForHeader}`],
-        [`Tanggal: ${dateRangeForHeader}`],
-        [''],
-        // Header row for data
-        ['Tanggal Order', 'Nama Customer', 'No Telepon', 'Paket', 'Item dalam Paket', 'Jumlah', 'Harga Satuan', 'Total', 'Tanggal Pickup']
-      ]);
+      let worksheet: any;
+      let workbook = XLSX.utils.book_new();
 
-      // Add data rows starting from row 7 (index 6)
-      XLSX.utils.sheet_add_json(worksheet, paymentDetails, { 
-        origin: 'A7',
-        skipHeader: true 
-      });
+      if (!storeId && paymentDetails.length > 0) {
+        // Group by store when "all stores" is selected
+        const groupedByStore: { [key: string]: any[] } = {};
+        
+        // Group payment details by store name
+        paymentDetails.forEach(detail => {
+          const storeName = detail['Store Name'];
+          if (!groupedByStore[storeName]) {
+            groupedByStore[storeName] = [];
+          }
+          // Remove Store Name from detail for display
+          const { 'Store Name': _, ...detailWithoutStoreName } = detail;
+          groupedByStore[storeName].push(detailWithoutStoreName);
+        });
 
-      // Set column widths for better readability
-      worksheet['!cols'] = [
-        { width: 12 }, // Tanggal Order
-        { width: 20 }, // Nama Customer
-        { width: 15 }, // No Telepon
-        { width: 25 }, // Paket
-        { width: 50 }, // Item dalam Paket
-        { width: 8 },  // Jumlah
-        { width: 15 }, // Harga Satuan
-        { width: 15 }, // Total
-        { width: 12 }  // Tanggal Pickup
-      ];
+        // Create worksheet data with store groupings
+        const worksheetData: any[] = [];
+        
+        // Add header information
+        worksheetData.push(['LAPORAN DETAIL ORDER KE TOKO']);
+        worksheetData.push(['']);
+        worksheetData.push([`Nama Toko: ${storeNameForHeader}`]);
+        worksheetData.push([`Tanggal: ${dateRangeForHeader}`]);
+        worksheetData.push(['']);
 
-      // Merge cells for title
-      worksheet['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } } // Merge title across all columns
-      ];
+        // Add data for each store
+        Object.keys(groupedByStore).sort().forEach((storeName, storeIndex) => {
+          const storeData = groupedByStore[storeName];
+          
+          // Add store header
+          worksheetData.push([`=== ${storeName} ===`]);
+          
+          // Add column headers
+          worksheetData.push(['Tanggal Order', 'Nama Customer', 'No Telepon', 'Paket', 'Item dalam Paket', 'Jumlah', 'Harga Satuan', 'Total', 'Tanggal Pickup']);
+          
+          // Add store data
+          storeData.forEach(detail => {
+            worksheetData.push([
+              detail['Tanggal Order'],
+              detail['Nama Customer'],
+              detail['No Telepon'],
+              detail['Paket'],
+              detail['Item dalam Paket'],
+              detail['Jumlah'],
+              detail['Harga Satuan'],
+              detail['Total'],
+              detail['Tanggal Pickup']
+            ]);
+          });
+          
+          // Add empty row between stores
+          if (storeIndex < Object.keys(groupedByStore).length - 1) {
+            worksheetData.push(['']);
+          }
+        });
 
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Payment Details');
+        worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+        // Set column widths
+        worksheet['!cols'] = [
+          { width: 12 }, // Tanggal Order
+          { width: 20 }, // Nama Customer
+          { width: 15 }, // No Telepon
+          { width: 25 }, // Paket
+          { width: 50 }, // Item dalam Paket
+          { width: 8 },  // Jumlah
+          { width: 15 }, // Harga Satuan
+          { width: 15 }, // Total
+          { width: 12 }  // Tanggal Pickup
+        ];
+
+        // Merge cells for title
+        worksheet['!merges'] = [
+          { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } } // Merge title across all columns
+        ];
+
+      } else {
+        // Single store or no data - use original format
+        // Remove Store Name from paymentDetails for single store display
+        const cleanPaymentDetails = paymentDetails.map(detail => {
+          const { 'Store Name': _, ...cleanDetail } = detail;
+          return cleanDetail;
+        });
+
+        worksheet = XLSX.utils.aoa_to_sheet([
+          ['LAPORAN DETAIL ORDER KE TOKO'],
+          [''],
+          [`Nama Toko: ${storeNameForHeader}`],
+          [`Tanggal: ${dateRangeForHeader}`],
+          [''],
+          // Header row for data
+          ['Tanggal Order', 'Nama Customer', 'No Telepon', 'Paket', 'Item dalam Paket', 'Jumlah', 'Harga Satuan', 'Total', 'Tanggal Pickup']
+        ]);
+
+        // Add data rows starting from row 7 (index 6)
+        XLSX.utils.sheet_add_json(worksheet, cleanPaymentDetails, { 
+          origin: 'A7',
+          skipHeader: true 
+        });
+
+        // Set column widths for better readability
+        worksheet['!cols'] = [
+          { width: 12 }, // Tanggal Order
+          { width: 20 }, // Nama Customer
+          { width: 15 }, // No Telepon
+          { width: 25 }, // Paket
+          { width: 50 }, // Item dalam Paket
+          { width: 8 },  // Jumlah
+          { width: 15 }, // Harga Satuan
+          { width: 15 }, // Total
+          { width: 12 }  // Tanggal Pickup
+        ];
+
+        // Merge cells for title
+        worksheet['!merges'] = [
+          { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } } // Merge title across all columns
+        ];
+      }
+
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Order Details');
 
       // Generate buffer
       const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
