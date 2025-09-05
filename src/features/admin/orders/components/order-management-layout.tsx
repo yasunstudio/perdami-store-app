@@ -115,6 +115,12 @@ export default function OrderManagementLayout({
   const [sort, setSort] = useState({ field: 'createdAt', direction: 'desc' })
   const [totalPages, setTotalPages] = useState(1)
   
+  // Handle view order
+  const handleViewOrder = (order: OrderWithRelations) => {
+    setSelectedOrder(order)
+    router.push(`/admin/orders/${order.id}`)
+  }
+  
   // Verify payment function
   const verifyPayment = async (orderId: string, status: 'PAID' | 'FAILED') => {
     try {
@@ -136,29 +142,77 @@ export default function OrderManagementLayout({
 
   // Quick actions for each order
   const getQuickActions = (order: OrderWithRelations) => {
+    // Special actions for payment verification
     if (order.paymentStatus === 'PENDING' && order.paymentProofUrl) {
       return (
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            onClick={() => verifyPayment(order.id, 'PAID')}
-            variant="default"
-          >
-            <CheckCircle className="h-4 w-4 mr-1" />
-            Terima
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => verifyPayment(order.id, 'FAILED')}
-            variant="destructive"
-          >
-            <XCircle className="h-4 w-4 mr-1" />
-            Tolak
-          </Button>
+        <div className="flex flex-col gap-2">
+          {/* Payment verification buttons */}
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              onClick={() => verifyPayment(order.id, 'PAID')}
+              variant="default"
+              className="flex-1"
+            >
+              <CheckCircle className="h-4 w-4 mr-1" />
+              Terima
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => verifyPayment(order.id, 'FAILED')}
+              variant="destructive"
+              className="flex-1"
+            >
+              <XCircle className="h-4 w-4 mr-1" />
+              Tolak
+            </Button>
+          </div>
+          {/* Standard action buttons */}
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              onClick={() => handleViewOrder(order)}
+              variant="outline"
+              className="flex-1"
+            >
+              <Eye className="h-4 w-4 mr-1" />
+              Detail
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => handleDeleteOrder(order)}
+              variant="outline"
+              className="text-red-600 hover:text-red-700"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )
     }
-    return null
+    
+    // Standard actions for all other orders
+    return (
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          onClick={() => handleViewOrder(order)}
+          variant="outline"
+          className="flex-1"
+        >
+          <Eye className="h-4 w-4 mr-1" />
+          Detail
+        </Button>
+        <Button
+          size="sm"
+          onClick={() => handleDeleteOrder(order)}
+          variant="outline"
+          className="text-red-600 hover:text-red-700"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    )
   }
 
   // Check if order needs payment verification
