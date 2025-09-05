@@ -100,7 +100,7 @@ export function OrderInformation({ order, onOrderUpdate }: OrderInformationProps
   }
 
   // Handle WhatsApp notification to customer
-  const handleNotifyCustomer = () => {
+  const handleNotifyCustomer = async () => {
     try {
       const customerPhone = order.user?.phone
       const customerName = order.user?.name
@@ -115,10 +115,20 @@ export function OrderInformation({ order, onOrderUpdate }: OrderInformationProps
         return
       }
 
+      // Fetch complete order data with items from API
+      const response = await fetch(`/api/admin/orders/${order.id}`)
+      if (!response.ok) {
+        throw new Error('Gagal mengambil data order lengkap')
+      }
+      
+      const fullOrderData = await response.json()
+      console.log('Full order data for WhatsApp:', fullOrderData) // Debug log
+
       // Convert order to format expected by generateCustomerPickupMessage
       const orderForWhatsApp = {
         ...order,
-        orderItems: [], // Will be filled from items if needed
+        orderItems: fullOrderData.items || fullOrderData.orderItems || [],
+        items: fullOrderData.items || fullOrderData.orderItems || [],
         user: {
           name: customerName,
           phone: customerPhone

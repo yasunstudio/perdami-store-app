@@ -107,14 +107,20 @@ export function generateCustomerPickupMessage(order: any): string {
   // Handle different order item structures
   const items = order.orderItems || order.items || []
   
+  console.log('Debug order items:', items) // Debug log
+  
   // Format items list
   const itemsList = items
-    .map((item: any) => `- ${item.quantity}x ${item.bundle?.name || 'Item'}`)
+    .map((item: any) => {
+      const itemName = item.bundle?.name || item.name || 'Item'
+      const quantity = item.quantity || 1
+      return `- ${quantity}x ${itemName}`
+    })
     .join('\n')
 
-  // Format pickup date
+  // Format pickup date without time (only date)
   const pickupDate = order.pickupDate 
-    ? format(new Date(order.pickupDate), 'dd MMMM yyyy HH:mm', { locale: id })
+    ? format(new Date(order.pickupDate), 'dd MMMM yyyy', { locale: id })
     : 'Akan dikonfirmasi'
 
   const customerName = order.user?.name || order.customer?.name || 'Customer'
@@ -126,14 +132,14 @@ Halo Bapak/Ibu *${customerName}*,
 Pesanan #*${order.orderNumber}* Anda sudah siap untuk diambil!
 
 *Detail Pesanan:*
-${itemsList}
+${itemsList || 'Data pesanan tidak tersedia'}
 
 *Total: Rp ${order.totalAmount.toLocaleString('id-ID')}*
 
 *Lokasi Pickup:*
 Booth PIT Perdami 2025
 
-*Jadwal Pickup:*
+*Tanggal Pickup:*
 ${pickupDate}
 
 Terima kasih 🙏
