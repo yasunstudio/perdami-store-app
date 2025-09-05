@@ -156,6 +156,35 @@ export async function GET(request: NextRequest) {
       }
     };
 
+    // Custom date formatting functions to match frontend
+    const formatDate = (date: Date | null): string => {
+      if (!date) return '-';
+      
+      const dateObj = new Date(date);
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const month = monthNames[dateObj.getMonth()];
+      const year = dateObj.getFullYear();
+      
+      return `${day}-${month}-${year}`;
+    };
+
+    const formatDateTime = (date: Date | null): string => {
+      if (!date) return '-';
+      
+      const dateObj = new Date(date);
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const month = monthNames[dateObj.getMonth()];
+      const year = dateObj.getFullYear();
+      const hours = String(dateObj.getHours()).padStart(2, '0');
+      const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+      
+      return `${day}-${month}-${year} ${hours}:${minutes}`;
+    };
+
     // Transform data to flat list of payment details
     const paymentDetails: any[] = [];
     
@@ -187,7 +216,7 @@ export async function GET(request: NextRequest) {
             : 'Batch 2 - Malam (18:00-06:00)';
 
           paymentDetails.push({
-            'Tanggal Order': order.createdAt.toLocaleDateString('id-ID'),
+            'Tanggal Order': formatDateTime(order.createdAt),
             'Nama Customer': order.user?.name || 'N/A',
             'No Telepon': order.user?.phone || '-',
             'Paket': item.bundle.name,
@@ -195,7 +224,7 @@ export async function GET(request: NextRequest) {
             'Jumlah': item.quantity,
             'Harga Satuan': costPrice,
             'Total': totalPrice,
-            'Tanggal Pickup': order.pickupDate ? order.pickupDate.toLocaleDateString('id-ID') : '-',
+            'Tanggal Pickup': formatDate(order.pickupDate),
           });
         }
       });
@@ -216,13 +245,13 @@ export async function GET(request: NextRequest) {
       // Format date range for header
       let dateRangeForHeader = 'Semua Tanggal';
       if (startDate && endDate) {
-        const startDateFormatted = new Date(startDate).toLocaleDateString('id-ID');
-        const endDateFormatted = new Date(endDate).toLocaleDateString('id-ID');
+        const startDateFormatted = formatDate(new Date(startDate));
+        const endDateFormatted = formatDate(new Date(endDate));
         dateRangeForHeader = `${startDateFormatted} - ${endDateFormatted}`;
       } else if (startDate) {
-        dateRangeForHeader = `Mulai ${new Date(startDate).toLocaleDateString('id-ID')}`;
+        dateRangeForHeader = `Mulai ${formatDate(new Date(startDate))}`;
       } else if (endDate) {
-        dateRangeForHeader = `Sampai ${new Date(endDate).toLocaleDateString('id-ID')}`;
+        dateRangeForHeader = `Sampai ${formatDate(new Date(endDate))}`;
       }
 
       // Create worksheet with header information
