@@ -256,7 +256,7 @@ export async function GET(request: NextRequest) {
 
       // Create worksheet with header information
       const worksheet = XLSX.utils.aoa_to_sheet([
-        ['LAPORAN DETAIL PEMBAYARAN KE TOKO'],
+        ['LAPORAN DETAIL ORDER KE TOKO'],
         [''],
         [`Nama Toko: ${storeNameForHeader}`],
         [`Tanggal: ${dateRangeForHeader}`],
