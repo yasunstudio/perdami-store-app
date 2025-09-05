@@ -13,7 +13,6 @@ export const exportOrdersToExcel = ({ allOrders, storeOrders }: ExportOrdersToEx
 
   // Sheet 1: All Orders
   const allOrdersData = allOrders.map((order) => ({
-    'No. Pesanan': order.orderNumber,
     'Customer': order.user?.name || 'N/A',
     'No. Telp': order.user?.phone || 'N/A',
     'Email': order.user?.email || 'N/A',
@@ -29,7 +28,8 @@ export const exportOrdersToExcel = ({ allOrders, storeOrders }: ExportOrdersToEx
     'Tanggal Order': format(new Date(order.createdAt), 'dd MMM yyyy HH:mm', { locale: id }),
     'Tanggal Pickup': order.pickupDate 
       ? format(new Date(order.pickupDate), 'dd MMM yyyy HH:mm', { locale: id })
-      : 'Belum dijadwalkan'
+      : 'Belum dijadwalkan',
+    'Note': order.notes || ''
   }))
 
   const allOrdersSheet = XLSX.utils.json_to_sheet(allOrdersData)
@@ -72,63 +72,31 @@ export const exportOrdersToExcel = ({ allOrders, storeOrders }: ExportOrdersToEx
   // Additional sheets for each store
   Object.entries(storeOrdersMap).forEach(([storeName, orderItems]) => {
     const storeOrdersData = orderItems.map((item) => ({
-      'No. Pesanan': item.orderNumber,
       'Customer': item.customerName,
       'No. Telp': item.customerPhone,
       'Email': item.customerEmail,
       'Nama Item': item.itemName,
       'Jumlah': item.quantity,
-      'Harga Satuan': item.pricePerUnit,
-      'Total Item': item.itemTotal,
-      'Biaya Layanan': item.serviceFee,
-      'Status Order': item.orderStatus,
-      'Status Pembayaran': item.paymentStatus,
+      'Harga Jual (Satuan)': item.pricePerUnit,
+      'Jumlah Penjualan': item.itemTotal,
       'Tanggal Order': format(new Date(item.orderDate), 'dd MMM yyyy HH:mm', { locale: id }),
       'Tanggal Pickup': item.pickupDate 
         ? format(new Date(item.pickupDate), 'dd MMM yyyy HH:mm', { locale: id })
         : 'Belum dijadwalkan'
     }))
 
-    // Calculate summary data
-    const summary = {
-      totalOrders: new Set(orderItems.map(item => item.orderNumber)).size,
-      totalItems: orderItems.reduce((sum, item) => sum + item.quantity, 0),
-      totalRevenue: orderItems.reduce((sum, item) => sum + item.itemTotal, 0),
-      totalServiceFee: orderItems.reduce((sum, item) => sum + item.serviceFee, 0)
-    }
-
-    // Add summary rows at the top
-    const summaryData = [
-      ['Ringkasan Penjualan'],
-      ['Total Pesanan', summary.totalOrders],
-      ['Total Item Terjual', summary.totalItems],
-      ['Total Pendapatan', summary.totalRevenue],
-      ['Total Biaya Layanan', summary.totalServiceFee],
-      ['Total Bersih', summary.totalRevenue],
-      [''],  // Empty row as separator
-    ]
-
-    // Create worksheet and add summary
-    const storeSheet = XLSX.utils.aoa_to_sheet(summaryData)
-    
-    // Add the detailed order data below summary
-    XLSX.utils.sheet_add_json(storeSheet, storeOrdersData, { 
-      origin: 'A' + (summaryData.length + 1)
-    })
+    // Create worksheet directly with order data (no summary)
+    const storeSheet = XLSX.utils.json_to_sheet(storeOrdersData)
 
     // Set column widths
     const columnWidths = [
-      { wch: 15 },  // No. Pesanan
       { wch: 20 },  // Customer
       { wch: 15 },  // No. Telp
       { wch: 25 },  // Email
       { wch: 30 },  // Nama Item
       { wch: 10 },  // Jumlah
-      { wch: 15 },  // Harga Satuan
-      { wch: 15 },  // Total Item
-      { wch: 15 },  // Biaya Layanan
-      { wch: 15 },  // Status Order
-      { wch: 15 },  // Status Pembayaran
+      { wch: 20 },  // Harga Jual (Satuan)
+      { wch: 20 },  // Jumlah Penjualan
       { wch: 20 },  // Tanggal Order
       { wch: 20 },  // Tanggal Pickup
     ]

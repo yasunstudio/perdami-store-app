@@ -4,7 +4,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, RefreshCw, Download, FileSpreadsheet, Filter, Database } from 'lucide-react';
+import { Loader2, RefreshCw, FileText, Download, FileSpreadsheet } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -41,8 +41,8 @@ export const StorePaymentDetailsPage = () => {
     await refreshData();
   };
 
-  const handleExport = async () => {
-    await exportPaymentDetails(filters, 'excel');
+  const handleExport = async (format: 'excel' | 'pdf') => {
+    await exportPaymentDetails(filters, format);
   };
 
   const formatDateForInput = (date?: Date): string => {
@@ -100,7 +100,7 @@ export const StorePaymentDetailsPage = () => {
       <Card className="shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
-            <Filter className="w-5 h-5 text-blue-600" />
+            <FileText className="w-5 h-5 text-blue-600" />
             Filter Laporan
           </CardTitle>
         </CardHeader>
@@ -230,7 +230,7 @@ export const StorePaymentDetailsPage = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handleExport}
+                  onClick={() => handleExport('excel')}
                   disabled={isLoading || isExporting}
                   className="h-10 px-4"
                 >
@@ -240,6 +240,21 @@ export const StorePaymentDetailsPage = () => {
                     <FileSpreadsheet className="w-4 h-4 mr-2" />
                   )}
                   Export Excel
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleExport('pdf')}
+                  disabled={isLoading || isExporting}
+                  className="h-10 px-4"
+                >
+                  {isExporting ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <FileText className="w-4 h-4 mr-2" />
+                  )}
+                  Export PDF
                 </Button>
               </div>
             )}
@@ -391,7 +406,7 @@ export const StorePaymentDetailsPage = () => {
         !isLoading && hasFilters && (
           <Card className="shadow-sm">
             <CardContent className="text-center py-12">
-              <Database className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+              <FileText className="w-16 h-16 mx-auto mb-4 text-gray-400" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                 No Data Found
               </h3>

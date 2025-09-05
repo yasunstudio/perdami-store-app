@@ -284,7 +284,7 @@ export async function GET(request: NextRequest) {
         worksheetData.push(['LAPORAN DETAIL ORDER KE TOKO']);
         worksheetData.push(['']);
         worksheetData.push([`Nama Toko: ${storeNameForHeader}`]);
-        worksheetData.push([`Tanggal Pickup: ${dateRangeForHeader}`]);
+        worksheetData.push([`Tanggal: ${dateRangeForHeader}`]);
         worksheetData.push(['']);
 
         // Add data for each store

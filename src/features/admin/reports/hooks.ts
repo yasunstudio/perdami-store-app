@@ -12,13 +12,16 @@ export const useStorePaymentDetails = () => {
   const [isLoadingStores, setIsLoadingStores] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Initialize with specific 3-day pickup date range where data exists
-  const startDate = new Date('2025-09-05'); // Start of pickup period
-  const endDate = new Date('2025-09-07');   // End of pickup period
+  // Initialize with broader date range for better initial data visibility
+  const today = new Date();
+  const weekAgo = new Date();
+  weekAgo.setDate(today.getDate() - 7);
+  const weekAhead = new Date();
+  weekAhead.setDate(today.getDate() + 7);
   
   const [filters, setFilters] = useState<StorePaymentFilters>({
-    startDate: startDate,
-    endDate: endDate
+    startDate: weekAgo,
+    endDate: weekAhead
   });
 
   const updateFilters = useCallback((newFilters: Partial<StorePaymentFilters>) => {
@@ -26,12 +29,14 @@ export const useStorePaymentDetails = () => {
   }, []);
 
   const clearFilters = useCallback(() => {
-    // Reset to the same 3-day pickup period default
-    const defaultStartDate = new Date('2025-09-05');
-    const defaultEndDate = new Date('2025-09-07');
+    const today = new Date();
+    const weekAgo = new Date();
+    weekAgo.setDate(today.getDate() - 7);
+    const weekAhead = new Date();
+    weekAhead.setDate(today.getDate() + 7);
     setFilters({
-      startDate: defaultStartDate,
-      endDate: defaultEndDate
+      startDate: weekAgo,
+      endDate: weekAhead
     });
   }, []);
 
@@ -106,7 +111,7 @@ export const usePaymentExport = () => {
 
   const exportPaymentDetails = useCallback(async (
     filters: StorePaymentFilters, 
-    format: 'excel' = 'excel'
+    format: 'excel' | 'pdf' = 'excel'
   ) => {
     try {
       setIsExporting(true);
@@ -122,8 +127,9 @@ export const usePaymentExport = () => {
       const dateRange = filters.startDate && filters.endDate 
         ? `${filters.startDate.toISOString().split('T')[0]}_to_${filters.endDate.toISOString().split('T')[0]}`
         : 'all-dates';
+      const extension = format === 'excel' ? 'xlsx' : 'pdf';
       
-      link.download = `store-payment-details_${storeName}_${dateRange}.xlsx`;
+      link.download = `store-payment-details_${storeName}_${dateRange}.${extension}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

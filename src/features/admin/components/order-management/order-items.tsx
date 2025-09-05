@@ -14,7 +14,6 @@ interface OrderItemsProps {
     id: string
     orderNumber: string
     createdAt: string
-    pickupDate?: string
     orderStatus: string
     paymentStatus: string
     notes?: string
@@ -130,8 +129,7 @@ export function OrderItems({ order, items, totalAmount }: OrderItemsProps) {
             <div class="info-box">
               <h3>Informasi Pesanan</h3>
               <p><strong>No. Invoice:</strong> ${order.orderNumber}</p>
-              <p><strong>Tanggal Order:</strong> ${formatDate(order.createdAt)}</p>
-              ${order.pickupDate ? `<p><strong>Tanggal Pickup:</strong> ${formatDate(order.pickupDate)}</p>` : ''}
+              <p><strong>Tanggal:</strong> ${formatDate(order.createdAt)}</p>
               <p><strong>Status:</strong> ${order.orderStatus}</p>
               <p><strong>Pembayaran:</strong> ${order.payment?.method || 'Transfer Bank'}</p>
             </div>

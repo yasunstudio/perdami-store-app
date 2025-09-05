@@ -21,6 +21,8 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get('endDate');
     const batchId = searchParams.get('batchId');
 
+    console.log('Store Payment Details API called with:', { storeId, startDate, endDate, batchId });
+
     // Build where clause
     const whereClause: any = {
       orderStatus: 'CONFIRMED', // Only confirmed orders
@@ -42,6 +44,8 @@ export async function GET(request: NextRequest) {
         whereClause.pickupDate.lte = end;
       }
     }
+
+    console.log('WHERE CLAUSE:', JSON.stringify(whereClause, null, 2));
 
     // Note: Batch filtering will be applied after data retrieval
 
@@ -88,6 +92,13 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    console.log(`RAW ORDERS FOUND: ${orders.length}`);
+    orders.forEach((order, index) => {
+      if (index < 3) { // Log first 3 for debugging
+        console.log(`Order ${index + 1}: ${order.orderNumber}, pickup: ${order.pickupDate?.toISOString()}, status: ${order.orderStatus}`);
+      }
+    });
+
     // Transform data to flat list of payment details
     const paymentDetails: any[] = [];
     
@@ -95,6 +106,7 @@ export async function GET(request: NextRequest) {
       // Apply batch filtering if specified
       if (batchId) {
         const orderBatch = getBatchFromOrderTime(order.createdAt);
+        console.log(`Order ${order.id}: createdAt=${order.createdAt.toISOString()}, batch=${orderBatch}, filter=${batchId}`);
         if (orderBatch !== batchId) return;
       }
 
