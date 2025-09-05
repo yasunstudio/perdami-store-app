@@ -84,7 +84,11 @@ export async function GET(request: NextRequest) {
         orderItems: {
           include: {
             bundle: {
-              include: {
+              select: {
+                id: true,
+                name: true,
+                contents: true,
+                costPrice: true,
                 store: {
                   select: {
                     id: true,
@@ -109,6 +113,48 @@ export async function GET(request: NextRequest) {
         pickupDate: 'asc'
       }
     });
+
+    // Function to format bundle contents like in frontend
+    const formatBundleContents = (contents: any) => {
+      if (!contents) return '-';
+      try {
+        if (typeof contents === 'string') {
+          return contents;
+        }
+        if (Array.isArray(contents)) {
+          // Handle array of objects with name and quantity
+          return contents.map((item: any) => {
+            if (typeof item === 'string') {
+              return item;
+            }
+            if (typeof item === 'object' && item.name) {
+              // Format: "Item Name (quantity)" - always show quantity
+              const quantity = item.quantity || 1;
+              return `${item.name} (${quantity})`;
+            }
+            return String(item);
+          }).join(', ');
+        }
+        if (typeof contents === 'object') {
+          if (contents.items && Array.isArray(contents.items)) {
+            return contents.items.map((item: any) => {
+              if (typeof item === 'string') {
+                return item;
+              }
+              if (typeof item === 'object' && item.name) {
+                const quantity = item.quantity || 1;
+                return `${item.name} (${quantity})`;
+              }
+              return item.name || item.description || String(item);
+            }).join(', ');
+          }
+          return JSON.stringify(contents).replace(/[{}"]/g, '').replace(/,/g, ', ');
+        }
+        return String(contents);
+      } catch {
+        return '-';
+      }
+    };
 
     // Transform data to flat list of payment details
     const paymentDetails: any[] = [];
@@ -144,15 +190,12 @@ export async function GET(request: NextRequest) {
             'Tanggal Order': order.createdAt.toLocaleDateString('id-ID'),
             'Nama Customer': order.user?.name || 'N/A',
             'No Telepon': order.user?.phone || '-',
-            'Nama Item': item.bundle.name,
+            'Paket': item.bundle.name,
+            'Item dalam Paket': formatBundleContents(item.bundle.contents),
             'Jumlah': item.quantity,
             'Harga Satuan': costPrice,
-            'Total Harga': totalPrice,
-            'Catatan': order.notes || '-',
+            'Total': totalPrice,
             'Tanggal Pickup': order.pickupDate ? order.pickupDate.toLocaleDateString('id-ID') : '-',
-            'Toko': item.bundle.store.name,
-            'Order Number': order.orderNumber,
-            'Batch': batchName,
           });
         }
       });
