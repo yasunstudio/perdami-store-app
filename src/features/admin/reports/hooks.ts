@@ -21,6 +21,13 @@ export const useStorePaymentDetails = () => {
   const endDate = new Date('2025-09-07');
   endDate.setHours(23, 59, 59, 999); // End of September 7, 2025
   
+  console.log('Filter initialization:', {
+    startOfToday: startOfToday.toISOString(),
+    endDate: endDate.toISOString(),
+    startFormatted: startOfToday.toISOString().split('T')[0],
+    endFormatted: endDate.toISOString().split('T')[0]
+  });
+  
   const [filters, setFilters] = useState<StorePaymentFilters>({
     startDate: startOfToday,
     endDate: endDate

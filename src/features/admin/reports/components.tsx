@@ -47,7 +47,9 @@ export const StorePaymentDetailsPage = () => {
 
   const formatDateForInput = (date?: Date): string => {
     if (!date) return '';
-    return date.toISOString().split('T')[0];
+    const formatted = date.toISOString().split('T')[0];
+    console.log('formatDateForInput:', { date: date.toISOString(), formatted });
+    return formatted;
   };
 
   const availableBatches = getAvailableBatches();
