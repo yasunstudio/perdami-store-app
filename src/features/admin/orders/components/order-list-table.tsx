@@ -96,18 +96,9 @@ export function OrderListTable({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="flex flex-col space-y-1">
-                    <span className="text-sm font-medium">
-                      {(order.items || order.orderItems || []).length} item(s)
-                    </span>
-                    <span className="text-xs text-muted-foreground truncate">
-                      {(order.items || order.orderItems || [])
-                        .slice(0, 2)
-                        .map(item => item.bundle.name)
-                        .join(', ')}
-                      {(order.items || order.orderItems || []).length > 2 && '...'}
-                    </span>
-                  </div>
+                  <span className="text-sm font-medium">
+                    {(order.items || order.orderItems || []).length} item(s)
+                  </span>
                 </TableCell>
                 <TableCell className="text-right">
                   <span className="font-medium">{formatPrice(order.totalAmount)}</span>
