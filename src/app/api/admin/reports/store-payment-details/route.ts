@@ -56,7 +56,11 @@ export async function GET(request: NextRequest) {
         orderItems: {
           include: {
             bundle: {
-              include: {
+              select: {
+                id: true,
+                name: true,
+                contents: true,
+                costPrice: true,
                 store: {
                   select: {
                     id: true,
@@ -113,6 +117,7 @@ export async function GET(request: NextRequest) {
             customerName: order.user?.name || 'N/A',
             customerPhone: order.user?.phone || null,
             itemName: item.bundle.name,
+            bundleContents: item.bundle.contents || null,
             quantity: item.quantity,
             unitPrice: costPrice,
             totalPrice: totalPrice,

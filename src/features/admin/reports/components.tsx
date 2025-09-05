@@ -307,7 +307,8 @@ export const StorePaymentDetailsPage = () => {
                     <TableHead className="min-w-[120px]">Batch</TableHead>
                     <TableHead className="min-w-[150px]">Customer</TableHead>
                     <TableHead className="min-w-[120px]">No Telepon</TableHead>
-                    <TableHead className="min-w-[200px]">Item</TableHead>
+                    <TableHead className="min-w-[200px]">Paket</TableHead>
+                    <TableHead className="min-w-[250px]">Item dalam Paket</TableHead>
                     <TableHead className="min-w-[80px] text-right">Jumlah</TableHead>
                     <TableHead className="min-w-[120px] text-right">Harga Satuan</TableHead>
                     <TableHead className="min-w-[120px] text-right">Total Harga</TableHead>
@@ -321,6 +322,30 @@ export const StorePaymentDetailsPage = () => {
                     const indonesiaTime = new Date(orderDate.getTime() + (7 * 60 * 60 * 1000));
                     const orderHour = indonesiaTime.getUTCHours();
                     const batchName = orderHour >= 6 && orderHour < 18 ? 'Batch 1 - Siang' : 'Batch 2 - Malam';
+                    
+                    // Format bundle contents
+                    const formatBundleContents = (contents: any) => {
+                      if (!contents) return '-';
+                      try {
+                        if (typeof contents === 'string') {
+                          return contents;
+                        }
+                        if (Array.isArray(contents)) {
+                          return contents.join(', ');
+                        }
+                        if (typeof contents === 'object') {
+                          if (contents.items && Array.isArray(contents.items)) {
+                            return contents.items.map((item: any) => 
+                              typeof item === 'string' ? item : item.name || item.description || JSON.stringify(item)
+                            ).join(', ');
+                          }
+                          return JSON.stringify(contents).replace(/[{}"]/g, '').replace(/,/g, ', ');
+                        }
+                        return String(contents);
+                      } catch {
+                        return '-';
+                      }
+                    };
                     
                     return (
                       <TableRow key={`${detail.orderId}-${detail.itemName}-${index}`}>
@@ -337,7 +362,10 @@ export const StorePaymentDetailsPage = () => {
                         </TableCell>
                         <TableCell className="font-medium">{detail.customerName}</TableCell>
                         <TableCell>{detail.customerPhone || '-'}</TableCell>
-                        <TableCell>{detail.itemName}</TableCell>
+                        <TableCell className="font-medium">{detail.itemName}</TableCell>
+                        <TableCell className="text-sm text-gray-600 dark:text-gray-400">
+                          {formatBundleContents(detail.bundleContents)}
+                        </TableCell>
                         <TableCell className="text-right">{detail.quantity}</TableCell>
                         <TableCell className="text-right">{formatCurrency(detail.unitPrice)}</TableCell>
                         <TableCell className="text-right font-medium">{formatCurrency(detail.totalPrice)}</TableCell>

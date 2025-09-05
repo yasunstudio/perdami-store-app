@@ -5,6 +5,7 @@ export interface StorePaymentDetail {
   customerName: string;
   customerPhone: string | null;
   itemName: string;
+  bundleContents?: any; // JSON data for bundle contents
   quantity: number;
   unitPrice: number; // cost price
   totalPrice: number; // quantity × cost price
