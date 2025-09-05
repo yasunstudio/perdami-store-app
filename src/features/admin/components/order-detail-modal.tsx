@@ -31,8 +31,10 @@ import {
   Eye,
   Download,
   Edit3,
-  History
+  History,
+  MessageCircle
 } from 'lucide-react'
+import { generateCustomerPickupMessage, openWhatsApp, validateIndonesianPhone } from '@/lib/whatsapp'
 
 interface OrderDetailModalProps {
   order: Order | null
@@ -110,6 +112,33 @@ export function OrderDetailModal({ order, isOpen, onClose, onUpdate }: OrderDeta
   const handleViewPaymentProof = () => {
     if (order.paymentProof) {
       window.open(order.paymentProof, '_blank')
+    }
+  }
+
+  // Handle WhatsApp notification to customer
+  const handleNotifyCustomer = () => {
+    if (!order) return
+    
+    try {
+      const customerPhone = order.customer?.phone || order.user?.phone
+      const customerName = order.customer?.name || order.user?.name
+
+      if (!customerPhone) {
+        toast.error('Nomor telepon customer tidak tersedia')
+        return
+      }
+
+      if (!validateIndonesianPhone(customerPhone)) {
+        toast.error('Format nomor telepon tidak valid')
+        return
+      }
+
+      const message = generateCustomerPickupMessage(order)
+      openWhatsApp(customerPhone, message)
+      toast.success(`WhatsApp terbuka untuk notifikasi ke ${customerName}`)
+    } catch (error) {
+      console.error('Error opening WhatsApp:', error)
+      toast.error('Gagal membuka WhatsApp')
     }
   }
 
@@ -209,10 +238,24 @@ export function OrderDetailModal({ order, isOpen, onClose, onUpdate }: OrderDeta
             {/* Customer Information */}
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base font-semibold text-gray-900 dark:text-gray-100">
-                  <User className="h-4 w-4" />
-                  Informasi Pelanggan
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold text-gray-900 dark:text-gray-100">
+                    <User className="h-4 w-4" />
+                    Informasi Pelanggan
+                  </CardTitle>
+                  {/* WhatsApp notification button - show if customer has phone and order is ready */}
+                  {(order.customer?.phone || order.user?.phone) && order.orderStatus === 'READY' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleNotifyCustomer}
+                      className="flex items-center gap-2 bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      Notifikasi WhatsApp
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-2 pt-0">
                 <div className="flex items-center gap-2">

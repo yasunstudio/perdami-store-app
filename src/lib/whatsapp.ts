@@ -119,24 +119,22 @@ export function generateCustomerPickupMessage(order: any): string {
 
   const customerName = order.user?.name || order.customer?.name || 'Customer'
 
-  const message = `🎉 *Pesanan Anda Sudah Siap!*
+  const message = `*Pesanan Anda Sudah Siap!*
 
-Halo *${customerName}*,
+Halo Bapak/Ibu *${customerName}*,
 
 Pesanan #*${order.orderNumber}* Anda sudah siap untuk diambil!
 
-📋 *Detail Pesanan:*
+*Detail Pesanan:*
 ${itemsList}
 
-💰 *Total: Rp ${order.totalAmount.toLocaleString('id-ID')}*
+*Total: Rp ${order.totalAmount.toLocaleString('id-ID')}*
 
-📍 *Lokasi Pickup:*
-Booth Perdami 2025
+*Lokasi Pickup:*
+Booth PIT Perdami 2025
 
-⏰ *Jadwal Pickup:*
-📅 ${pickupDate}
-
-Silakan datang sesuai jadwal ya! 
+*Jadwal Pickup:*
+${pickupDate}
 
 Terima kasih 🙏
 _Tim Dharma Wanita Perdami_`
