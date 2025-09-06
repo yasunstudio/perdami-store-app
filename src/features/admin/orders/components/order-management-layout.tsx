@@ -172,7 +172,7 @@ export default function OrderManagementLayout({
       const response = await fetch(`/api/admin/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderStatus: newStatus })
+        body: JSON.stringify({ status: newStatus })
       })
 
       if (!response.ok) throw new Error('Failed to update order status')
