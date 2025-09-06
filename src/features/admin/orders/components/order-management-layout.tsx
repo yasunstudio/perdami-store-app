@@ -115,10 +115,55 @@ export default function OrderManagementLayout({
   const [sort, setSort] = useState({ field: 'createdAt', direction: 'desc' })
   const [totalPages, setTotalPages] = useState(1)
   
+  // Update status states
+  const [updateStatusDialogOpen, setUpdateStatusDialogOpen] = useState(false)
+  const [orderToUpdate, setOrderToUpdate] = useState<OrderWithRelations | null>(null)
+  const [newOrderStatus, setNewOrderStatus] = useState<string>('')
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
+  
+  // Bulk update states
+  const [bulkUpdateDialogOpen, setBulkUpdateDialogOpen] = useState(false)
+  const [bulkUpdateStatus, setBulkUpdateStatus] = useState<string>('')
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false)
+  
   // Handle view order
   const handleViewOrder = (order: OrderWithRelations) => {
     setSelectedOrder(order)
     router.push(`/admin/orders/${order.id}`)
+  }
+  
+  // Handle update order status
+  const handleUpdateOrderStatus = (order: OrderWithRelations) => {
+    setOrderToUpdate(order)
+    setNewOrderStatus(order.orderStatus)
+    setUpdateStatusDialogOpen(true)
+  }
+  
+  // Update order status function
+  const updateOrderStatus = async () => {
+    if (!orderToUpdate || !newOrderStatus) return
+    
+    try {
+      setIsUpdatingStatus(true)
+      const response = await fetch(`/api/admin/orders/${orderToUpdate.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderStatus: newOrderStatus })
+      })
+
+      if (!response.ok) throw new Error('Failed to update order status')
+      
+      toast.success('Status pesanan berhasil diperbarui')
+      setUpdateStatusDialogOpen(false)
+      setOrderToUpdate(null)
+      setNewOrderStatus('')
+      fetchOrders()
+    } catch (error) {
+      console.error('Error updating order status:', error)
+      toast.error('Gagal memperbarui status pesanan')
+    } finally {
+      setIsUpdatingStatus(false)
+    }
   }
   
   // Verify payment function
@@ -180,6 +225,15 @@ export default function OrderManagementLayout({
             </Button>
             <Button
               size="sm"
+              onClick={() => handleUpdateOrderStatus(order)}
+              variant="outline"
+              className="flex-1"
+            >
+              <Clock className="h-4 w-4 mr-1" />
+              Status
+            </Button>
+            <Button
+              size="sm"
               onClick={() => handleDeleteOrder(order)}
               variant="outline"
               className="text-red-600 hover:text-red-700"
@@ -202,6 +256,15 @@ export default function OrderManagementLayout({
         >
           <Eye className="h-4 w-4 mr-1" />
           Detail
+        </Button>
+        <Button
+          size="sm"
+          onClick={() => handleUpdateOrderStatus(order)}
+          variant="outline"
+          className="flex-1"
+        >
+          <Clock className="h-4 w-4 mr-1" />
+          Status
         </Button>
         <Button
           size="sm"
@@ -618,6 +681,85 @@ export default function OrderManagementLayout({
                 <>
                   <Trash2 className="mr-2 h-4 w-4" />
                   Hapus Pesanan
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Update Status Dialog */}
+      <Dialog open={updateStatusDialogOpen} onOpenChange={setUpdateStatusDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Status Pesanan</DialogTitle>
+            <DialogDescription>
+              Ubah status pesanan #{orderToUpdate?.orderNumber}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Status Pesanan Baru</label>
+              <Select
+                value={newOrderStatus}
+                onValueChange={setNewOrderStatus}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih status baru" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PENDING">Pending</SelectItem>
+                  <SelectItem value="CONFIRMED">Dikonfirmasi</SelectItem>
+                  <SelectItem value="PROCESSING">Diproses</SelectItem>
+                  <SelectItem value="READY">Siap Diambil</SelectItem>
+                  <SelectItem value="COMPLETED">Selesai</SelectItem>
+                  <SelectItem value="CANCELLED">Dibatalkan</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {orderToUpdate && (
+              <div className="bg-muted/50 p-3 rounded-md">
+                <p className="text-sm text-muted-foreground mb-1">Status saat ini:</p>
+                <Badge className="mb-2">
+                  {orderToUpdate.orderStatus}
+                </Badge>
+                <p className="text-sm text-muted-foreground">
+                  Customer: {orderToUpdate.user?.name}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Total: Rp {orderToUpdate.totalAmount?.toLocaleString('id-ID')}
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setUpdateStatusDialogOpen(false)
+                setOrderToUpdate(null)
+                setNewOrderStatus('')
+              }}
+              disabled={isUpdatingStatus}
+              className="flex-1"
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={updateOrderStatus}
+              disabled={isUpdatingStatus || !newOrderStatus}
+              className="flex-1"
+            >
+              {isUpdatingStatus ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Mengupdate...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Update Status
                 </>
               )}
             </Button>
