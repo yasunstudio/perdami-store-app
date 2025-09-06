@@ -175,13 +175,17 @@ export default function OrderManagementLayout({
         body: JSON.stringify({ status: newStatus })
       })
 
-      if (!response.ok) throw new Error('Failed to update order status')
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('API Error:', errorData)
+        throw new Error(errorData.error || `HTTP ${response.status}`)
+      }
       
       toast.success(`Status pesanan berhasil diubah ke ${newStatus}`)
       fetchOrders()
     } catch (error) {
       console.error('Error updating order status:', error)
-      toast.error('Gagal memperbarui status pesanan')
+      toast.error(`Gagal memperbarui status pesanan: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
   

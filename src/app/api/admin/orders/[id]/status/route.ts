@@ -8,16 +8,23 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log('[STATUS UPDATE] Starting request for order:', params.id)
+    
     const session = await auth()
     
     if (!session?.user?.role || session.user.role !== 'ADMIN') {
+      console.log('[STATUS UPDATE] Unauthorized access attempt')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const orderId = params.id
-    const { status } = await request.json()
+    const body = await request.json()
+    console.log('[STATUS UPDATE] Request body:', body)
+    
+    const { status } = body
 
     if (!status) {
+      console.log('[STATUS UPDATE] Missing status parameter')
       return NextResponse.json(
         { error: 'Status is required' },
         { status: 400 }
@@ -27,6 +34,7 @@ export async function PATCH(
     // Validate status
     const validStatuses = ['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'COMPLETED', 'CANCELLED']
     if (!validStatuses.includes(status)) {
+      console.log('[STATUS UPDATE] Invalid status:', status)
       return NextResponse.json(
         { error: 'Invalid status' },
         { status: 400 }
