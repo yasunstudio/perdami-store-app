@@ -7,8 +7,11 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const orderId = params.id
+  let requestedStatus: string | undefined
+  
   try {
-    console.log('[STATUS UPDATE] Starting request for order:', params.id)
+    console.log('[STATUS UPDATE] Starting request for order:', orderId)
     
     const session = await auth()
     
@@ -17,11 +20,11 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const orderId = params.id
     const body = await request.json()
     console.log('[STATUS UPDATE] Request body:', body)
     
     const { status } = body
+    requestedStatus = status
 
     if (!status) {
       console.log('[STATUS UPDATE] Missing status parameter')
@@ -75,19 +78,25 @@ export async function PATCH(
       }
     })
 
+    console.log('[STATUS UPDATE] Order updated successfully:', updatedOrder.id)
+
     // Create notification for status change
     try {
+      console.log('[STATUS UPDATE] Creating notification...')
       await NotificationService.notifyOrderStatusChange(
         orderId, 
         status, 
         currentOrder.orderStatus
       )
+      console.log('[STATUS UPDATE] Notification created successfully')
     } catch (notificationError) {
-      console.error('Failed to create notification:', notificationError)
+      console.error('[STATUS UPDATE] Failed to create notification:', notificationError)
       // Don't fail the main operation if notification fails
     }
 
+    // TODO: Re-enable activity logging after debugging
     // Log the status change activity
+    /*
     try {
       await prisma.userActivityLog.create({
         data: {
@@ -102,13 +111,26 @@ export async function PATCH(
       console.error('Failed to log activity:', logError)
       // Don't fail the main operation if logging fails
     }
+    */
 
+    console.log('[STATUS UPDATE] Returning success response')
     return NextResponse.json(updatedOrder)
 
   } catch (error) {
-    console.error('Error updating order status:', error)
+    console.error('[STATUS UPDATE] Error updating order status:', error)
+    console.error('[STATUS UPDATE] Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      orderId,
+      requestedStatus
+    })
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
