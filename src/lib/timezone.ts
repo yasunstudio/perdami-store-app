@@ -12,7 +12,7 @@ export function isStoreClosed(): boolean {
   return now >= CLOSURE_DATE;
   
   // FOR TESTING: Uncomment line below to test closure page
-  // return true;
+  return true;
 }
 
 /**
