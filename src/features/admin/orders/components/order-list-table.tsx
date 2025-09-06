@@ -259,21 +259,33 @@ export function OrderListTable({
                       </DropdownMenuSub>
 
                       {/* View Payment Proof */}
-                      <PaymentProofModal 
-                        order={order}
-                        trigger={
-                          <DropdownMenuItem 
-                            onSelect={(e) => e.preventDefault()}
-                            disabled={!order.paymentProofUrl}
-                            className={!order.paymentProofUrl ? "opacity-50 cursor-not-allowed" : ""}
-                          >
-                            <FileImage className={`mr-2 h-4 w-4 ${!order.paymentProofUrl ? 'text-gray-400' : ''}`} />
-                            <span className={!order.paymentProofUrl ? 'text-gray-400' : ''}>
-                              Lihat Bukti Bayar
-                            </span>
-                          </DropdownMenuItem>
-                        }
-                      />
+                      {(() => {
+                        // Comprehensive debugging
+                        console.log('=== Payment Proof Debug ===')
+                        console.log('Order:', order.orderNumber)
+                        console.log('paymentProofUrl:', order.paymentProofUrl)
+                        console.log('paymentProofUrl type:', typeof order.paymentProofUrl)
+                        console.log('Boolean check:', !!order.paymentProofUrl)
+                        console.log('============================')
+                        
+                        return (
+                          <PaymentProofModal 
+                            order={order}
+                            trigger={
+                              <DropdownMenuItem 
+                                onSelect={(e) => e.preventDefault()}
+                                disabled={!order.paymentProofUrl}
+                                className={!order.paymentProofUrl ? "opacity-50 cursor-not-allowed" : ""}
+                              >
+                                <FileImage className={`mr-2 h-4 w-4 ${!order.paymentProofUrl ? 'text-gray-400' : ''}`} />
+                                <span className={!order.paymentProofUrl ? 'text-gray-400' : ''}>
+                                  Lihat Bukti Bayar {order.paymentProofUrl ? '✓' : '✗'}
+                                </span>
+                              </DropdownMenuItem>
+                            }
+                          />
+                        )
+                      })()}
 
                       {/* Print Invoice */}
                       <DropdownMenuItem onClick={() => handlePrintInvoice(order)}>
