@@ -10,9 +10,7 @@ export const CLOSURE_DATE = new Date('2025-09-06T21:00:00+07:00'); // 6 Sept 202
 export function isStoreClosed(): boolean {
   const now = new Date();
   return now >= CLOSURE_DATE;
-  
-  // FOR TESTING: Uncomment line below to test closure page
-  return true;
+}
 }
 
 /**
