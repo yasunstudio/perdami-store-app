@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { auditLog } from '@/lib/audit'
 import { notificationService } from '@/lib/notification'
+import { isStoreClosed } from '@/lib/timezone'
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -14,6 +15,15 @@ const registerSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    // Check if store is closed - block new user registrations
+    if (isStoreClosed()) {
+      console.log('🚫 Store is closed, rejecting new user registration')
+      return NextResponse.json(
+        { message: 'Pendaftaran pengguna baru telah ditutup. Event telah berakhir.' },
+        { status: 403 }
+      )
+    }
+    
     const body = await request.json()
     
     // Validate input
