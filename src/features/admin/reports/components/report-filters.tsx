@@ -5,8 +5,6 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
@@ -67,64 +65,64 @@ export function ReportFilters({
       {/* Date Range Picker */}
       <div className="space-y-2">
         <Label>Periode Tanggal</Label>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                'w-full justify-start text-left font-normal',
-                !dateRange && 'text-muted-foreground'
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {dateRange?.from ? (
-                dateRange.to ? (
-                  <>
-                    {format(dateRange.from, 'dd MMM', { locale: id })} -{' '}
-                    {format(dateRange.to, 'dd MMM yyyy', { locale: id })}
-                  </>
-                ) : (
-                  format(dateRange.from, 'dd MMM yyyy', { locale: id })
-                )
-              ) : (
-                'Pilih tanggal'
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <div className="space-y-3 p-3">
-              <div className="grid grid-cols-1 gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleQuickDateSelect('last7days')}
-                  className="justify-start h-8"
-                >
-                  7 Hari Terakhir
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleQuickDateSelect('last30days')}
-                  className="justify-start h-8"
-                >
-                  30 Hari Terakhir
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleQuickDateSelect('thisMonth')}
-                  className="justify-start h-8"
-                >
-                  Bulan Ini
-                </Button>
-              </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 pt-2 border-t">
-                Atau pilih tanggal custom di form tanggal
-              </div>
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs text-gray-500 dark:text-gray-400">Dari Tanggal</Label>
+              <input
+                type="date"
+                value={format(dateRange.from, 'yyyy-MM-dd')}
+                onChange={(e) => {
+                  const newFrom = new Date(e.target.value)
+                  if (newFrom <= dateRange.to) {
+                    handleDateRangeChange({ from: newFrom, to: dateRange.to })
+                  }
+                }}
+                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
-          </PopoverContent>
-        </Popover>
+            <div>
+              <Label className="text-xs text-gray-500 dark:text-gray-400">Sampai Tanggal</Label>
+              <input
+                type="date"
+                value={format(dateRange.to, 'yyyy-MM-dd')}
+                onChange={(e) => {
+                  const newTo = new Date(e.target.value)
+                  if (newTo >= dateRange.from) {
+                    handleDateRangeChange({ from: dateRange.from, to: newTo })
+                  }
+                }}
+                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleQuickDateSelect('last7days')}
+              className="text-xs h-7"
+            >
+              7 Hari
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleQuickDateSelect('last30days')}
+              className="text-xs h-7"
+            >
+              30 Hari
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleQuickDateSelect('thisMonth')}
+              className="text-xs h-7"
+            >
+              Bulan Ini
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Store Filter */}
