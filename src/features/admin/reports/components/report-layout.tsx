@@ -94,20 +94,10 @@ export function ReportLayout({
 
       {/* Filters Section */}
       {filters && (
-        <>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center space-x-2">
-                <Filter className="h-4 w-4" />
-                <span>Filter & Pengaturan</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              {filters}
-            </CardContent>
-          </Card>
+        <div className="space-y-4">
+          {filters}
           <Separator />
-        </>
+        </div>
       )}
 
       {/* Content Section */}
