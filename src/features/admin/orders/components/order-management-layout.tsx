@@ -165,6 +165,25 @@ export default function OrderManagementLayout({
       setIsUpdatingStatus(false)
     }
   }
+
+  // Quick update order status (for table dropdown)
+  const quickUpdateOrderStatus = async (orderId: string, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderStatus: newStatus })
+      })
+
+      if (!response.ok) throw new Error('Failed to update order status')
+      
+      toast.success(`Status pesanan berhasil diubah ke ${newStatus}`)
+      fetchOrders()
+    } catch (error) {
+      console.error('Error updating order status:', error)
+      toast.error('Gagal memperbarui status pesanan')
+    }
+  }
   
   // Verify payment function
   const verifyPayment = async (orderId: string, status: 'PAID' | 'FAILED') => {
@@ -580,6 +599,9 @@ export default function OrderManagementLayout({
                   router.push(`/admin/orders/${order.id}`)
                 }}
                 onDelete={handleDeleteOrder}
+                onUpdateStatus={(order, newStatus) => {
+                  quickUpdateOrderStatus(order.id, newStatus)
+                }}
                 isDeleting={isDeleting}
                 getStatusBadge={getStatusBadge}
                 getPaymentStatusBadge={getStatusBadge}

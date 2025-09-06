@@ -8,8 +8,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Eye, Trash2, MessageCircle } from 'lucide-react'
+import { MoreHorizontal, Eye, Trash2, MessageCircle, Clock, ChevronRight } from 'lucide-react'
 import { OrderWithRelations } from '../types/order.types'
 import { formatPrice } from '@/lib/utils'
 import { format } from 'date-fns'
@@ -22,6 +25,7 @@ interface OrderListTableProps {
   onView: (order: OrderWithRelations) => void
   // onEdit: (order: OrderWithRelations) => void // Disabled - use View Details instead
   onDelete: (order: OrderWithRelations) => void
+  onUpdateStatus: (order: OrderWithRelations, newStatus: string) => void
   isDeleting: boolean
   getStatusBadge: (status: string) => React.ReactNode
   getPaymentStatusBadge: (status: string) => React.ReactNode
@@ -32,10 +36,30 @@ export function OrderListTable({
   onView,
   // onEdit, // Disabled - use View Details instead
   onDelete,
+  onUpdateStatus,
   isDeleting,
   getStatusBadge,
   getPaymentStatusBadge
 }: OrderListTableProps) {
+
+  // Order status options
+  const orderStatusOptions = [
+    { value: 'PENDING', label: 'Pending', description: 'Menunggu konfirmasi' },
+    { value: 'CONFIRMED', label: 'Dikonfirmasi', description: 'Pesanan dikonfirmasi' },
+    { value: 'PROCESSING', label: 'Diproses', description: 'Sedang diproses' },
+    { value: 'READY', label: 'Siap Diambil', description: 'Siap untuk pickup' },
+    { value: 'COMPLETED', label: 'Selesai', description: 'Pesanan selesai' },
+    { value: 'CANCELLED', label: 'Dibatalkan', description: 'Pesanan dibatalkan' }
+  ]
+
+  // Handle status update
+  const handleStatusUpdate = (order: OrderWithRelations, newStatus: string) => {
+    if (order.orderStatus === newStatus) {
+      toast.info('Status pesanan sudah sama')
+      return
+    }
+    onUpdateStatus(order, newStatus)
+  }
 
   // Handle WhatsApp notification to customer
   const handleNotifyCustomer = (order: OrderWithRelations) => {
@@ -108,8 +132,7 @@ export function OrderListTable({
                 </TableCell>
                 <TableCell>
                   {getPaymentStatusBadge(order.paymentStatus)}
-                </TableCell>
-                <TableCell>
+                </TableCell>                <TableCell>
                   <div className="flex flex-col space-y-0.5">
                     <span className="text-sm">
                       {format(new Date(order.createdAt), 'dd MMM yyyy', { locale: id })}
@@ -153,6 +176,34 @@ export function OrderListTable({
                         <Eye className="mr-2 h-4 w-4" />
                         Lihat Detail
                       </DropdownMenuItem>
+                      
+                      {/* Update Status Submenu */}
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger>
+                          <Clock className="mr-2 h-4 w-4" />
+                          Update Status
+                          <ChevronRight className="ml-auto h-4 w-4" />
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent>
+                          {orderStatusOptions.map((status) => (
+                            <DropdownMenuItem
+                              key={status.value}
+                              onClick={() => handleStatusUpdate(order, status.value)}
+                              disabled={order.orderStatus === status.value}
+                              className={order.orderStatus === status.value ? 'bg-muted' : ''}
+                            >
+                              <div className="flex flex-col">
+                                <span className="font-medium">{status.label}</span>
+                                <span className="text-xs text-muted-foreground">{status.description}</span>
+                              </div>
+                              {order.orderStatus === status.value && (
+                                <span className="ml-auto text-xs text-muted-foreground">(Aktif)</span>
+                              )}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
+                      
                       {/* WhatsApp notification - show if customer has phone and order is ready */}
                       {(order.customer?.phone || order.user?.phone) && order.orderStatus === 'READY' && (
                         <DropdownMenuItem onClick={() => handleNotifyCustomer(order)}>
