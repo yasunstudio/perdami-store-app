@@ -1,9 +1,27 @@
+'use client';
+
 import { Metadata } from 'next'
+import { useEffect } from 'react'
+import { isStoreClosed } from '@/lib/timezone'
 import CartPage from '@/features/cart'
 
-export const metadata: Metadata = {
-  title: 'Keranjang Belanja - Perdami Store',
-  description: 'Lihat dan kelola produk di keranjang belanja Anda',
-}
+// Note: metadata export moved since this is now a client component
+export default function CartPageWrapper() {
+  useEffect(() => {
+    // Redirect to homepage if store is closed
+    if (isStoreClosed()) {
+      window.location.href = '/';
+    }
+  }, []);
 
-export default CartPage
+  // If store is closed, show nothing (will redirect)
+  if (isStoreClosed()) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
+
+  return <CartPage />
+}

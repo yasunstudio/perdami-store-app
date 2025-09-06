@@ -6,6 +6,7 @@ import { PaymentMethod, OrderStatus, PaymentStatus } from '@prisma/client'
 import { auditLog } from '@/lib/audit'
 import { NotificationService } from '@/lib/notification-service'
 import { SERVICE_FEE, calculateServiceFeePerStore } from '@/lib/service-fee'
+import { isStoreClosed } from '@/lib/timezone'
 
 const createOrderSchema = z.object({
   customerName: z.string().min(2, 'Nama minimal 2 karakter'),
@@ -36,6 +37,16 @@ function generateOrderNumber(): string {
 export async function POST(request: NextRequest) {
   try {
     console.log('🛒 Creating new order...')
+    
+    // Check if store is closed
+    if (isStoreClosed()) {
+      console.log('🚫 Store is closed, rejecting new order')
+      return NextResponse.json(
+        { error: 'Pemesanan telah ditutup. Terima kasih atas partisipasi Anda.' },
+        { status: 403 }
+      )
+    }
+    
     const session = await auth()
     
     if (!session?.user) {

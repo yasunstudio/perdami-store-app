@@ -6,6 +6,7 @@ import { validateFile, fileToBase64 } from '@/lib/upload'
 import { auditLog } from '@/lib/audit'
 import { notificationService } from '@/lib/notification'
 import { v2 as cloudinary } from 'cloudinary'
+import { isStoreClosed } from '@/lib/timezone'
 
 // Configure Cloudinary
 cloudinary.config({
@@ -16,6 +17,15 @@ cloudinary.config({
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if store is closed - block new payment proof uploads
+    if (isStoreClosed()) {
+      console.log('🚫 Store is closed, rejecting payment proof upload')
+      return NextResponse.json(
+        { error: 'Upload bukti pembayaran telah ditutup. Silakan hubungi admin untuk bantuan.' },
+        { status: 403 }
+      )
+    }
+    
     const session = await auth()
     
     if (!session) {

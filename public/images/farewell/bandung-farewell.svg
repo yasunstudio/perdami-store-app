@@ -1,0 +1,47 @@
+<svg width="400" height="400" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="skyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#87CEEB;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFE4E1;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="mountainGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B4513;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#654321;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background Sky -->
+  <rect width="400" height="400" fill="url(#skyGradient)"/>
+  
+  <!-- Mountains -->
+  <polygon points="0,200 100,100 200,150 300,80 400,120 400,400 0,400" fill="url(#mountainGradient)"/>
+  
+  <!-- City Buildings -->
+  <rect x="50" y="250" width="30" height="150" fill="#696969"/>
+  <rect x="90" y="220" width="25" height="180" fill="#708090"/>
+  <rect x="120" y="240" width="35" height="160" fill="#696969"/>
+  <rect x="170" y="260" width="20" height="140" fill="#708090"/>
+  <rect x="200" y="230" width="40" height="170" fill="#696969"/>
+  <rect x="250" y="250" width="25" height="150" fill="#708090"/>
+  <rect x="280" y="240" width="30" height="160" fill="#696969"/>
+  <rect x="320" y="270" width="25" height="130" fill="#708090"/>
+  
+  <!-- Windows -->
+  <rect x="55" y="260" width="5" height="8" fill="#FFFF99"/>
+  <rect x="65" y="260" width="5" height="8" fill="#FFFF99"/>
+  <rect x="55" y="280" width="5" height="8" fill="#FFFF99"/>
+  <rect x="95" y="240" width="4" height="6" fill="#FFFF99"/>
+  <rect x="105" y="240" width="4" height="6" fill="#FFFF99"/>
+  <rect x="125" y="260" width="6" height="8" fill="#FFFF99"/>
+  <rect x="140" y="260" width="6" height="8" fill="#FFFF99"/>
+  <rect x="205" y="250" width="7" height="9" fill="#FFFF99"/>
+  <rect x="220" y="250" width="7" height="9" fill="#FFFF99"/>
+  
+  <!-- Traditional Elements -->
+  <circle cx="200" cy="180" r="40" fill="#FF6347" opacity="0.8"/>
+  <text x="200" y="190" text-anchor="middle" fill="white" font-family="serif" font-size="24" font-weight="bold">❤️</text>
+  
+  <!-- Bandung Text -->
+  <text x="200" y="350" text-anchor="middle" fill="#8B4513" font-family="serif" font-size="28" font-weight="bold">BANDUNG</text>
+  <text x="200" y="375" text-anchor="middle" fill="#654321" font-family="serif" font-size="16">Tercinta</text>
+</svg>

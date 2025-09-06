@@ -1,4 +1,7 @@
-import { Suspense } from 'react'
+'use client';
+
+import { Suspense, useEffect } from 'react'
+import { isStoreClosed } from '@/lib/timezone'
 import CheckoutPage from '@/features/checkout'
 
 function CheckoutLoading() {
@@ -23,6 +26,22 @@ function CheckoutLoading() {
 }
 
 export default function CheckoutPageWrapper() {
+  useEffect(() => {
+    // Redirect to homepage if store is closed
+    if (isStoreClosed()) {
+      window.location.href = '/';
+    }
+  }, []);
+
+  // If store is closed, show nothing (will redirect)
+  if (isStoreClosed()) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
+
   return (
     <Suspense fallback={<CheckoutLoading />}>
       <CheckoutPage />
