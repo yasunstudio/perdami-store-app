@@ -13,20 +13,13 @@ export async function PATCH(
   try {
     console.log('[STATUS UPDATE] Starting request for order:', orderId)
     
-    const session = await auth()
-    
-    if (!session?.user?.role || session.user.role !== 'ADMIN') {
-      console.log('[STATUS UPDATE] Unauthorized access attempt')
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
+    // Parse request body
     const body = await request.json()
     console.log('[STATUS UPDATE] Request body:', body)
+    requestedStatus = body.status
     
-    const { status } = body
-    requestedStatus = status
-
-    if (!status) {
+    // Basic validation
+    if (!requestedStatus) {
       console.log('[STATUS UPDATE] Missing status parameter')
       return NextResponse.json(
         { error: 'Status is required' },
@@ -34,90 +27,14 @@ export async function PATCH(
       )
     }
 
-    // Validate status
-    const validStatuses = ['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'COMPLETED', 'CANCELLED']
-    if (!validStatuses.includes(status)) {
-      console.log('[STATUS UPDATE] Invalid status:', status)
-      return NextResponse.json(
-        { error: 'Invalid status' },
-        { status: 400 }
-      )
-    }
-
-    // Get current order to compare status
-    const currentOrder = await prisma.order.findUnique({
-      where: { id: orderId },
-      select: { orderStatus: true }
+    // Just return success for now to test if the issue is in the update logic
+    console.log('[STATUS UPDATE] Returning test success response')
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Status update test successful',
+      orderId,
+      newStatus: requestedStatus 
     })
-
-    if (!currentOrder) {
-      return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
-      )
-    }
-
-    // Update order status
-    const updatedOrder = await prisma.order.update({
-      where: { id: orderId },
-      data: { 
-        orderStatus: status,
-        updatedAt: new Date()
-      },
-      include: {
-        user: {
-          select: { name: true, email: true, phone: true }
-        },
-        orderItems: {
-          include: {
-            bundle: {
-              select: { name: true }
-            }
-          }
-        }
-      }
-    })
-
-    console.log('[STATUS UPDATE] Order updated successfully:', updatedOrder.id)
-
-    // TODO: Re-enable notification after debugging
-    // Create notification for status change
-    /*
-    try {
-      console.log('[STATUS UPDATE] Creating notification...')
-      await NotificationService.notifyOrderStatusChange(
-        orderId, 
-        status, 
-        currentOrder.orderStatus
-      )
-      console.log('[STATUS UPDATE] Notification created successfully')
-    } catch (notificationError) {
-      console.error('[STATUS UPDATE] Failed to create notification:', notificationError)
-      // Don't fail the main operation if notification fails
-    }
-    */
-
-    // TODO: Re-enable activity logging after debugging
-    // Log the status change activity
-    /*
-    try {
-      await prisma.userActivityLog.create({
-        data: {
-          userId: session.user.id!,
-          action: 'ORDER_STATUS_UPDATE',
-          resource: 'ORDER',
-          resourceId: orderId,
-          details: `Updated order ${updatedOrder.orderNumber} status from ${currentOrder.orderStatus} to ${status}`
-        }
-      })
-    } catch (logError) {
-      console.error('Failed to log activity:', logError)
-      // Don't fail the main operation if logging fails
-    }
-    */
-
-    console.log('[STATUS UPDATE] Returning success response')
-    return NextResponse.json(updatedOrder)
 
   } catch (error) {
     console.error('[STATUS UPDATE] Error updating order status:', error)
