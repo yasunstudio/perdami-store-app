@@ -168,23 +168,34 @@ export default function OrderManagementLayout({
 
   // Quick update order status (for table dropdown)
   const quickUpdateOrderStatus = async (orderId: string, newStatus: string) => {
+    console.log('[FRONTEND] quickUpdateOrderStatus called with:', { orderId, newStatus })
+    
     try {
-      const response = await fetch(`/api/admin/orders/${orderId}/status`, {
+      const url = `/api/admin/orders/${orderId}/status`
+      console.log('[FRONTEND] Making request to:', url)
+      
+      const response = await fetch(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
       })
 
+      console.log('[FRONTEND] Response status:', response.status)
+      console.log('[FRONTEND] Response ok:', response.ok)
+
       if (!response.ok) {
         const errorData = await response.json()
-        console.error('API Error:', errorData)
+        console.error('[FRONTEND] API Error:', errorData)
         throw new Error(errorData.error || `HTTP ${response.status}`)
       }
+      
+      const successData = await response.json()
+      console.log('[FRONTEND] Success response:', successData)
       
       toast.success(`Status pesanan berhasil diubah ke ${newStatus}`)
       fetchOrders()
     } catch (error) {
-      console.error('Error updating order status:', error)
+      console.error('[FRONTEND] Error updating order status:', error)
       toast.error(`Gagal memperbarui status pesanan: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
