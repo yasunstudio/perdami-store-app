@@ -22,7 +22,7 @@ export default function ClosurePage({ showCountdown = false }: ClosurePageProps)
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
       <div className="max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -39,10 +39,10 @@ export default function ClosurePage({ showCountdown = false }: ClosurePageProps)
               className="relative mx-auto w-72 h-72 mb-6"
             >
               {/* Decorative Background */}
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-200 to-red-200 rounded-full opacity-20 animate-pulse"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-200 to-red-200 dark:from-orange-900/30 dark:to-red-900/30 rounded-full opacity-20 animate-pulse"></div>
               
               {/* Main Image Container */}
-              <div className="relative w-full h-full rounded-full overflow-hidden border-4 border-white shadow-2xl">
+              <div className="relative w-full h-full rounded-full overflow-hidden border-4 border-white dark:border-gray-200 shadow-2xl dark:shadow-gray-900/50">
                 <img
                   src="/images/farewell/bandung-farewell.svg"
                   alt="Bandung Farewell"
@@ -71,7 +71,7 @@ export default function ClosurePage({ showCountdown = false }: ClosurePageProps)
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                className="absolute -top-4 -right-4 w-12 h-12 bg-orange-400 rounded-full flex items-center justify-center text-white text-xl shadow-lg"
+                className="absolute -top-4 -right-4 w-12 h-12 bg-orange-400 dark:bg-orange-500 rounded-full flex items-center justify-center text-white text-xl shadow-lg dark:shadow-gray-900/50"
               >
                 🎉
               </motion.div>
@@ -79,7 +79,7 @@ export default function ClosurePage({ showCountdown = false }: ClosurePageProps)
               <motion.div
                 animate={{ rotate: -360 }}
                 transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-                className="absolute -bottom-4 -left-4 w-12 h-12 bg-red-400 rounded-full flex items-center justify-center text-white text-xl shadow-lg"
+                className="absolute -bottom-4 -left-4 w-12 h-12 bg-red-400 dark:bg-red-500 rounded-full flex items-center justify-center text-white text-xl shadow-lg dark:shadow-gray-900/50"
               >
                 ❤️
               </motion.div>
@@ -92,7 +92,7 @@ export default function ClosurePage({ showCountdown = false }: ClosurePageProps)
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
           >
-            <Card className="backdrop-blur-sm bg-white/90 border-0 shadow-2xl">
+            <Card className="backdrop-blur-sm bg-white/90 dark:bg-gray-800/90 border-0 shadow-2xl dark:shadow-gray-900/50">
               <CardContent className="p-8 md:p-12">
                 <div className="space-y-6">
                   {/* Title */}
@@ -100,11 +100,11 @@ export default function ClosurePage({ showCountdown = false }: ClosurePageProps)
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.8, delay: 0.6 }}
-                    className="text-3xl md:text-4xl font-bold text-gray-800 mb-4"
+                    className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 mb-4"
                   >
                     Pemesanan Oleh-oleh Bandung
                     <br />
-                    <span className="text-red-600">Telah Ditutup</span>
+                    <span className="text-red-600 dark:text-red-400">Telah Ditutup</span>
                   </motion.h1>
 
                   {/* Countdown (if needed) */}
@@ -113,9 +113,9 @@ export default function ClosurePage({ showCountdown = false }: ClosurePageProps)
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.6, delay: 0.8 }}
-                      className="bg-gradient-to-r from-orange-100 to-red-100 rounded-lg p-4 mb-6"
+                      className="bg-gradient-to-r from-orange-100 to-red-100 dark:from-orange-900/20 dark:to-red-900/20 rounded-lg p-4 mb-6"
                     >
-                      <div className="flex items-center justify-center gap-2 text-orange-700">
+                      <div className="flex items-center justify-center gap-2 text-orange-700 dark:text-orange-300">
                         <Clock className="w-5 h-5" />
                         <span className="font-semibold">Waktu pemesanan telah berakhir</span>
                       </div>
@@ -127,15 +127,15 @@ export default function ClosurePage({ showCountdown = false }: ClosurePageProps)
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 1.0 }}
-                    className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 mb-6"
+                    className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 mb-6"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="bg-blue-500 rounded-full p-2 mt-1">
+                      <div className="bg-blue-500 dark:bg-blue-600 rounded-full p-2 mt-1">
                         <MapPin className="w-5 h-5 text-white" />
                       </div>
                       <div className="text-left">
-                        <h3 className="font-semibold text-blue-800 mb-2">Pengambilan Pesanan</h3>
-                        <p className="text-blue-700">
+                        <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">Pengambilan Pesanan</h3>
+                        <p className="text-blue-700 dark:text-blue-300">
                           Silakan pengambilan pesanan di<br />
                           <strong>Booth Dharma Wanita PERDAMI Jawa Barat</strong>
                         </p>
@@ -148,19 +148,19 @@ export default function ClosurePage({ showCountdown = false }: ClosurePageProps)
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.8, delay: 1.2 }}
-                    className="space-y-4 text-gray-700"
+                    className="space-y-4 text-gray-700 dark:text-gray-300"
                   >
                     <div className="flex items-center justify-center gap-2 mb-4">
-                      <Heart className="w-6 h-6 text-red-500" />
-                      <span className="text-lg font-semibold text-red-600">Hatur Nuhun Pisan</span>
-                      <Heart className="w-6 h-6 text-red-500" />
+                      <Heart className="w-6 h-6 text-red-500 dark:text-red-400" />
+                      <span className="text-lg font-semibold text-red-600 dark:text-red-400">Hatur Nuhun Pisan</span>
+                      <Heart className="w-6 h-6 text-red-500 dark:text-red-400" />
                     </div>
                     
                     <p className="text-lg leading-relaxed">
                       <strong>Hatur nuhun pisan</strong> atas pesanan sareng dukunganna.
                     </p>
                     
-                    <p className="text-lg leading-relaxed italic text-orange-700">
+                    <p className="text-lg leading-relaxed italic text-orange-700 dark:text-orange-300">
                       Mugia ku ieu oleh-oleh tiasa janten kenangan manis<br />
                       ti <strong>Bandung tercinta</strong> ❤️
                     </p>
@@ -175,7 +175,7 @@ export default function ClosurePage({ showCountdown = false }: ClosurePageProps)
                   >
                     <Button
                       onClick={() => window.location.href = '/orders'}
-                      className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-3 rounded-lg font-semibold shadow-lg transition-all duration-300 transform hover:scale-105"
+                      className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 dark:from-blue-500 dark:to-blue-600 dark:hover:from-blue-600 dark:hover:to-blue-700 text-white px-8 py-3 rounded-lg font-semibold shadow-lg transition-all duration-300 transform hover:scale-105"
                     >
                       <Gift className="w-4 h-4 mr-2" />
                       Lihat Pesanan Saya
@@ -184,7 +184,7 @@ export default function ClosurePage({ showCountdown = false }: ClosurePageProps)
                     <Button
                       variant="outline"
                       onClick={() => window.location.href = '/auth/login'}
-                      className="border-2 border-orange-400 text-orange-600 hover:bg-orange-50 px-8 py-3 rounded-lg font-semibold transition-all duration-300"
+                      className="border-2 border-orange-400 dark:border-orange-500 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 px-8 py-3 rounded-lg font-semibold transition-all duration-300"
                     >
                       Masuk ke Akun
                     </Button>
@@ -201,7 +201,7 @@ export default function ClosurePage({ showCountdown = false }: ClosurePageProps)
             transition={{ duration: 1, delay: 1.6 }}
             className="mt-8 text-center"
           >
-            <div className="inline-flex items-center gap-2 text-orange-600 text-sm">
+            <div className="inline-flex items-center gap-2 text-orange-600 dark:text-orange-400 text-sm">
               <span>🏔️</span>
               <span className="font-medium">PERDAMI Jawa Barat 2025</span>
               <span>🏔️</span>
