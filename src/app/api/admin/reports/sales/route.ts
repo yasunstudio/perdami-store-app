@@ -25,7 +25,8 @@ export async function GET(request: Request) {
     // Build where clause
     const whereClause: any = {
       orderStatus: 'COMPLETED',
-      createdAt: {
+      pickupStatus: 'PICKED_UP', // Only include picked up orders
+      pickupDate: {
         gte: startOfDay(fromDate),
         lte: endOfDay(toDate)
       }
@@ -94,14 +95,16 @@ export async function GET(request: Request) {
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 10)
 
-    // Sales by day
+    // Sales by day (based on pickup date)
     const salesByDay = new Map()
     orders.forEach(order => {
-      const day = format(order.createdAt, 'yyyy-MM-dd')
-      const existing = salesByDay.get(day) || { date: day, sales: 0, orders: 0 }
-      existing.sales += order.totalAmount
-      existing.orders += 1
-      salesByDay.set(day, existing)
+      if (order.pickupDate) {
+        const day = format(order.pickupDate, 'yyyy-MM-dd')
+        const existing = salesByDay.get(day) || { date: day, sales: 0, orders: 0 }
+        existing.sales += order.totalAmount
+        existing.orders += 1
+        salesByDay.set(day, existing)
+      }
     })
 
     const salesByDayArray = Array.from(salesByDay.values())

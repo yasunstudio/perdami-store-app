@@ -97,14 +97,14 @@ export function ReportFilters({
             <div className="flex items-center space-x-2">
               <Calendar className="h-4 w-4 text-gray-600 dark:text-gray-400" />
               <Label className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                Periode Tanggal
+                Periode Pickup
               </Label>
             </div>
             
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                  Dari Tanggal
+                  Dari Tanggal Pickup
                 </Label>
                 <input
                   type="date"
@@ -120,7 +120,7 @@ export function ReportFilters({
               </div>
               <div className="space-y-2">
                 <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                  Sampai Tanggal
+                  Sampai Tanggal Pickup
                 </Label>
                 <input
                   type="date"

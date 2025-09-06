@@ -25,7 +25,8 @@ export async function GET(request: Request) {
     // Build where clause
     const whereClause: any = {
       orderStatus: 'COMPLETED',
-      createdAt: {
+      pickupStatus: 'PICKED_UP', // Only include picked up orders
+      pickupDate: {
         gte: startOfDay(fromDate),
         lte: endOfDay(toDate)
       }
@@ -141,21 +142,23 @@ export async function GET(request: Request) {
       })
     })
 
-    // Calculate monthly data
+    // Calculate monthly data (based on pickup date)
     orders.forEach(order => {
-      const monthKey = format(order.createdAt, 'yyyy-MM')
-      if (monthlyData.has(monthKey)) {
-        const monthData = monthlyData.get(monthKey)
-        
-        order.orderItems.forEach(item => {
-          if (!item.bundle) return
-          const revenue = item.totalPrice
-          const cost = item.quantity * (item.bundle.costPrice || 0)
+      if (order.pickupDate) {
+        const monthKey = format(order.pickupDate, 'yyyy-MM')
+        if (monthlyData.has(monthKey)) {
+          const monthData = monthlyData.get(monthKey)
           
-          monthData.revenue += revenue
-          monthData.costs += cost
-          monthData.profit = monthData.revenue - monthData.costs
-        })
+          order.orderItems.forEach(item => {
+            if (!item.bundle) return
+            const revenue = item.totalPrice
+            const cost = item.quantity * (item.bundle.costPrice || 0)
+            
+            monthData.revenue += revenue
+            monthData.costs += cost
+            monthData.profit = monthData.revenue - monthData.costs
+          })
+        }
       }
     })
 
