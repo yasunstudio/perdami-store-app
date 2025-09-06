@@ -200,7 +200,6 @@ export default function ProfitLossReportPage() {
   return (
     <AdminPageLayout title="Laporan Rugi Laba">
       <ReportLayout
-        title="Laporan Rugi Laba"
         description="Analisis profitabilitas dan performa keuangan bisnis"
         isLoading={isLoading}
         isExporting={isExporting}

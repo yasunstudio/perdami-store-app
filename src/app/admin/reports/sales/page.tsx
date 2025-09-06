@@ -184,7 +184,6 @@ export default function SalesReportPage() {
   return (
     <AdminPageLayout title="Laporan Penjualan">
       <ReportLayout
-        title="Laporan Penjualan"
         description="Analisis lengkap data penjualan dan performa produk"
         isLoading={isLoading}
         isExporting={isExporting}

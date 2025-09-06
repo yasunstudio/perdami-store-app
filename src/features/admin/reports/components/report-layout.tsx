@@ -9,7 +9,7 @@ import { Download, RefreshCw, Calendar, Filter } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface ReportLayoutProps {
-  title: string
+  title?: string
   description: string
   children: ReactNode
   isLoading?: boolean
@@ -42,9 +42,11 @@ export function ReportLayout({
       {/* Header Section */}
       <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-            {title}
-          </h1>
+          {title && (
+            <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+              {title}
+            </h1>
+          )}
           <p className="text-sm text-gray-600 dark:text-gray-400">
             {description}
           </p>

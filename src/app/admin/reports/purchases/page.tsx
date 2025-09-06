@@ -181,7 +181,6 @@ export default function PurchaseReportPage() {
   return (
     <AdminPageLayout title="Laporan Pembelian">
       <ReportLayout
-        title="Laporan Pembelian"
         description="Analisis perilaku pembelian pelanggan dan tren transaksi"
         isLoading={isLoading}
         isExporting={isExporting}
