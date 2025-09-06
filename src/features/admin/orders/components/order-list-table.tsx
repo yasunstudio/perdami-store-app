@@ -46,7 +46,7 @@ export function OrderListTable({
   const orderStatusOptions = [
     { value: 'PENDING', label: 'Pending', description: 'Menunggu konfirmasi' },
     { value: 'CONFIRMED', label: 'Dikonfirmasi', description: 'Pesanan dikonfirmasi' },
-    { value: 'PREPARING', label: 'Diproses', description: 'Sedang diproses' },
+    { value: 'PROCESSING', label: 'Diproses', description: 'Sedang diproses' },
     { value: 'READY', label: 'Siap Diambil', description: 'Siap untuk pickup' },
     { value: 'COMPLETED', label: 'Selesai', description: 'Pesanan selesai' },
     { value: 'CANCELLED', label: 'Dibatalkan', description: 'Pesanan dibatalkan' }

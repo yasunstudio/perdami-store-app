@@ -38,7 +38,7 @@ export async function PATCH(
     console.log('[STATUS UPDATE] Status parameter validated:', status)
 
     // Validate status
-    const validStatuses = ['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'COMPLETED', 'CANCELLED']
+    const validStatuses = ['PENDING', 'CONFIRMED', 'PROCESSING', 'READY', 'COMPLETED', 'CANCELLED']
     if (!validStatuses.includes(status)) {
       console.log('[STATUS UPDATE] Invalid status:', status)
       return NextResponse.json(
