@@ -147,40 +147,45 @@ export function ReportFilters({
                   Filter Toko
                 </Label>
               </div>
-              <Select
-                value={filters.storeId || 'all'}
-                onValueChange={(value) =>
-                  onFiltersChange({
-                    ...filters,
-                    storeId: value === 'all' ? undefined : value
-                  })
-                }
-              >
-                <SelectTrigger className="h-10 border-2 hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
-                  <SelectValue placeholder="Pilih toko..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all" className="font-medium">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-                      <span>Semua Toko</span>
-                    </div>
-                  </SelectItem>
-                  {stores.map((store) => (
-                    <SelectItem key={store.id} value={store.id}>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  Pilih Toko
+                </Label>
+                <Select
+                  value={filters.storeId || 'all'}
+                  onValueChange={(value) =>
+                    onFiltersChange({
+                      ...filters,
+                      storeId: value === 'all' ? undefined : value
+                    })
+                  }
+                >
+                  <SelectTrigger className="h-10 border-2 hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
+                    <SelectValue placeholder="Pilih toko..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all" className="font-medium">
                       <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                        <span>{store.name}</span>
+                        <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                        <span>Semua Toko</span>
                       </div>
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    {stores.map((store) => (
+                      <SelectItem key={store.id} value={store.id}>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                          <span>{store.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Category Filter - If needed */}
+                {/* Category Filter - If needed */}
         {showCategoryFilter && (
           <>
             <Separator className="my-4" />
@@ -191,35 +196,40 @@ export function ReportFilters({
                   Filter Kategori
                 </Label>
               </div>
-              <Select
-                value={filters.categoryId || 'all'}
-                onValueChange={(value) =>
-                  onFiltersChange({
-                    ...filters,
-                    categoryId: value === 'all' ? undefined : value
-                  })
-                }
-              >
-                <SelectTrigger className="h-10 border-2 hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
-                  <SelectValue placeholder="Pilih kategori..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all" className="font-medium">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-                      <span>Semua Kategori</span>
-                    </div>
-                  </SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  Pilih Kategori
+                </Label>
+                <Select
+                  value={filters.categoryId || 'all'}
+                  onValueChange={(value) =>
+                    onFiltersChange({
+                      ...filters,
+                      categoryId: value === 'all' ? undefined : value
+                    })
+                  }
+                >
+                  <SelectTrigger className="h-10 border-2 hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
+                    <SelectValue placeholder="Pilih kategori..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all" className="font-medium">
                       <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                        <span>{category.name}</span>
+                        <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                        <span>Semua Kategori</span>
                       </div>
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                          <span>{category.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </>
         )}
