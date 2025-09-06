@@ -80,7 +80,9 @@ export async function PATCH(
 
     console.log('[STATUS UPDATE] Order updated successfully:', updatedOrder.id)
 
+    // TODO: Re-enable notification after debugging
     // Create notification for status change
+    /*
     try {
       console.log('[STATUS UPDATE] Creating notification...')
       await NotificationService.notifyOrderStatusChange(
@@ -93,6 +95,7 @@ export async function PATCH(
       console.error('[STATUS UPDATE] Failed to create notification:', notificationError)
       // Don't fail the main operation if notification fails
     }
+    */
 
     // TODO: Re-enable activity logging after debugging
     // Log the status change activity
