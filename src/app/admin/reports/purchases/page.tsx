@@ -16,6 +16,7 @@ import { getDefaultDateRange, formatCurrency, formatNumber, buildReportFilters }
 
 export default function PurchaseReportPage() {
   const [isLoading, setIsLoading] = useState(true)
+  const [isExporting, setIsExporting] = useState(false)
   const [reportData, setReportData] = useState<PurchaseReportData | null>(null)
   const [filters, setFilters] = useState<IReportFilters>({
     dateRange: getDefaultDateRange()
@@ -66,8 +67,104 @@ export default function PurchaseReportPage() {
     fetchReportData()
   }
 
-  const handleExport = () => {
-    toast.info('Fitur export akan segera tersedia')
+  const handleExport = async () => {
+    if (!reportData) {
+      toast.error('Tidak ada data untuk di-export')
+      return
+    }
+
+    setIsExporting(true)
+    try {
+      // Import XLSX dinamically
+      const XLSX = await import('xlsx')
+      
+      // Create workbook
+      const workbook = XLSX.utils.book_new()
+
+      // Sheet 1: Summary Statistics
+      const summaryData = [
+        ['LAPORAN PEMBELIAN'],
+        [''],
+        ['Periode', `${filters.dateRange.from.toLocaleDateString('id-ID')} - ${filters.dateRange.to.toLocaleDateString('id-ID')}`],
+        ['Tanggal Export', new Date().toLocaleDateString('id-ID')],
+        [''],
+        ['RINGKASAN PEMBELIAN'],
+        ['Metrik', 'Nilai'],
+        ['Total Pembelian', formatCurrency(reportData.totalPurchases)],
+        ['Total Transaksi', reportData.totalTransactions.toString()],
+        ['Rata-rata Nilai Transaksi', formatCurrency(reportData.averageTransactionValue)],
+        ['Pelanggan Aktif', reportData.topCustomers.length.toString()],
+      ]
+      const summarySheet = XLSX.utils.aoa_to_sheet(summaryData)
+      XLSX.utils.book_append_sheet(workbook, summarySheet, 'Ringkasan')
+
+      // Sheet 2: Top Customers
+      if (reportData.topCustomers.length > 0) {
+        const customersData = [
+          ['PELANGGAN TERATAS'],
+          [''],
+          ['Ranking', 'Nama Pelanggan', 'Email', 'Total Pembelian', 'Jumlah Pesanan'],
+          ...reportData.topCustomers.map((customer, index) => [
+            (index + 1).toString(),
+            customer.name,
+            customer.email,
+            formatCurrency(customer.totalSpent),
+            customer.orderCount.toString()
+          ])
+        ]
+        const customersSheet = XLSX.utils.aoa_to_sheet(customersData)
+        XLSX.utils.book_append_sheet(workbook, customersSheet, 'Pelanggan Teratas')
+      }
+
+      // Sheet 3: Purchases by Category
+      if (reportData.purchasesByCategory.length > 0) {
+        const categoryData = [
+          ['PEMBELIAN PER KATEGORI'],
+          [''],
+          ['Ranking', 'Kategori', 'Total Pembelian', 'Jumlah Transaksi', 'Persentase'],
+          ...reportData.purchasesByCategory.map((category, index) => [
+            (index + 1).toString(),
+            category.categoryName,
+            formatCurrency(category.purchases),
+            category.transactions.toString(),
+            `${((category.purchases / reportData.totalPurchases) * 100).toFixed(2)}%`
+          ])
+        ]
+        const categorySheet = XLSX.utils.aoa_to_sheet(categoryData)
+        XLSX.utils.book_append_sheet(workbook, categorySheet, 'Pembelian per Kategori')
+      }
+
+      // Sheet 4: Daily Trend
+      if (reportData.purchasesByDay.length > 0) {
+        const dailyData = [
+          ['TREN PEMBELIAN HARIAN'],
+          [''],
+          ['Tanggal', 'Total Pembelian', 'Jumlah Transaksi', 'Rata-rata per Transaksi'],
+          ...reportData.purchasesByDay.map((day) => [
+            day.date,
+            formatCurrency(day.purchases),
+            day.transactions.toString(),
+            formatCurrency(day.transactions > 0 ? day.purchases / day.transactions : 0)
+          ])
+        ]
+        const dailySheet = XLSX.utils.aoa_to_sheet(dailyData)
+        XLSX.utils.book_append_sheet(workbook, dailySheet, 'Tren Harian')
+      }
+
+      // Generate filename
+      const dateStr = new Date().toISOString().split('T')[0]
+      const filename = `Laporan_Pembelian_${dateStr}.xlsx`
+
+      // Save file
+      XLSX.writeFile(workbook, filename)
+      
+      toast.success('Laporan berhasil di-export ke Excel')
+    } catch (error) {
+      console.error('Export error:', error)
+      toast.error('Gagal export laporan')
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   const chartData = reportData?.purchasesByDay.map(item => ({
@@ -87,6 +184,7 @@ export default function PurchaseReportPage() {
         title="Laporan Pembelian"
         description="Analisis perilaku pembelian pelanggan dan tren transaksi"
         isLoading={isLoading}
+        isExporting={isExporting}
         onRefresh={handleRefresh}
         onExport={handleExport}
         badges={reportData ? [

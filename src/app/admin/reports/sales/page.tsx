@@ -16,6 +16,7 @@ import { getDefaultDateRange, formatCurrency, formatNumber, buildReportFilters }
 
 export default function SalesReportPage() {
   const [isLoading, setIsLoading] = useState(true)
+  const [isExporting, setIsExporting] = useState(false)
   const [reportData, setReportData] = useState<SalesReportData | null>(null)
   const [filters, setFilters] = useState<IReportFilters>({
     dateRange: getDefaultDateRange()
@@ -66,8 +67,102 @@ export default function SalesReportPage() {
     fetchReportData()
   }
 
-  const handleExport = () => {
-    toast.info('Fitur export akan segera tersedia')
+  const handleExport = async () => {
+    if (!reportData) {
+      toast.error('Tidak ada data untuk di-export')
+      return
+    }
+
+    setIsExporting(true)
+    try {
+      // Import XLSX dinamically untuk mengurangi bundle size
+      const XLSX = await import('xlsx')
+      
+      // Create workbook
+      const workbook = XLSX.utils.book_new()
+
+      // Sheet 1: Summary Statistics
+      const summaryData = [
+        ['LAPORAN PENJUALAN'],
+        [''],
+        ['Periode', `${filters.dateRange.from.toLocaleDateString('id-ID')} - ${filters.dateRange.to.toLocaleDateString('id-ID')}`],
+        ['Tanggal Export', new Date().toLocaleDateString('id-ID')],
+        [''],
+        ['RINGKASAN PENJUALAN'],
+        ['Metrik', 'Nilai'],
+        ['Total Penjualan', formatCurrency(reportData.totalSales)],
+        ['Total Pesanan', reportData.totalOrders.toString()],
+        ['Rata-rata Nilai Pesanan', formatCurrency(reportData.averageOrderValue)],
+        ['Total Produk Terjual', reportData.topProducts.reduce((sum, p) => sum + p.quantity, 0).toString()],
+      ]
+      const summarySheet = XLSX.utils.aoa_to_sheet(summaryData)
+      XLSX.utils.book_append_sheet(workbook, summarySheet, 'Ringkasan')
+
+      // Sheet 2: Top Products
+      if (reportData.topProducts.length > 0) {
+        const productsData = [
+          ['PRODUK TERLARIS'],
+          [''],
+          ['Ranking', 'Nama Produk', 'Qty Terjual', 'Total Revenue'],
+          ...reportData.topProducts.map((product, index) => [
+            (index + 1).toString(),
+            product.name,
+            product.quantity.toString(),
+            formatCurrency(product.revenue)
+          ])
+        ]
+        const productsSheet = XLSX.utils.aoa_to_sheet(productsData)
+        XLSX.utils.book_append_sheet(workbook, productsSheet, 'Produk Terlaris')
+      }
+
+      // Sheet 3: Sales by Store
+      if (reportData.salesByStore.length > 0) {
+        const storesData = [
+          ['PENJUALAN PER TOKO'],
+          [''],
+          ['Ranking', 'Nama Toko', 'Total Penjualan', 'Jumlah Pesanan'],
+          ...reportData.salesByStore.map((store, index) => [
+            (index + 1).toString(),
+            store.storeName,
+            formatCurrency(store.sales),
+            store.orders.toString()
+          ])
+        ]
+        const storesSheet = XLSX.utils.aoa_to_sheet(storesData)
+        XLSX.utils.book_append_sheet(workbook, storesSheet, 'Penjualan per Toko')
+      }
+
+      // Sheet 4: Daily Sales Trend
+      if (reportData.salesByDay.length > 0) {
+        const dailyData = [
+          ['TREN PENJUALAN HARIAN'],
+          [''],
+          ['Tanggal', 'Total Penjualan', 'Jumlah Pesanan', 'Rata-rata per Pesanan'],
+          ...reportData.salesByDay.map((day) => [
+            day.date,
+            formatCurrency(day.sales),
+            day.orders.toString(),
+            formatCurrency(day.orders > 0 ? day.sales / day.orders : 0)
+          ])
+        ]
+        const dailySheet = XLSX.utils.aoa_to_sheet(dailyData)
+        XLSX.utils.book_append_sheet(workbook, dailySheet, 'Tren Harian')
+      }
+
+      // Generate filename
+      const dateStr = new Date().toISOString().split('T')[0]
+      const filename = `Laporan_Penjualan_${dateStr}.xlsx`
+
+      // Save file
+      XLSX.writeFile(workbook, filename)
+      
+      toast.success('Laporan berhasil di-export ke Excel')
+    } catch (error) {
+      console.error('Export error:', error)
+      toast.error('Gagal export laporan')
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   const chartData = reportData?.salesByDay.map(item => ({
@@ -92,6 +187,7 @@ export default function SalesReportPage() {
         title="Laporan Penjualan"
         description="Analisis lengkap data penjualan dan performa produk"
         isLoading={isLoading}
+        isExporting={isExporting}
         onRefresh={handleRefresh}
         onExport={handleExport}
         badges={reportData ? [

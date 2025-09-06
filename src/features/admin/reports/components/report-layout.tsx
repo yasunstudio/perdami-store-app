@@ -13,6 +13,7 @@ interface ReportLayoutProps {
   description: string
   children: ReactNode
   isLoading?: boolean
+  isExporting?: boolean
   onRefresh?: () => void
   onExport?: () => void
   filters?: ReactNode
@@ -29,6 +30,7 @@ export function ReportLayout({
   description,
   children,
   isLoading = false,
+  isExporting = false,
   onRefresh,
   onExport,
   filters,
@@ -67,11 +69,11 @@ export function ReportLayout({
               variant="outline"
               size="sm"
               onClick={onExport}
-              disabled={isLoading}
+              disabled={isLoading || isExporting}
               className="flex items-center space-x-2"
             >
-              <Download className="h-4 w-4" />
-              <span>Export</span>
+              <Download className={cn('h-4 w-4', isExporting && 'animate-pulse')} />
+              <span>{isExporting ? 'Exporting...' : 'Export Excel'}</span>
             </Button>
           )}
         </div>

@@ -17,6 +17,7 @@ import { getDefaultDateRange, formatCurrency, formatPercentage, buildReportFilte
 
 export default function ProfitLossReportPage() {
   const [isLoading, setIsLoading] = useState(true)
+  const [isExporting, setIsExporting] = useState(false)
   const [reportData, setReportData] = useState<ProfitLossReportData | null>(null)
   const [filters, setFilters] = useState<IReportFilters>({
     dateRange: getDefaultDateRange()
@@ -67,8 +68,118 @@ export default function ProfitLossReportPage() {
     fetchReportData()
   }
 
-  const handleExport = () => {
-    toast.info('Fitur export akan segera tersedia')
+  const handleExport = async () => {
+    if (!reportData) {
+      toast.error('Tidak ada data untuk di-export')
+      return
+    }
+
+    setIsExporting(true)
+    try {
+      // Import XLSX dinamically
+      const XLSX = await import('xlsx')
+      
+      // Create workbook
+      const workbook = XLSX.utils.book_new()
+
+      // Sheet 1: Summary Statistics
+      const summaryData = [
+        ['LAPORAN RUGI LABA'],
+        [''],
+        ['Periode', `${filters.dateRange.from.toLocaleDateString('id-ID')} - ${filters.dateRange.to.toLocaleDateString('id-ID')}`],
+        ['Tanggal Export', new Date().toLocaleDateString('id-ID')],
+        [''],
+        ['RINGKASAN KEUANGAN'],
+        ['Metrik', 'Nilai'],
+        ['Total Revenue', formatCurrency(reportData.totalRevenue)],
+        ['Total Biaya', formatCurrency(reportData.totalCosts)],
+        ['Laba Bersih', formatCurrency(reportData.netProfit)],
+        ['Margin Keuntungan', formatPercentage(reportData.profitMargin)],
+        [''],
+        ['BREAKDOWN BIAYA'],
+        ['COGS (Cost of Goods Sold)', formatCurrency((reportData as any).breakdown?.costOfGoodsSold || 0)],
+        ['Biaya Operasional', formatCurrency((reportData as any).breakdown?.operationalCosts || 0)],
+        ['Gross Profit Margin', formatPercentage((reportData as any).breakdown?.grossProfitMargin || 0)],
+      ]
+      const summarySheet = XLSX.utils.aoa_to_sheet(summaryData)
+      XLSX.utils.book_append_sheet(workbook, summarySheet, 'Ringkasan')
+
+      // Sheet 2: Top Profitable Products
+      if (reportData.topProfitableProducts.length > 0) {
+        const productsData = [
+          ['PRODUK PALING MENGUNTUNGKAN'],
+          [''],
+          ['Ranking', 'Nama Produk', 'Revenue', 'Biaya', 'Profit', 'Margin (%)'],
+          ...reportData.topProfitableProducts.map((product, index) => [
+            (index + 1).toString(),
+            product.name,
+            formatCurrency(product.revenue),
+            formatCurrency(product.cost),
+            formatCurrency(product.profit),
+            product.margin.toFixed(2)
+          ])
+        ]
+        const productsSheet = XLSX.utils.aoa_to_sheet(productsData)
+        XLSX.utils.book_append_sheet(workbook, productsSheet, 'Produk Menguntungkan')
+      }
+
+      // Sheet 3: Profit by Store
+      if (reportData.profitByStore.length > 0) {
+        const storesData = [
+          ['PROFITABILITAS PER TOKO'],
+          [''],
+          ['Ranking', 'Nama Toko', 'Revenue', 'Biaya', 'Profit', 'Margin (%)'],
+          ...reportData.profitByStore.map((store, index) => {
+            const margin = store.revenue > 0 ? (store.profit / store.revenue) * 100 : 0
+            return [
+              (index + 1).toString(),
+              store.storeName,
+              formatCurrency(store.revenue),
+              formatCurrency(store.costs),
+              formatCurrency(store.profit),
+              margin.toFixed(2)
+            ]
+          })
+        ]
+        const storesSheet = XLSX.utils.aoa_to_sheet(storesData)
+        XLSX.utils.book_append_sheet(workbook, storesSheet, 'Profit per Toko')
+      }
+
+      // Sheet 4: Monthly Revenue Trend
+      if (reportData.revenueByMonth.length > 0) {
+        const monthlyData = [
+          ['TREN BULANAN'],
+          [''],
+          ['Bulan', 'Revenue', 'Biaya', 'Profit', 'Margin (%)'],
+          ...reportData.revenueByMonth.map((month) => {
+            const margin = month.revenue > 0 ? (month.profit / month.revenue) * 100 : 0
+            return [
+              month.month,
+              formatCurrency(month.revenue),
+              formatCurrency(month.costs),
+              formatCurrency(month.profit),
+              margin.toFixed(2)
+            ]
+          })
+        ]
+        const monthlySheet = XLSX.utils.aoa_to_sheet(monthlyData)
+        XLSX.utils.book_append_sheet(workbook, monthlySheet, 'Tren Bulanan')
+      }
+
+      // Generate filename
+      const dateStr = new Date().toISOString().split('T')[0]
+      const filename = `Laporan_Rugi_Laba_${dateStr}.xlsx`
+
+      // Save file
+      XLSX.writeFile(workbook, filename)
+      
+      toast.success('Laporan berhasil di-export ke Excel')
+    } catch (error) {
+      console.error('Export error:', error)
+      toast.error('Gagal export laporan')
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   const monthlyRevenueChart = reportData?.revenueByMonth.map(item => ({
@@ -92,6 +203,7 @@ export default function ProfitLossReportPage() {
         title="Laporan Rugi Laba"
         description="Analisis profitabilitas dan performa keuangan bisnis"
         isLoading={isLoading}
+        isExporting={isExporting}
         onRefresh={handleRefresh}
         onExport={handleExport}
         badges={reportData ? [
