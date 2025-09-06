@@ -19,6 +19,7 @@ import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
 import { generateCustomerPickupMessage, openWhatsApp, validateIndonesianPhone } from '@/lib/whatsapp'
 import { toast } from 'sonner'
+import { PaymentProofModal } from '@/components/admin/payment-proof-modal'
 
 interface OrderListTableProps {
   orders: OrderWithRelations[]
@@ -78,16 +79,6 @@ export function OrderListTable({
       return
     }
     onUpdatePaymentStatus(order, newStatus)
-  }
-
-  // Handle view payment proof
-  const handleViewPaymentProof = (order: OrderWithRelations) => {
-    if (!order.paymentProofUrl) {
-      toast.warning('Belum ada bukti pembayaran')
-      return
-    }
-    // Open payment proof page in new tab
-    window.open(`/admin/orders/${order.id}/payment-proof`, '_blank')
   }
 
   // Handle print invoice
@@ -268,13 +259,22 @@ export function OrderListTable({
                       </DropdownMenuSub>
 
                       {/* View Payment Proof */}
-                      <DropdownMenuItem 
-                        onClick={() => handleViewPaymentProof(order)}
-                        disabled={!order.paymentProofUrl}
-                      >
-                        <FileImage className="mr-2 h-4 w-4" />
-                        Lihat Bukti Bayar
-                      </DropdownMenuItem>
+                      {order.paymentProofUrl ? (
+                        <PaymentProofModal 
+                          order={order}
+                          trigger={
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                              <FileImage className="mr-2 h-4 w-4" />
+                              Lihat Bukti Bayar
+                            </DropdownMenuItem>
+                          }
+                        />
+                      ) : (
+                        <DropdownMenuItem disabled>
+                          <FileImage className="mr-2 h-4 w-4" />
+                          Lihat Bukti Bayar
+                        </DropdownMenuItem>
+                      )}
 
                       {/* Print Invoice */}
                       <DropdownMenuItem onClick={() => handlePrintInvoice(order)}>
