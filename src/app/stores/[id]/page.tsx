@@ -1,4 +1,8 @@
+'use client';
+
 import { Metadata } from 'next'
+import { useEffect } from 'react'
+import { isStoreClosed } from '@/lib/timezone'
 import StoreDetailPage from '@/features/stores/store-detail'
 
 interface StorePageProps {
@@ -7,33 +11,23 @@ interface StorePageProps {
   }>
 }
 
-export async function generateMetadata({ params }: StorePageProps): Promise<Metadata> {
-  const { id } = await params
-  
-  try {
-    const response = await fetch(`${process.env.NEXTAUTH_URL}/api/stores/${id}`, {
-      cache: 'no-store'
-    })
-    
-    if (response.ok) {
-      const store = await response.json()
-      
-      return {
-        title: `${store.name} - Perdami Store`,
-        description: store.description || `Toko ${store.name} - Oleh-oleh khas Bandung untuk PIT PERDAMI 2025`,
-      }
+// Note: generateMetadata removed since this is now a client component
+export default function StorePage({ params }: { params: { id: string } }) {
+  useEffect(() => {
+    // Redirect to homepage if store is closed
+    if (isStoreClosed()) {
+      window.location.href = '/';
     }
-  } catch (error) {
-    console.error('Error generating metadata:', error)
-  }
-  
-  return {
-    title: 'Detail Toko - Perdami Store',
-    description: 'Detail toko oleh-oleh khas Bandung untuk PIT PERDAMI 2025',
-  }
-}
+  }, []);
 
-export default async function StorePage({ params }: StorePageProps) {
-  const { id } = await params
-  return <StoreDetailPage storeId={id} />
+  // If store is closed, show nothing (will redirect)
+  if (isStoreClosed()) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
+
+  return <StoreDetailPage storeId={params.id} />
 }
