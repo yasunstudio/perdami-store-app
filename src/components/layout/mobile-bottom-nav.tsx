@@ -11,7 +11,8 @@ import {
   Package, 
   Store, 
   ShoppingCart, 
-  User 
+  User,
+  Receipt
 } from 'lucide-react'
 import { useCartStore } from '@/stores/cart-store'
 import { useSession } from 'next-auth/react'
@@ -66,15 +67,16 @@ export function MobileBottomNav() {
       label: 'Paket'
     },
     {
-      href: '/stores',
-      icon: Store,
-      label: 'Toko'
-    },
-    {
       href: '/cart',
       icon: ShoppingCart,
       label: 'Keranjang',
       badge: cart.itemCount
+    },
+    {
+      href: '/orders',
+      icon: Receipt,
+      label: 'Pesanan',
+      requiresAuth: true
     },
     {
       href: session ? '/profile' : '/auth/login',
@@ -101,8 +103,11 @@ export function MobileBottomNav() {
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       
       <nav className="flex items-center justify-around px-2 py-2 safe-area-pb">
-        {navItems.map(({ href, icon: Icon, label, badge }) => {
+        {navItems.map(({ href, icon: Icon, label, badge, requiresAuth }) => {
           const active = isActive(href)
+          
+          // For auth-required items, redirect to login if not authenticated
+          const finalHref = requiresAuth && !session ? '/auth/login' : href
           
           return (
             <Button
@@ -117,7 +122,7 @@ export function MobileBottomNav() {
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <Link href={href}>
+              <Link href={finalHref}>
                 <div className="relative">
                   <Icon 
                     className={cn(
