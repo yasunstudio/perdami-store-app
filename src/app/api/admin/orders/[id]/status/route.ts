@@ -12,13 +12,18 @@ export async function PATCH(
     console.log('[STATUS UPDATE] Starting request for order:', orderId)
     
     // Check authentication
+    console.log('[STATUS UPDATE] Checking authentication...')
     const session = await auth()
+    console.log('[STATUS UPDATE] Session retrieved:', !!session, session?.user?.role)
+    
     if (!session?.user?.role || session.user.role !== 'ADMIN') {
       console.log('[STATUS UPDATE] Unauthorized access attempt')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    console.log('[STATUS UPDATE] Authentication passed')
 
     // Parse request body
+    console.log('[STATUS UPDATE] Parsing request body...')
     const body = await request.json()
     console.log('[STATUS UPDATE] Request body:', body)
     const { status } = body
@@ -30,6 +35,7 @@ export async function PATCH(
         { status: 400 }
       )
     }
+    console.log('[STATUS UPDATE] Status parameter validated:', status)
 
     // Validate status
     const validStatuses = ['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'COMPLETED', 'CANCELLED']
@@ -40,12 +46,15 @@ export async function PATCH(
         { status: 400 }
       )
     }
+    console.log('[STATUS UPDATE] Status value validated')
 
     // Get current order
+    console.log('[STATUS UPDATE] Fetching current order...')
     const currentOrder = await prisma.order.findUnique({
       where: { id: orderId },
       select: { orderStatus: true, orderNumber: true }
     })
+    console.log('[STATUS UPDATE] Current order found:', !!currentOrder, currentOrder?.orderStatus)
 
     if (!currentOrder) {
       console.log('[STATUS UPDATE] Order not found:', orderId)
@@ -58,6 +67,7 @@ export async function PATCH(
     console.log('[STATUS UPDATE] Current order status:', currentOrder.orderStatus, '-> New status:', status)
 
     // Update order status in database
+    console.log('[STATUS UPDATE] Updating order in database...')
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
       data: { 
