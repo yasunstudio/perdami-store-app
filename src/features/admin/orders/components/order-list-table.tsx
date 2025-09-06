@@ -12,7 +12,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Eye, Trash2, MessageCircle, Clock, ChevronRight } from 'lucide-react'
+import { MoreHorizontal, Eye, Trash2, MessageCircle, Clock, ChevronRight, CreditCard, FileImage, Printer } from 'lucide-react'
 import { OrderWithRelations } from '../types/order.types'
 import { formatPrice } from '@/lib/utils'
 import { format } from 'date-fns'
@@ -26,6 +26,7 @@ interface OrderListTableProps {
   // onEdit: (order: OrderWithRelations) => void // Disabled - use View Details instead
   onDelete: (order: OrderWithRelations) => void
   onUpdateStatus: (order: OrderWithRelations, newStatus: string) => void
+  onUpdatePaymentStatus: (order: OrderWithRelations, newStatus: string) => void
   isDeleting: boolean
   getStatusBadge: (status: string) => React.ReactNode
   getPaymentStatusBadge: (status: string) => React.ReactNode
@@ -37,6 +38,7 @@ export function OrderListTable({
   // onEdit, // Disabled - use View Details instead
   onDelete,
   onUpdateStatus,
+  onUpdatePaymentStatus,
   isDeleting,
   getStatusBadge,
   getPaymentStatusBadge
@@ -52,6 +54,14 @@ export function OrderListTable({
     { value: 'CANCELLED', label: 'Dibatalkan', description: 'Pesanan dibatalkan' }
   ]
 
+  // Payment status options
+  const paymentStatusOptions = [
+    { value: 'PENDING', label: 'Menunggu', description: 'Menunggu pembayaran' },
+    { value: 'PAID', label: 'Lunas', description: 'Pembayaran berhasil' },
+    { value: 'FAILED', label: 'Gagal', description: 'Pembayaran gagal' },
+    { value: 'REFUNDED', label: 'Refund', description: 'Pembayaran dikembalikan' }
+  ]
+
   // Handle status update
   const handleStatusUpdate = (order: OrderWithRelations, newStatus: string) => {
     if (order.orderStatus === newStatus) {
@@ -59,6 +69,32 @@ export function OrderListTable({
       return
     }
     onUpdateStatus(order, newStatus)
+  }
+
+  // Handle payment status update
+  const handlePaymentStatusUpdate = (order: OrderWithRelations, newStatus: string) => {
+    if (order.paymentStatus === newStatus) {
+      toast.info('Status pembayaran sudah sama')
+      return
+    }
+    onUpdatePaymentStatus(order, newStatus)
+  }
+
+  // Handle view payment proof
+  const handleViewPaymentProof = (order: OrderWithRelations) => {
+    if (!order.paymentProofUrl) {
+      toast.warning('Belum ada bukti pembayaran')
+      return
+    }
+    // Open payment proof page in new tab
+    window.open(`/admin/orders/${order.id}/payment-proof`, '_blank')
+  }
+
+  // Handle print invoice
+  const handlePrintInvoice = (order: OrderWithRelations) => {
+    // Open invoice in new window for printing
+    const invoiceUrl = `/admin/orders/${order.id}/invoice`
+    window.open(invoiceUrl, '_blank')
   }
 
   // Handle WhatsApp notification to customer
@@ -203,6 +239,48 @@ export function OrderListTable({
                           ))}
                         </DropdownMenuSubContent>
                       </DropdownMenuSub>
+
+                      {/* Update Payment Status Submenu */}
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger>
+                          <CreditCard className="mr-2 h-4 w-4" />
+                          Update Pembayaran
+                          <ChevronRight className="ml-auto h-4 w-4" />
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent>
+                          {paymentStatusOptions.map((status) => (
+                            <DropdownMenuItem
+                              key={status.value}
+                              onClick={() => handlePaymentStatusUpdate(order, status.value)}
+                              disabled={order.paymentStatus === status.value}
+                              className={order.paymentStatus === status.value ? 'bg-muted' : ''}
+                            >
+                              <div className="flex flex-col">
+                                <span className="font-medium">{status.label}</span>
+                                <span className="text-xs text-muted-foreground">{status.description}</span>
+                              </div>
+                              {order.paymentStatus === status.value && (
+                                <span className="ml-auto text-xs text-muted-foreground">(Aktif)</span>
+                              )}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
+
+                      {/* View Payment Proof */}
+                      <DropdownMenuItem 
+                        onClick={() => handleViewPaymentProof(order)}
+                        disabled={!order.paymentProofUrl}
+                      >
+                        <FileImage className="mr-2 h-4 w-4" />
+                        Lihat Bukti Bayar
+                      </DropdownMenuItem>
+
+                      {/* Print Invoice */}
+                      <DropdownMenuItem onClick={() => handlePrintInvoice(order)}>
+                        <Printer className="mr-2 h-4 w-4" />
+                        Cetak Invoice
+                      </DropdownMenuItem>
                       
                       {/* WhatsApp notification - show if customer has phone and order is ready */}
                       {(order.customer?.phone || order.user?.phone) && order.orderStatus === 'READY' && (

@@ -199,6 +199,39 @@ export default function OrderManagementLayout({
       toast.error(`Gagal memperbarui status pesanan: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
+
+  const quickUpdatePaymentStatus = async (orderId: string, newStatus: string) => {
+    console.log('[FRONTEND] quickUpdatePaymentStatus called with:', { orderId, newStatus })
+    
+    try {
+      const url = `/api/admin/orders/${orderId}/payment-status`
+      console.log('[FRONTEND] Making request to:', url)
+      
+      const response = await fetch(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      })
+
+      console.log('[FRONTEND] Response status:', response.status)
+      console.log('[FRONTEND] Response ok:', response.ok)
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('[FRONTEND] API Error:', errorData)
+        throw new Error(errorData.error || `HTTP ${response.status}`)
+      }
+      
+      const successData = await response.json()
+      console.log('[FRONTEND] Success response:', successData)
+      
+      toast.success(`Status pembayaran berhasil diubah ke ${newStatus}`)
+      fetchOrders()
+    } catch (error) {
+      console.error('[FRONTEND] Error updating payment status:', error)
+      toast.error(`Gagal memperbarui status pembayaran: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
   
   // Verify payment function
   const verifyPayment = async (orderId: string, status: 'PAID' | 'FAILED') => {
@@ -616,6 +649,9 @@ export default function OrderManagementLayout({
                 onDelete={handleDeleteOrder}
                 onUpdateStatus={(order, newStatus) => {
                   quickUpdateOrderStatus(order.id, newStatus)
+                }}
+                onUpdatePaymentStatus={(order, newStatus) => {
+                  quickUpdatePaymentStatus(order.id, newStatus)
                 }}
                 isDeleting={isDeleting}
                 getStatusBadge={getStatusBadge}
