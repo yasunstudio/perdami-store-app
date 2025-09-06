@@ -24,8 +24,9 @@ export function PaymentProofModal({ order, trigger }: PaymentProofModalProps) {
   const [imageError, setImageError] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
 
+  // Always render trigger, but disable functionality if no payment proof
   if (!order.paymentProofUrl) {
-    return null
+    return trigger || null
   }
 
   const handleDownload = () => {

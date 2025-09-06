@@ -259,29 +259,21 @@ export function OrderListTable({
                       </DropdownMenuSub>
 
                       {/* View Payment Proof */}
-                      {(() => {
-                        // Debug logging
-                        console.log(`Order ${order.orderNumber}: paymentProofUrl =`, order.paymentProofUrl)
-                        const hasPaymentProof = order.paymentProofUrl && order.paymentProofUrl.trim() !== ''
-                        console.log(`Order ${order.orderNumber}: hasPaymentProof =`, hasPaymentProof)
-                        
-                        return hasPaymentProof ? (
-                          <PaymentProofModal 
-                            order={order}
-                            trigger={
-                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                <FileImage className="mr-2 h-4 w-4" />
-                                Lihat Bukti Bayar
-                              </DropdownMenuItem>
-                            }
-                          />
-                        ) : (
-                          <DropdownMenuItem disabled className="opacity-50 cursor-not-allowed">
-                            <FileImage className="mr-2 h-4 w-4 text-gray-400" />
-                            <span className="text-gray-400">Lihat Bukti Bayar</span>
+                      <PaymentProofModal 
+                        order={order}
+                        trigger={
+                          <DropdownMenuItem 
+                            onSelect={(e) => e.preventDefault()}
+                            disabled={!order.paymentProofUrl}
+                            className={!order.paymentProofUrl ? "opacity-50 cursor-not-allowed" : ""}
+                          >
+                            <FileImage className={`mr-2 h-4 w-4 ${!order.paymentProofUrl ? 'text-gray-400' : ''}`} />
+                            <span className={!order.paymentProofUrl ? 'text-gray-400' : ''}>
+                              Lihat Bukti Bayar
+                            </span>
                           </DropdownMenuItem>
-                        )
-                      })()}
+                        }
+                      />
 
                       {/* Print Invoice */}
                       <DropdownMenuItem onClick={() => handlePrintInvoice(order)}>
