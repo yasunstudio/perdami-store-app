@@ -1,57 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
-import { NotificationService } from '@/lib/notification-service'
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const orderId = params.id
-  let requestedStatus: string | undefined
+  console.log('[STATUS UPDATE] Endpoint hit with order ID:', params.id)
   
   try {
-    console.log('[STATUS UPDATE] Starting request for order:', orderId)
-    
-    // Parse request body
+    // Try to parse JSON
     const body = await request.json()
-    console.log('[STATUS UPDATE] Request body:', body)
-    requestedStatus = body.status
+    console.log('[STATUS UPDATE] Body parsed successfully:', body)
     
-    // Basic validation
-    if (!requestedStatus) {
-      console.log('[STATUS UPDATE] Missing status parameter')
-      return NextResponse.json(
-        { error: 'Status is required' },
-        { status: 400 }
-      )
-    }
-
-    // Just return success for now to test if the issue is in the update logic
-    console.log('[STATUS UPDATE] Returning test success response')
     return NextResponse.json({ 
-      success: true, 
-      message: 'Status update test successful',
-      orderId,
-      newStatus: requestedStatus 
-    })
-
-  } catch (error) {
-    console.error('[STATUS UPDATE] Error updating order status:', error)
-    console.error('[STATUS UPDATE] Error details:', {
-      name: error instanceof Error ? error.name : 'Unknown',
-      message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      orderId,
-      requestedStatus
+      success: true,
+      message: 'Endpoint working correctly',
+      receivedOrderId: params.id,
+      receivedBody: body,
+      timestamp: new Date().toISOString()
     })
     
+  } catch (parseError) {
+    console.error('[STATUS UPDATE] JSON parse error:', parseError)
     return NextResponse.json(
       { 
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        error: 'Failed to parse request body',
+        details: parseError instanceof Error ? parseError.message : String(parseError)
       },
-      { status: 500 }
+      { status: 400 }
     )
   }
 }
