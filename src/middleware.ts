@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
- * Check if current time is past order cutoff (September 6, 2025 20:00 WIB)
+ * Check if current time is past order cutoff (September 20, 2025 23:59 WIB)
+ * Updated to September 20 as per maintenance schedule
  */
 function isPastOrderCutoff(): boolean {
   const now = new Date()
@@ -9,8 +10,12 @@ function isPastOrderCutoff(): boolean {
   // Convert to WIB (UTC+7)
   const wibTime = new Date(now.getTime() + (7 * 60 * 60 * 1000))
   
-  // Cutoff: September 6, 2025 20:00 WIB
-  const cutoffDate = new Date('2025-09-06T20:00:00+07:00')
+  // Cutoff: September 20, 2025 23:59 WIB (extended deadline)
+  const cutoffDate = new Date('2025-09-20T23:59:00+07:00')
+  
+  console.log('🕐 Current WIB time:', wibTime.toISOString())
+  console.log('🕐 Cutoff time:', cutoffDate.toISOString())
+  console.log('🕐 Is past cutoff:', wibTime >= cutoffDate)
   
   return wibTime >= cutoffDate
 }
