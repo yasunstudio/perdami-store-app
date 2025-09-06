@@ -46,7 +46,9 @@ import {
   Clock,
   AlertCircle,
   QrCode,
-  LayoutGrid
+  LayoutGrid,
+  TrendingUp,
+  DollarSign
 } from 'lucide-react';
 
 // Import new components and utilities
@@ -160,6 +162,24 @@ const navigation: SidebarItem[] = [
         name: 'Laporan & Analisis',
         href: '/admin/reports',
         icon: BarChart,
+        permission: PERMISSIONS.REPORTS_READ
+      },
+      {
+        name: 'Laporan Penjualan',
+        href: '/admin/reports/sales',
+        icon: TrendingUp,
+        permission: PERMISSIONS.REPORTS_READ
+      },
+      {
+        name: 'Laporan Pembelian',
+        href: '/admin/reports/purchases',
+        icon: ShoppingCart,
+        permission: PERMISSIONS.REPORTS_READ
+      },
+      {
+        name: 'Laporan Rugi Laba',
+        href: '/admin/reports/profit-loss',
+        icon: DollarSign,
         permission: PERMISSIONS.REPORTS_READ
       },
       {

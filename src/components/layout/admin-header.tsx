@@ -44,6 +44,9 @@ const breadcrumbMap: Record<string, { title: string; parent?: string }> = {
   '/admin/settings': { title: 'Pengaturan', parent: 'Sistem' },
   '/admin/profile': { title: 'Profil Admin' },
   '/admin/reports': { title: 'Laporan & Analisis' },
+  '/admin/reports/sales': { title: 'Laporan Penjualan', parent: 'Laporan' },
+  '/admin/reports/purchases': { title: 'Laporan Pembelian', parent: 'Laporan' },
+  '/admin/reports/profit-loss': { title: 'Laporan Rugi Laba', parent: 'Laporan' },
   '/admin/audit-logs': { title: 'Audit Log', parent: 'Sistem' },
 };
 
