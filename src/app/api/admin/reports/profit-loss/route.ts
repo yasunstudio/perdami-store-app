@@ -114,8 +114,12 @@ export async function GET(request: Request) {
 
     const grossProfit = totalRevenue - totalCosts
     
-    // Assuming operational costs are 10% of revenue (can be made configurable)
-    const operationalCosts = totalRevenue * 0.1
+    // Operational costs calculation based on order volume and business logic
+    // Service fee from orders + estimated operational overhead
+    const serviceFeeTotal = orders.reduce((sum, order) => sum + (order.serviceFee || 0), 0)
+    const estimatedOverhead = totalRevenue * 0.03 // 3% for platform, payment processing, etc
+    const operationalCosts = serviceFeeTotal + estimatedOverhead
+    
     const netProfit = grossProfit - operationalCosts
     const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0
 
