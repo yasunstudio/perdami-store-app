@@ -108,37 +108,37 @@ export async function GET(request: Request) {
     const purchasesByDayArray = Array.from(purchasesByDay.values())
       .sort((a, b) => a.date.localeCompare(b.date))
 
-    // Purchases by category (using store as category for simplicity)
-    const categoryPurchases = new Map()
+    // Purchases by store
+    const storePurchases = new Map()
     orders.forEach(order => {
       order.orderItems.forEach(item => {
         if (!item.bundle?.store) return
-        const categoryKey = item.bundle.store.id
-        const existing = categoryPurchases.get(categoryKey) || {
-          categoryId: item.bundle.store.id,
-          categoryName: item.bundle.store.name,
+        const storeKey = item.bundle.store.id
+        const existing = storePurchases.get(storeKey) || {
+          storeId: item.bundle.store.id,
+          storeName: item.bundle.store.name,
           purchases: 0,
           transactions: 0
         }
         existing.purchases += item.totalPrice
-        categoryPurchases.set(categoryKey, existing)
+        storePurchases.set(storeKey, existing)
       })
     })
 
-    // Count transactions per category
-    const transactionsByCategory = new Map()
+    // Count transactions per store
+    const transactionsByStore = new Map()
     orders.forEach(order => {
       const storeIds = [...new Set(order.orderItems
         .filter(item => item.bundle?.store)
         .map(item => item.bundle!.store.id))]
       storeIds.forEach(storeId => {
-        transactionsByCategory.set(storeId, (transactionsByCategory.get(storeId) || 0) + 1)
+        transactionsByStore.set(storeId, (transactionsByStore.get(storeId) || 0) + 1)
       })
     })
 
-    const purchasesByCategoryArray = Array.from(categoryPurchases.values()).map(category => ({
-      ...category,
-      transactions: transactionsByCategory.get(category.categoryId) || 0
+    const purchasesByStoreArray = Array.from(storePurchases.values()).map(store => ({
+      ...store,
+      transactions: transactionsByStore.get(store.storeId) || 0
     })).sort((a, b) => b.purchases - a.purchases)
 
     const reportData = {
@@ -147,7 +147,7 @@ export async function GET(request: Request) {
       averageTransactionValue,
       topCustomers,
       purchasesByDay: purchasesByDayArray,
-      purchasesByCategory: purchasesByCategoryArray,
+      purchasesByStore: purchasesByStoreArray,
       period: {
         from: format(fromDate, 'yyyy-MM-dd'),
         to: format(toDate, 'yyyy-MM-dd')

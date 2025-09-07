@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Calendar, Filter, Store, Tag, RotateCcw } from 'lucide-react'
+import { Calendar, Filter, Store, RotateCcw } from 'lucide-react'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
@@ -18,20 +18,14 @@ interface ReportFiltersProps {
   filters: ReportFilters
   onFiltersChange: (filters: ReportFilters) => void
   showStoreFilter?: boolean
-  showCategoryFilter?: boolean
-  showUserFilter?: boolean
   stores?: Array<{ id: string; name: string }>
-  categories?: Array<{ id: string; name: string }>
 }
 
 export function ReportFilters({
   filters,
   onFiltersChange,
   showStoreFilter = false,
-  showCategoryFilter = false,
-  showUserFilter = false,
-  stores = [],
-  categories = []
+  stores = []
 }: ReportFiltersProps) {
   const [dateRange, setDateRange] = useState<DateRange>(filters.dateRange)
 
@@ -51,8 +45,6 @@ export function ReportFilters({
   const getActiveFiltersCount = () => {
     let count = 0
     if (filters.storeId) count++
-    if (filters.categoryId) count++
-    if (filters.userId) count++
     return count
   }
 
@@ -184,55 +176,6 @@ export function ReportFilters({
             </div>
           )}
         </div>
-
-                {/* Category Filter - If needed */}
-        {showCategoryFilter && (
-          <>
-            <Separator className="my-4" />
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Tag className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                <Label className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  Filter Kategori
-                </Label>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                  Pilih Kategori
-                </Label>
-                <Select
-                  value={filters.categoryId || 'all'}
-                  onValueChange={(value) =>
-                    onFiltersChange({
-                      ...filters,
-                      categoryId: value === 'all' ? undefined : value
-                    })
-                  }
-                >
-                  <SelectTrigger className="h-10 border-2 hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
-                    <SelectValue placeholder="Pilih kategori..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all" className="font-medium">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-                        <span>Semua Kategori</span>
-                      </div>
-                    </SelectItem>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        <div className="flex items-center space-x-2">
-                          <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                          <span>{category.name}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </>
-        )}
       </CardContent>
     </Card>
   )

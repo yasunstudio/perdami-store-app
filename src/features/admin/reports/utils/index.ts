@@ -64,10 +64,6 @@ export const buildReportFilters = (filters: Partial<ReportFilters>): URLSearchPa
     params.append('storeId', filters.storeId)
   }
   
-  if (filters.categoryId) {
-    params.append('categoryId', filters.categoryId)
-  }
-  
   if (filters.userId) {
     params.append('userId', filters.userId)
   }

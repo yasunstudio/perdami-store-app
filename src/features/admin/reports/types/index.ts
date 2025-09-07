@@ -6,7 +6,6 @@ export interface DateRange {
 export interface ReportFilters {
   dateRange: DateRange
   storeId?: string
-  categoryId?: string
   userId?: string
 }
 
@@ -49,9 +48,9 @@ export interface PurchaseReportData {
     purchases: number
     transactions: number
   }>
-  purchasesByCategory: Array<{
-    categoryId: string
-    categoryName: string
+  purchasesByStore: Array<{
+    storeId: string
+    storeName: string
     purchases: number
     transactions: number
   }>

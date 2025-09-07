@@ -116,22 +116,21 @@ export default function PurchaseReportPage() {
         XLSX.utils.book_append_sheet(workbook, customersSheet, 'Pelanggan Teratas')
       }
 
-      // Sheet 3: Purchases by Category
-      if (reportData.purchasesByCategory.length > 0) {
-        const categoryData = [
-          ['PEMBELIAN PER KATEGORI'],
+            // Sheet 3: Purchases by Store
+      if (reportData.purchasesByStore.length > 0) {
+        const storesData = [
+          ['PEMBELIAN PER TOKO'],
           [''],
-          ['Ranking', 'Kategori', 'Total Pembelian', 'Jumlah Transaksi', 'Persentase'],
-          ...reportData.purchasesByCategory.map((category, index) => [
+          ['Ranking', 'Nama Toko', 'Total Pembelian', 'Total Transaksi'],
+          ...reportData.purchasesByStore.map((store, index) => [
             (index + 1).toString(),
-            category.categoryName,
-            formatCurrency(category.purchases),
-            category.transactions.toString(),
-            `${((category.purchases / reportData.totalPurchases) * 100).toFixed(2)}%`
+            store.storeName,
+            formatCurrency(store.purchases),
+            store.transactions.toString()
           ])
         ]
-        const categorySheet = XLSX.utils.aoa_to_sheet(categoryData)
-        XLSX.utils.book_append_sheet(workbook, categorySheet, 'Pembelian per Kategori')
+        const storesSheet = XLSX.utils.aoa_to_sheet(storesData)
+        XLSX.utils.book_append_sheet(workbook, storesSheet, 'Pembelian per Toko')
       }
 
       // Sheet 4: Daily Trend
@@ -173,8 +172,8 @@ export default function PurchaseReportPage() {
     label: `${item.transactions} transaksi`
   })) || []
 
-  const categoryChart = reportData?.purchasesByCategory.slice(0, 5).map(item => ({
-    name: item.categoryName,
+  const storeChart = reportData?.purchasesByStore.slice(0, 5).map(item => ({
+    name: item.storeName,
     value: item.purchases
   })) || []
 
@@ -244,9 +243,9 @@ export default function PurchaseReportPage() {
                 height={300}
               />
               <SimpleChart
-                title="Pembelian per Kategori"
-                description="Distribusi pembelian berdasarkan kategori"
-                data={categoryChart}
+                title="Pembelian per Toko"
+                description="Distribusi pembelian berdasarkan toko"
+                data={storeChart}
                 type="pie"
                 formatValue="currency"
                 height={300}
@@ -297,37 +296,37 @@ export default function PurchaseReportPage() {
               </CardContent>
             </Card>
 
-            {/* Category Performance */}
+            {/* Store Performance */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Performa Kategori</CardTitle>
+                <CardTitle className="text-lg">Performa Toko</CardTitle>
                 <CardDescription>
-                  Analisis pembelian berdasarkan kategori produk
+                  Analisis pembelian berdasarkan toko
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {reportData.purchasesByCategory.map((category, index) => (
-                    <div key={category.categoryId} className="flex items-center justify-between p-3 border rounded-lg dark:border-gray-700">
+                  {reportData.purchasesByStore.map((store, index) => (
+                    <div key={store.storeId} className="flex items-center justify-between p-3 border rounded-lg dark:border-gray-700">
                       <div className="flex items-center space-x-3">
                         <Badge variant="secondary" className="text-xs">
                           #{index + 1}
                         </Badge>
                         <div>
                           <p className="font-medium text-gray-900 dark:text-gray-100">
-                            {category.categoryName}
+                            {store.storeName}
                           </p>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {category.transactions} transaksi
+                            {store.transactions} transaksi
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-gray-900 dark:text-gray-100">
-                          {formatCurrency(category.purchases)}
+                          {formatCurrency(store.purchases)}
                         </p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {((category.purchases / reportData.totalPurchases) * 100).toFixed(1)}%
+                          {((store.purchases / reportData.totalPurchases) * 100).toFixed(1)}%
                         </p>
                       </div>
                     </div>
