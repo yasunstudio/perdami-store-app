@@ -149,7 +149,7 @@ export default function ProfitLossReportPage() {
         const transactionHeaders = [
           ['DETAIL TRANSAKSI PENJUALAN'],
           [''],
-          ['Order ID', 'Tanggal Order', 'Tanggal Pickup', 'Customer', 'Produk', 'Toko', 'Qty', 'Harga Satuan (IDR)', 'Total Harga (IDR)', 'Cost per Unit (IDR)', 'Total Cost (IDR)', 'Profit per Item (IDR)', 'Margin (%)', 'Status']
+          ['Order ID', 'Tanggal Order', 'Tanggal Pickup', 'Nama Customer', 'Nama Produk', 'Nama Toko', 'Jumlah Qty', 'Harga Jual Satuan (IDR)', 'Subtotal Produk (IDR)', 'Harga Beli Satuan (IDR)', 'Subtotal Cost (IDR)', 'Keuntungan Item (IDR)', 'Margin Profit (%)', 'Status Order']
         ]
         
         const transactionRows = detailData.transactions.map((order: any) => {
