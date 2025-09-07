@@ -181,7 +181,7 @@ export default function ProfitLossReportPage() {
           ...reportData.topProfitableProducts.map((product, index) => {
             const revenueContribution = (product.revenue / reportData.totalRevenue * 100)
             const performance = product.margin > 30 ? 'Excellent' : product.margin > 20 ? 'Good' : product.margin > 10 ? 'Average' : 'Poor'
-            const quantity = replaceNA((product as any).quantity, Math.round(product.revenue / (product.revenue / 10))) // Estimate quantity
+            const quantity = (product as any).quantity || 0 // Use real quantity from database
             return [
               (index + 1).toString(),
               product.name,
@@ -211,21 +211,23 @@ export default function ProfitLossReportPage() {
           ['ANALISIS PROFITABILITAS PER TOKO'],
           [''],
           ['Ranking', 'Nama Toko', 'Total Revenue (IDR)', 'Total Cost (IDR)', 'Net Profit (IDR)', 'Margin (%)', 'Kontribusi Revenue (%)', 'Jumlah Order', 'Avg Order Value (IDR)', 'Status Performa'],
-          ...reportData.profitByStore.map((store, index) => {
-            const margin = store.revenue > 0 ? (store.profit / store.revenue) * 100 : 0
+          ...reportData.profitByStore.map((store: any, index: number) => {
             const revenueContribution = (store.revenue / reportData.totalRevenue * 100)
-            const performance = margin > 25 ? 'Excellent' : margin > 15 ? 'Good' : margin > 5 ? 'Average' : 'Poor'
-            const orderCount = replaceNA((store as any).orderCount, Math.round(store.revenue / 50000)) // Estimate order count
+            const avgOrderValue = (store as any).orderCount && (store as any).orderCount > 0 
+              ? store.revenue / (store as any).orderCount 
+              : 0
+            const performance = store.margin > 25 ? 'Top Tier' : store.margin > 15 ? 'Good' : store.margin > 10 ? 'Average' : 'Needs Improvement'
+            const orderCount = (store as any).orderCount || 0
             return [
               (index + 1).toString(),
-              store.storeName,
+              store.name,
               formatNumberForExcel(store.revenue),
-              formatNumberForExcel(store.costs),
+              formatNumberForExcel(store.cost),
               formatNumberForExcel(store.profit),
-              formatPercentageForExcel(margin),
+              formatPercentageForExcel(store.margin),
               formatPercentageForExcel(revenueContribution),
               orderCount,
-              formatNumberForExcel(orderCount > 0 ? store.revenue / orderCount : 0),
+              formatNumberForExcel(avgOrderValue),
               performance
             ]
           }),

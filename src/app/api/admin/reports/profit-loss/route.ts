@@ -89,11 +89,13 @@ export async function GET(request: Request) {
           revenue: 0,
           cost: 0,
           profit: 0,
-          margin: 0
+          margin: 0,
+          quantity: 0 // Add quantity tracking
         }
         existingProduct.revenue += revenue
         existingProduct.cost += storeCost
         existingProduct.profit += profit
+        existingProduct.quantity += item.quantity // Track total quantity sold
         existingProduct.margin = existingProduct.revenue > 0 ? 
           (existingProduct.profit / existingProduct.revenue) * 100 : 0
         productProfitability.set(productKey, existingProduct)
@@ -106,12 +108,33 @@ export async function GET(request: Request) {
             storeName: item.bundle.store.name,
             revenue: 0,
             costs: 0,
-            profit: 0
+            profit: 0,
+            orderCount: 0 // Add order count tracking
           }
           existingStore.revenue += revenue
           existingStore.costs += storeCost
           existingStore.profit += profit
           storeProfitability.set(storeKey, existingStore)
+        }
+      })
+      
+      // Count unique orders per store
+      const ordersByStore = new Map()
+      order.orderItems.forEach(item => {
+        if (item.bundle && item.bundle.store) {
+          const storeKey = item.bundle.store.id
+          if (!ordersByStore.has(storeKey)) {
+            ordersByStore.set(storeKey, new Set())
+          }
+          ordersByStore.get(storeKey).add(order.id)
+        }
+      })
+      
+      // Update order counts
+      ordersByStore.forEach((orderSet, storeKey) => {
+        const store = storeProfitability.get(storeKey)
+        if (store) {
+          store.orderCount += orderSet.size
         }
       })
     })
