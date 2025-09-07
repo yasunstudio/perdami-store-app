@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     // Build where clause
     const whereClause: any = {
       orderStatus: 'COMPLETED', // Only include completed orders
-      pickupDate: {
+      createdAt: { // Use createdAt instead of pickupDate to include all completed orders
         gte: startOfDay(fromDate),
         lte: endOfDay(toDate)
       }
@@ -174,38 +174,36 @@ export async function GET(request: Request) {
       })
     })
 
-    // Calculate monthly data (based on pickup date)
+    // Calculate monthly data (based on pickup date or created date if not picked up yet)
     orders.forEach(order => {
-      if (order.pickupDate) {
-        const monthKey = format(order.pickupDate, 'yyyy-MM')
-        if (monthlyData.has(monthKey)) {
-          const monthData = monthlyData.get(monthKey)
+      const dateToUse = order.pickupDate || order.createdAt // Use pickup date if available, otherwise creation date
+      const monthKey = format(dateToUse, 'yyyy-MM')
+      if (monthlyData.has(monthKey)) {
+        const monthData = monthlyData.get(monthKey)
+        
+        // Add service fee to monthly revenue
+        const monthlyServiceFee = order.serviceFee || 0
+        
+        order.orderItems.forEach(item => {
+          if (!item.bundle) return
+          const salesRevenue = item.totalPrice // Penjualan ke customer
+          const storeCost = item.quantity * (item.bundle.costPrice || 0) // Pembayaran ke toko
           
-          // Add service fee to monthly revenue
-          const monthlyServiceFee = order.serviceFee || 0
-          
-          order.orderItems.forEach(item => {
-            if (!item.bundle) return
-            const salesRevenue = item.totalPrice // Penjualan ke customer
-            const storeCost = item.quantity * (item.bundle.costPrice || 0) // Pembayaran ke toko
-            
-            monthData.revenue += salesRevenue
-            monthData.costs += storeCost
-          })
-          
-          // Add service fee to monthly revenue and recalculate profit
-          monthData.revenue += monthlyServiceFee
-          monthData.profit = monthData.revenue - monthData.costs
-        }
+          monthData.revenue += salesRevenue
+          monthData.costs += storeCost
+        })
+        
+        // Add service fee to monthly revenue and recalculate profit
+        monthData.revenue += monthlyServiceFee
+        monthData.profit = monthData.revenue - monthData.costs
       }
     })
 
     const revenueByMonth = Array.from(monthlyData.values())
 
-    // Top profitable products
+    // Top profitable products - show all products, not just top 10
     const topProfitableProducts = Array.from(productProfitability.values())
       .sort((a, b) => b.profit - a.profit)
-      .slice(0, 10)
 
     // Profit by store
     const profitByStore = Array.from(storeProfitability.values())
