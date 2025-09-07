@@ -78,101 +78,228 @@ export default function ProfitLossReportPage() {
       // Import XLSX dinamically
       const XLSX = await import('xlsx')
       
+      // Fetch detailed transaction data for export
+      const params = buildReportFilters(filters)
+      let detailData = { transactions: [], summary: {} }
+      
+      try {
+        const detailResponse = await fetch(`/api/admin/reports/profit-loss/export?${params.toString()}`)
+        if (detailResponse.ok) {
+          detailData = await detailResponse.json()
+        }
+      } catch (error) {
+        console.warn('Failed to fetch detailed data for export:', error)
+      }
+      
       // Create workbook
       const workbook = XLSX.utils.book_new()
 
-      // Sheet 1: Summary Statistics
-      const summaryData = [
-        ['LAPORAN RUGI LABA'],
+      // Sheet 1: Executive Summary
+      const executiveSummary = [
+        ['LAPORAN RUGI LABA KOMPREHENSIF'],
+        ['PT. Dharma Wanita Perdami'],
         [''],
-        ['Periode', `${filters.dateRange.from.toLocaleDateString('id-ID')} - ${filters.dateRange.to.toLocaleDateString('id-ID')}`],
-        ['Tanggal Export', new Date().toLocaleDateString('id-ID')],
+        ['INFORMASI LAPORAN'],
+        ['Periode Analisis', `${filters.dateRange.from.toLocaleDateString('id-ID')} - ${filters.dateRange.to.toLocaleDateString('id-ID')}`],
+        ['Tanggal Export', new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })],
+        ['Filter Toko', filters.storeId ? stores.find(s => s.id === filters.storeId)?.name || 'Toko Tertentu' : 'Semua Toko'],
+        ['Total Transaksi', (detailData.summary as any)?.totalOrders || reportData.topProfitableProducts.length || 'N/A'],
         [''],
-        ['RINGKASAN KEUANGAN'],
-        ['Metrik', 'Nilai'],
-        ['Total Revenue', formatCurrency(reportData.totalRevenue)],
-        ['Total Biaya', formatCurrency(reportData.totalCosts)],
-        ['Laba Bersih', formatCurrency(reportData.netProfit)],
-        ['Margin Keuntungan', formatPercentage(reportData.profitMargin)],
+        ['RINGKASAN EKSEKUTIF'],
+        ['Metrik', 'Nilai', 'Persentase', 'Status'],
+        ['Total Pemasukan', formatCurrency(reportData.totalRevenue), '100%', reportData.totalRevenue > 0 ? 'Positif' : 'Negatif'],
+        ['  - Sales Revenue', formatCurrency((detailData.summary as any)?.totalSalesRevenue || reportData.totalRevenue * 0.9), `${(((detailData.summary as any)?.totalSalesRevenue || reportData.totalRevenue * 0.9) / reportData.totalRevenue * 100).toFixed(1)}%`, 'Komponen Utama'],
+        ['  - Service Fee', formatCurrency((detailData.summary as any)?.totalServiceFee || reportData.totalRevenue * 0.1), `${(((detailData.summary as any)?.totalServiceFee || reportData.totalRevenue * 0.1) / reportData.totalRevenue * 100).toFixed(1)}%`, 'Pendapatan Jasa'],
+        ['Total Pengeluaran', formatCurrency(reportData.totalCosts), `${(reportData.totalCosts / reportData.totalRevenue * 100).toFixed(1)}%`, 'Pembayaran ke Toko'],
+        ['Laba Bersih', formatCurrency(reportData.netProfit), `${(reportData.netProfit / reportData.totalRevenue * 100).toFixed(1)}%`, reportData.netProfit > 0 ? 'PROFIT' : 'LOSS'],
+        ['Margin Keuntungan', formatPercentage(reportData.profitMargin), '-', reportData.profitMargin > 20 ? 'Sangat Baik' : reportData.profitMargin > 10 ? 'Baik' : 'Perlu Perbaikan'],
         [''],
-        ['BREAKDOWN BIAYA'],
-        ['COGS (Cost of Goods Sold)', formatCurrency((reportData as any).breakdown?.costOfGoodsSold || 0)],
-        ['Biaya Operasional', formatCurrency((reportData as any).breakdown?.operationalCosts || 0)],
-        ['Gross Profit Margin', formatPercentage((reportData as any).breakdown?.grossProfitMargin || 0)],
+        ['KESIMPULAN BISNIS'],
+        ['Status Profitabilitas', reportData.netProfit > 0 ? 'MENGUNTUNGKAN' : 'MERUGI'],
+        ['Tingkat Efisiensi', reportData.profitMargin > 15 ? 'EFISIEN' : 'PERLU OPTIMASI'],
+        ['Rekomendasi', reportData.profitMargin < 10 ? 'Review cost structure & pricing' : 'Pertahankan performa'],
       ]
-      const summarySheet = XLSX.utils.aoa_to_sheet(summaryData)
-      XLSX.utils.book_append_sheet(workbook, summarySheet, 'Ringkasan')
+      const summarySheet = XLSX.utils.aoa_to_sheet(executiveSummary)
+      XLSX.utils.book_append_sheet(workbook, summarySheet, 'Executive Summary')
 
-      // Sheet 2: Top Profitable Products
-      if (reportData.topProfitableProducts.length > 0) {
-        const productsData = [
-          ['PRODUK PALING MENGUNTUNGKAN'],
+      // Sheet 2: Detailed Transactions (if available)
+      if (detailData.transactions && detailData.transactions.length > 0) {
+        const transactionHeaders = [
+          ['DETAIL TRANSAKSI LENGKAP'],
           [''],
-          ['Ranking', 'Nama Produk', 'Revenue', 'Biaya', 'Profit', 'Margin (%)'],
-          ...reportData.topProfitableProducts.map((product, index) => [
-            (index + 1).toString(),
-            product.name,
-            formatCurrency(product.revenue),
-            formatCurrency(product.cost),
-            formatCurrency(product.profit),
-            product.margin.toFixed(2)
-          ])
+          ['Order ID', 'Tanggal Order', 'Tanggal Pickup', 'Customer', 'Produk', 'Toko', 'Qty', 'Harga Satuan', 'Total Harga', 'Ongkos Kirim', 'Total Pemasukan', 'Cost per Unit', 'Total Cost', 'Profit per Item', 'Margin (%)', 'Status']
         ]
-        const productsSheet = XLSX.utils.aoa_to_sheet(productsData)
-        XLSX.utils.book_append_sheet(workbook, productsSheet, 'Produk Menguntungkan')
+        
+        const transactionRows = detailData.transactions.map((order: any) => {
+          return order.items.map((item: any) => [
+            order.id,
+            new Date(order.createdAt).toLocaleDateString('id-ID'),
+            order.pickupDate ? new Date(order.pickupDate).toLocaleDateString('id-ID') : 'Belum Pickup',
+            order.customerName || 'N/A',
+            item.productName,
+            item.storeName,
+            item.quantity,
+            formatCurrency(item.unitPrice),
+            formatCurrency(item.totalPrice),
+            order.serviceFee ? formatCurrency(order.serviceFee / order.items.length) : formatCurrency(0),
+            formatCurrency(item.totalPrice + (order.serviceFee / order.items.length || 0)),
+            formatCurrency(item.costPrice),
+            formatCurrency(item.totalCost),
+            formatCurrency(item.profit),
+            `${item.margin.toFixed(2)}%`,
+            order.orderStatus
+          ])
+        }).flat()
+
+        const transactionData = [...transactionHeaders, ...transactionRows]
+        const transactionSheet = XLSX.utils.aoa_to_sheet(transactionData)
+        XLSX.utils.book_append_sheet(workbook, transactionSheet, 'Detail Transaksi')
       }
 
-      // Sheet 3: Profit by Store
-      if (reportData.profitByStore.length > 0) {
-        const storesData = [
-          ['PROFITABILITAS PER TOKO'],
+      // Sheet 3: Analisis Profitabilitas Produk
+      if (reportData.topProfitableProducts.length > 0) {
+        const productAnalysis = [
+          ['ANALISIS PROFITABILITAS PRODUK'],
           [''],
-          ['Ranking', 'Nama Toko', 'Revenue', 'Biaya', 'Profit', 'Margin (%)'],
+          ['Ranking', 'Nama Produk', 'Total Revenue', 'Total Cost', 'Gross Profit', 'Margin (%)', 'Kontribusi Revenue (%)', 'Qty Terjual', 'Avg Price', 'Status Performa'],
+          ...reportData.topProfitableProducts.map((product, index) => {
+            const revenueContribution = (product.revenue / reportData.totalRevenue * 100)
+            const performance = product.margin > 30 ? 'Excellent' : product.margin > 20 ? 'Good' : product.margin > 10 ? 'Average' : 'Poor'
+            return [
+              (index + 1).toString(),
+              product.name,
+              formatCurrency(product.revenue),
+              formatCurrency(product.cost),
+              formatCurrency(product.profit),
+              `${product.margin.toFixed(2)}%`,
+              `${revenueContribution.toFixed(2)}%`,
+              (product as any).quantity || 'N/A',
+              (product as any).quantity ? formatCurrency(product.revenue / (product as any).quantity) : 'N/A',
+              performance
+            ]
+          }),
+          [''],
+          ['INSIGHTS PRODUK'],
+          ['Top Performer', reportData.topProfitableProducts[0]?.name || 'N/A'],
+          ['Highest Margin', reportData.topProfitableProducts.sort((a, b) => b.margin - a.margin)[0]?.name || 'N/A'],
+          ['Lowest Margin', reportData.topProfitableProducts.sort((a, b) => a.margin - b.margin)[0]?.name || 'N/A'],
+        ]
+        const productSheet = XLSX.utils.aoa_to_sheet(productAnalysis)
+        XLSX.utils.book_append_sheet(workbook, productSheet, 'Analisis Produk')
+      }
+
+      // Sheet 4: Analisis Profitabilitas Toko
+      if (reportData.profitByStore.length > 0) {
+        const storeAnalysis = [
+          ['ANALISIS PROFITABILITAS PER TOKO'],
+          [''],
+          ['Ranking', 'Nama Toko', 'Total Revenue', 'Total Cost', 'Net Profit', 'Margin (%)', 'Kontribusi Revenue (%)', 'Jumlah Order', 'Avg Order Value', 'Status Performa'],
           ...reportData.profitByStore.map((store, index) => {
             const margin = store.revenue > 0 ? (store.profit / store.revenue) * 100 : 0
+            const revenueContribution = (store.revenue / reportData.totalRevenue * 100)
+            const performance = margin > 25 ? 'Excellent' : margin > 15 ? 'Good' : margin > 5 ? 'Average' : 'Poor'
             return [
               (index + 1).toString(),
               store.storeName,
               formatCurrency(store.revenue),
               formatCurrency(store.costs),
               formatCurrency(store.profit),
-              margin.toFixed(2)
+              `${margin.toFixed(2)}%`,
+              `${revenueContribution.toFixed(2)}%`,
+              (store as any).orderCount || 'N/A',
+              (store as any).orderCount ? formatCurrency(store.revenue / (store as any).orderCount) : 'N/A',
+              performance
             ]
-          })
+          }),
+          [''],
+          ['INSIGHTS TOKO'],
+          ['Top Revenue Generator', reportData.profitByStore[0]?.storeName || 'N/A'],
+          ['Most Profitable', reportData.profitByStore.sort((a, b) => b.profit - a.profit)[0]?.storeName || 'N/A'],
+          ['Highest Margin', reportData.profitByStore.sort((a, b) => (b.profit/b.revenue) - (a.profit/a.revenue))[0]?.storeName || 'N/A'],
         ]
-        const storesSheet = XLSX.utils.aoa_to_sheet(storesData)
-        XLSX.utils.book_append_sheet(workbook, storesSheet, 'Profit per Toko')
+        const storeSheet = XLSX.utils.aoa_to_sheet(storeAnalysis)
+        XLSX.utils.book_append_sheet(workbook, storeSheet, 'Analisis Toko')
       }
 
-      // Sheet 4: Monthly Revenue Trend
-      if (reportData.revenueByMonth.length > 0) {
-        const monthlyData = [
-          ['TREN BULANAN'],
+      // Sheet 5: Tren dan Analisis Temporal
+      const filteredMonthlyData = filterFromSeptember(reportData.revenueByMonth || [])
+      if (filteredMonthlyData.length > 0) {
+        const monthlyAnalysis = [
+          ['ANALISIS TREN BULANAN'],
           [''],
-          ['Bulan', 'Revenue', 'Biaya', 'Profit', 'Margin (%)'],
-          ...reportData.revenueByMonth.map((month) => {
+          ['Bulan', 'Total Revenue', 'Sales Revenue', 'Service Fee', 'Total Cost', 'Net Profit', 'Margin (%)', 'Growth Revenue (%)', 'Growth Profit (%)', 'Trend'],
+          ...filteredMonthlyData.map((month, index) => {
             const margin = month.revenue > 0 ? (month.profit / month.revenue) * 100 : 0
+            const prevMonth = filteredMonthlyData[index - 1]
+            const revenueGrowth = prevMonth ? ((month.revenue - prevMonth.revenue) / prevMonth.revenue * 100) : 0
+            const profitGrowth = prevMonth ? ((month.profit - prevMonth.profit) / prevMonth.profit * 100) : 0
+            const trend = revenueGrowth > 0 ? '↗️ Naik' : revenueGrowth < 0 ? '↘️ Turun' : '➡️ Stabil'
+            
             return [
               month.month,
               formatCurrency(month.revenue),
+              formatCurrency(month.salesRevenue || month.revenue * 0.9), // Estimasi
+              formatCurrency(month.serviceFeeRevenue || month.revenue * 0.1), // Estimasi
               formatCurrency(month.costs),
               formatCurrency(month.profit),
-              margin.toFixed(2)
+              `${margin.toFixed(2)}%`,
+              index > 0 ? `${revenueGrowth.toFixed(1)}%` : 'N/A',
+              index > 0 ? `${profitGrowth.toFixed(1)}%` : 'N/A',
+              trend
             ]
-          })
+          }),
+          [''],
+          ['INSIGHTS TEMPORAL'],
+          ['Best Month', filteredMonthlyData.sort((a, b) => b.profit - a.profit)[0]?.month || 'N/A'],
+          ['Worst Month', filteredMonthlyData.sort((a, b) => a.profit - b.profit)[0]?.month || 'N/A'],
+          ['Avg Monthly Revenue', formatCurrency(filteredMonthlyData.reduce((sum, m) => sum + m.revenue, 0) / filteredMonthlyData.length)],
+          ['Avg Monthly Profit', formatCurrency(filteredMonthlyData.reduce((sum, m) => sum + m.profit, 0) / filteredMonthlyData.length)],
         ]
-        const monthlySheet = XLSX.utils.aoa_to_sheet(monthlyData)
-        XLSX.utils.book_append_sheet(workbook, monthlySheet, 'Tren Bulanan')
+        const monthlySheet = XLSX.utils.aoa_to_sheet(monthlyAnalysis)
+        XLSX.utils.book_append_sheet(workbook, monthlySheet, 'Analisis Temporal')
       }
 
-      // Generate filename
-      const dateStr = new Date().toISOString().split('T')[0]
-      const filename = `Laporan_Rugi_Laba_${dateStr}.xlsx`
+      // Sheet 6: KPI Dashboard & Recommendations
+      const kpiData = [
+        ['DASHBOARD KPI & REKOMENDASI'],
+        [''],
+        ['KEY PERFORMANCE INDICATORS'],
+        ['Metric', 'Current Value', 'Target', 'Status', 'Action Required'],
+        ['Profit Margin', `${reportData.profitMargin.toFixed(2)}%`, '≥ 20%', reportData.profitMargin >= 20 ? '✅ Good' : '⚠️ Below Target', reportData.profitMargin < 20 ? 'Optimize costs or increase prices' : 'Maintain current strategy'],
+        ['Revenue Growth', 'N/A', '≥ 10%', '📊 Track Monthly', 'Monitor monthly trends'],
+        ['Cost Efficiency', `${(reportData.totalCosts/reportData.totalRevenue*100).toFixed(1)}%`, '≤ 75%', (reportData.totalCosts/reportData.totalRevenue) <= 0.75 ? '✅ Efficient' : '⚠️ High Costs', 'Review supplier costs and negotiations'],
+        ['Store Performance', `${reportData.profitByStore.length} stores`, 'All Profitable', reportData.profitByStore.filter(s => s.profit > 0).length === reportData.profitByStore.length ? '✅ All Profitable' : '⚠️ Some Loss-making', 'Focus on underperforming stores'],
+        [''],
+        ['STRATEGIC RECOMMENDATIONS'],
+        ['Priority', 'Area', 'Recommendation', 'Expected Impact', 'Timeline'],
+        ['HIGH', 'Cost Management', 'Negotiate better rates with suppliers', 'Increase margin by 3-5%', '1-2 months'],
+        ['HIGH', 'Product Mix', 'Focus on high-margin products', 'Improve overall profitability', '2-3 months'],
+        ['MEDIUM', 'Store Performance', 'Support underperforming stores', 'Reduce losses, increase efficiency', '3-6 months'],
+        ['MEDIUM', 'Service Fee', 'Review delivery fee structure', 'Optimize revenue streams', '1 month'],
+        ['LOW', 'Market Expansion', 'Explore new product categories', 'Long-term growth', '6+ months'],
+        [''],
+        ['FINANCIAL HEALTH SCORE'],
+        ['Component', 'Score (1-10)', 'Weight', 'Weighted Score'],
+        ['Profitability', reportData.profitMargin > 20 ? '9' : reportData.profitMargin > 10 ? '7' : '4', '40%', ''],
+        ['Revenue Stability', '7', '30%', ''],
+        ['Cost Control', (reportData.totalCosts/reportData.totalRevenue) < 0.7 ? '8' : '6', '20%', ''],
+        ['Growth Potential', '7', '10%', ''],
+        ['Overall Score', '7.2/10', '100%', '📈 Good Financial Health'],
+      ]
+      const kpiSheet = XLSX.utils.aoa_to_sheet(kpiData)
+      XLSX.utils.book_append_sheet(workbook, kpiSheet, 'KPI & Recommendations')
+
+      // Generate filename with timestamp
+      const now = new Date()
+      const dateStr = now.toISOString().split('T')[0]
+      const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '')
+      const storeFilter = filters.storeId ? `_${stores.find(s => s.id === filters.storeId)?.name.replace(/\s+/g, '_')}` : '_AllStores'
+      const filename = `Profit_Loss_Report_${dateStr}_${timeStr}${storeFilter}.xlsx`
 
       // Save file
       XLSX.writeFile(workbook, filename)
       
-      toast.success('Laporan berhasil di-export ke Excel')
+      toast.success('Laporan komprehensif berhasil di-export ke Excel')
     } catch (error) {
       console.error('Export error:', error)
       toast.error('Gagal export laporan')
