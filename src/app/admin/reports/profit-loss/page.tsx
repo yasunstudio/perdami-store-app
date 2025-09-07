@@ -147,24 +147,47 @@ export default function ProfitLossReportPage() {
         ]
         
         const transactionRows = detailData.transactions.map((order: any) => {
-          return order.items.map((item: any) => [
-            order.id,
-            new Date(order.createdAt).toLocaleDateString('id-ID'),
-            order.pickupDate ? new Date(order.pickupDate).toLocaleDateString('id-ID') : 'Belum Pickup',
-            replaceNA(order.customerName, 'Customer'),
-            replaceNA(item.productName, 'Produk'),
-            replaceNA(item.storeName, 'Toko'),
-            item.quantity || 1,
-            formatNumberForExcel(item.unitPrice || 0),
-            formatNumberForExcel(item.totalPrice || 0),
-            formatNumberForExcel(order.serviceFee ? order.serviceFee / order.items.length : 0),
-            formatNumberForExcel((item.totalPrice || 0) + (order.serviceFee / order.items.length || 0)),
-            formatNumberForExcel(item.costPrice || 0),
-            formatNumberForExcel(item.totalCost || 0),
-            formatNumberForExcel(item.profit || 0),
-            formatPercentageForExcel(item.margin || 0),
-            replaceNA(order.orderStatus, 'COMPLETED')
-          ])
+          // Group items by store to calculate service fee per store
+          const storeGroups = order.items.reduce((groups: any, item: any) => {
+            const storeId = item.storeId || 'unknown'
+            if (!groups[storeId]) {
+              groups[storeId] = {
+                storeName: item.storeName,
+                items: []
+              }
+            }
+            groups[storeId].items.push(item)
+            return groups
+          }, {})
+          
+          const storeCount = Object.keys(storeGroups).length
+          const serviceFeePerStore = 25000 // Rp 25.000 per toko
+          
+          return order.items.map((item: any) => {
+            // Find items from the same store to calculate service fee allocation
+            const itemsFromSameStore = storeGroups[item.storeId || 'unknown']?.items || [item]
+            const serviceFeeForThisStore = serviceFeePerStore
+            const serviceFeePerItem = serviceFeeForThisStore / itemsFromSameStore.length
+            
+            return [
+              order.id,
+              new Date(order.createdAt).toLocaleDateString('id-ID'),
+              order.pickupDate ? new Date(order.pickupDate).toLocaleDateString('id-ID') : 'Belum Pickup',
+              replaceNA(order.customerName, 'Customer'),
+              replaceNA(item.productName, 'Produk'),
+              replaceNA(item.storeName, 'Toko'),
+              item.quantity || 1,
+              formatNumberForExcel(item.unitPrice || 0),
+              formatNumberForExcel(item.totalPrice || 0),
+              formatNumberForExcel(serviceFeePerItem),
+              formatNumberForExcel((item.totalPrice || 0) + serviceFeePerItem),
+              formatNumberForExcel(item.costPrice || 0),
+              formatNumberForExcel(item.totalCost || 0),
+              formatNumberForExcel(item.profit || 0),
+              formatPercentageForExcel(item.margin || 0),
+              replaceNA(order.orderStatus, 'COMPLETED')
+            ]
+          })
         }).flat()
 
         const transactionData = [...transactionHeaders, ...transactionRows]
