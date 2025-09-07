@@ -72,11 +72,27 @@ export async function GET(request: Request) {
       serviceFeeRevenue += order.serviceFee || 0
       
       order.orderItems.forEach(item => {
-        if (!item.bundle) return
+        if (!item.bundle) {
+          console.log(`Warning: OrderItem ${item.id} has no bundle`)
+          return
+        }
 
         const revenue = item.totalPrice // Penjualan ke customer
         const storeCost = item.quantity * (item.bundle.costPrice || 0) // Pembayaran ke toko
         const profit = revenue - storeCost
+
+        // Debug logging for the specific product
+        if (item.bundle.name && item.bundle.name.includes('Bebek Frozen')) {
+          console.log(`Bebek Frozen Debug:`, {
+            productName: item.bundle.name,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalPrice: item.totalPrice,
+            costPrice: item.bundle.costPrice,
+            bundleId: item.bundle.id,
+            orderId: order.id
+          })
+        }
 
         totalRevenue += revenue
         storeCosts += storeCost
@@ -90,17 +106,24 @@ export async function GET(request: Request) {
           cost: 0,
           profit: 0,
           margin: 0,
-          quantity: 0, // Add quantity tracking
-          costPrice: item.bundle.costPrice || 0, // Store actual cost price from bundle
-          unitPrice: item.unitPrice || 0 // Store actual unit price from order item
+          quantity: 0,
+          costPrice: item.bundle.costPrice || 0, // Bundle cost price (should be consistent)
+          totalUnitPriceSum: 0, // Sum of all unit prices for averaging
+          transactionCount: 0, // Number of transactions for this product
+          avgUnitPrice: 0 // Average unit price across all transactions
         }
+        
         existingProduct.revenue += revenue
         existingProduct.cost += storeCost
         existingProduct.profit += profit
-        existingProduct.quantity += item.quantity // Track total quantity sold
-        // Keep the original prices (don't average them as they should be consistent)
-        existingProduct.costPrice = item.bundle.costPrice || 0
-        existingProduct.unitPrice = item.unitPrice || 0
+        existingProduct.quantity += item.quantity
+        existingProduct.totalUnitPriceSum += (item.unitPrice || 0) * item.quantity
+        existingProduct.transactionCount += 1
+        
+        // Calculate average unit price based on total revenue and quantity
+        existingProduct.avgUnitPrice = existingProduct.quantity > 0 ? 
+          existingProduct.revenue / existingProduct.quantity : 0
+          
         existingProduct.margin = existingProduct.revenue > 0 ? 
           (existingProduct.profit / existingProduct.revenue) * 100 : 0
         productProfitability.set(productKey, existingProduct)

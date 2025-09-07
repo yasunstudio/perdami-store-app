@@ -226,9 +226,9 @@ export default function ProfitLossReportPage() {
           ...reportData.topProfitableProducts.map((product, index) => {
             const revenueContribution = (product.revenue / reportData.totalRevenue * 100)
             const performance = product.margin > 30 ? 'Excellent' : product.margin > 20 ? 'Good' : product.margin > 10 ? 'Average' : 'Poor'
-            const quantity = (product as any).quantity || 0 // Use real quantity from database
-            const costPrice = (product as any).costPrice || 0 // Use actual cost price from bundle
-            const unitPrice = (product as any).unitPrice || 0 // Use actual unit price from order
+            const quantity = (product as any).quantity || 0
+            const costPrice = (product as any).costPrice || 0 // Bundle cost price (consistent)
+            const avgUnitPrice = (product as any).avgUnitPrice || 0 // Average selling price per unit
             return [
               (index + 1).toString(),
               product.name,
@@ -239,7 +239,7 @@ export default function ProfitLossReportPage() {
               formatPercentageForExcel(revenueContribution),
               quantity,
               formatNumberForExcel(costPrice),
-              formatNumberForExcel(unitPrice),
+              formatNumberForExcel(avgUnitPrice),
               performance
             ]
           }),
