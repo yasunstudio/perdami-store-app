@@ -138,56 +138,31 @@ export default function ProfitLossReportPage() {
       const summarySheet = XLSX.utils.aoa_to_sheet(executiveSummary)
       XLSX.utils.book_append_sheet(workbook, summarySheet, 'Executive Summary')
 
-      // Sheet 2: Detailed Transactions (if available)
+      // Sheet 2: Detailed Transactions (Sales Only - No Service Fee)
       if (detailData.transactions && detailData.transactions.length > 0) {
         const transactionHeaders = [
-          ['DETAIL TRANSAKSI LENGKAP'],
+          ['DETAIL TRANSAKSI PENJUALAN'],
           [''],
-          ['Order ID', 'Tanggal Order', 'Tanggal Pickup', 'Customer', 'Produk', 'Toko', 'Qty', 'Harga Satuan (IDR)', 'Total Harga (IDR)', 'Ongkos Kirim (IDR)', 'Total Pemasukan (IDR)', 'Cost per Unit (IDR)', 'Total Cost (IDR)', 'Profit per Item (IDR)', 'Margin (%)', 'Status']
+          ['Order ID', 'Tanggal Order', 'Tanggal Pickup', 'Customer', 'Produk', 'Toko', 'Qty', 'Harga Satuan (IDR)', 'Total Harga (IDR)', 'Cost per Unit (IDR)', 'Total Cost (IDR)', 'Profit per Item (IDR)', 'Margin (%)', 'Status']
         ]
         
         const transactionRows = detailData.transactions.map((order: any) => {
-          // Group items by store to calculate service fee per store
-          const storeGroups = order.items.reduce((groups: any, item: any) => {
-            const storeId = item.storeId || 'unknown'
-            if (!groups[storeId]) {
-              groups[storeId] = {
-                storeName: item.storeName,
-                items: []
-              }
-            }
-            groups[storeId].items.push(item)
-            return groups
-          }, {})
-          
-          const storeCount = Object.keys(storeGroups).length
-          const serviceFeePerStore = 25000 // Rp 25.000 per toko
-          
-          return order.items.map((item: any) => {
-            // Find items from the same store to calculate service fee allocation
-            const itemsFromSameStore = storeGroups[item.storeId || 'unknown']?.items || [item]
-            const serviceFeeForThisStore = serviceFeePerStore
-            const serviceFeePerItem = serviceFeeForThisStore / itemsFromSameStore.length
-            
-            return [
-              order.id,
-              new Date(order.createdAt).toLocaleDateString('id-ID'),
-              order.pickupDate ? new Date(order.pickupDate).toLocaleDateString('id-ID') : 'Belum Pickup',
-              replaceNA(order.customerName, 'Customer'),
-              replaceNA(item.productName, 'Produk'),
-              replaceNA(item.storeName, 'Toko'),
-              item.quantity || 1,
-              formatNumberForExcel(item.unitPrice || 0),
-              formatNumberForExcel(item.totalPrice || 0),
-              formatNumberForExcel(serviceFeePerItem),
-              formatNumberForExcel((item.totalPrice || 0) + serviceFeePerItem),
-              formatNumberForExcel(item.costPrice || 0),
-              formatNumberForExcel(item.totalCost || 0),
-              formatNumberForExcel(item.profit || 0),
-              formatPercentageForExcel(item.margin || 0),
-              replaceNA(order.orderStatus, 'COMPLETED')
-            ]
-          })
+          return order.items.map((item: any) => [
+            order.id,
+            new Date(order.createdAt).toLocaleDateString('id-ID'),
+            order.pickupDate ? new Date(order.pickupDate).toLocaleDateString('id-ID') : 'Belum Pickup',
+            replaceNA(order.customerName, 'Customer'),
+            replaceNA(item.productName, 'Produk'),
+            replaceNA(item.storeName, 'Toko'),
+            item.quantity || 1,
+            formatNumberForExcel(item.unitPrice || 0),
+            formatNumberForExcel(item.totalPrice || 0),
+            formatNumberForExcel(item.costPrice || 0),
+            formatNumberForExcel(item.totalCost || 0),
+            formatNumberForExcel(item.profit || 0),
+            formatPercentageForExcel(item.margin || 0),
+            replaceNA(order.orderStatus, 'COMPLETED')
+          ])
         }).flat()
 
         const transactionData = [...transactionHeaders, ...transactionRows]
@@ -195,7 +170,49 @@ export default function ProfitLossReportPage() {
         XLSX.utils.book_append_sheet(workbook, transactionSheet, 'Detail Transaksi')
       }
 
-      // Sheet 3: Analisis Profitabilitas Produk
+      // Sheet 3: Service Fee Analysis (Delivery Cost per Store)
+      if (detailData.transactions && detailData.transactions.length > 0) {
+        const serviceFeeHeaders = [
+          ['ANALISIS ONGKOS KIRIM PER TOKO'],
+          [''],
+          ['Order ID', 'Tanggal Order', 'Customer', 'Toko', 'Jumlah Item di Toko', 'Ongkos Kirim Toko (IDR)', 'Ongkos Kirim per Item (IDR)', 'Status Order']
+        ]
+        
+        const serviceFeeRows = detailData.transactions.map((order: any) => {
+          // Group items by store
+          const storeGroups = order.items.reduce((groups: any, item: any) => {
+            const storeId = item.storeId || 'unknown'
+            const storeName = item.storeName || 'Unknown Store'
+            if (!groups[storeId]) {
+              groups[storeId] = {
+                storeName: storeName,
+                items: []
+              }
+            }
+            groups[storeId].items.push(item)
+            return groups
+          }, {})
+          
+          const serviceFeePerStore = 25000 // Rp 25.000 per toko
+          
+          return Object.entries(storeGroups).map(([storeId, storeData]: [string, any]) => [
+            order.id,
+            new Date(order.createdAt).toLocaleDateString('id-ID'),
+            replaceNA(order.customerName, 'Customer'),
+            storeData.storeName,
+            storeData.items.length,
+            formatNumberForExcel(serviceFeePerStore),
+            formatNumberForExcel(serviceFeePerStore / storeData.items.length),
+            replaceNA(order.orderStatus, 'COMPLETED')
+          ])
+        }).flat()
+
+        const serviceFeeData = [...serviceFeeHeaders, ...serviceFeeRows]
+        const serviceFeeSheet = XLSX.utils.aoa_to_sheet(serviceFeeData)
+        XLSX.utils.book_append_sheet(workbook, serviceFeeSheet, 'Analisis Ongkos Kirim')
+      }
+
+      // Sheet 4: Analisis Profitabilitas Produk
       if (reportData.topProfitableProducts.length > 0) {
         const productAnalysis = [
           ['ANALISIS PROFITABILITAS PRODUK'],
@@ -231,7 +248,7 @@ export default function ProfitLossReportPage() {
         XLSX.utils.book_append_sheet(workbook, productSheet, 'Analisis Produk')
       }
 
-      // Sheet 4: Analisis Profitabilitas Toko
+      // Sheet 5: Analisis Profitabilitas Toko
       if (reportData.profitByStore.length > 0) {
         const storeAnalysis = [
           ['ANALISIS PROFITABILITAS PER TOKO'],
@@ -267,7 +284,7 @@ export default function ProfitLossReportPage() {
         XLSX.utils.book_append_sheet(workbook, storeSheet, 'Analisis Toko')
       }
 
-      // Sheet 5: Tren dan Analisis Temporal
+      // Sheet 6: Tren dan Analisis Temporal
       const filteredMonthlyData = filterFromSeptember(reportData.revenueByMonth || [])
       if (filteredMonthlyData.length > 0) {
         const monthlyAnalysis = [
@@ -305,7 +322,7 @@ export default function ProfitLossReportPage() {
         XLSX.utils.book_append_sheet(workbook, monthlySheet, 'Analisis Temporal')
       }
 
-      // Sheet 6: KPI Dashboard & Recommendations
+      // Sheet 7: KPI Dashboard & Recommendations
       const kpiData = [
         ['DASHBOARD KPI & REKOMENDASI'],
         [''],
