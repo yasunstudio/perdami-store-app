@@ -271,9 +271,9 @@ export async function GET(request: Request) {
       .sort((a, b) => b.profit - a.profit)
 
     const reportData = {
-      totalRevenue: totalIncome, // Sales + Service Fee
+      totalRevenue: totalIncome, // Total Pemasukan = Sales + Service Fee (sesuai dengan frontend)
       totalCosts: storeCosts, // Only store payments
-      grossProfit: totalRevenue, // Sales revenue only
+      grossProfit: totalRevenue, // Sales revenue only (tanpa service fee)
       netProfit, // Total income - store costs
       profitMargin,
       revenueByMonth,
@@ -284,10 +284,10 @@ export async function GET(request: Request) {
         to: format(toDate, 'yyyy-MM-dd')
       },
       breakdown: {
-        salesRevenue: totalRevenue, // Penjualan ke customer
+        salesRevenue: totalRevenue, // Penjualan produk ke customer (tanpa service fee)
         serviceFeeRevenue, // Biaya ongkos kirim
         storeCosts, // Pembayaran ke toko
-        totalIncome, // Sales + Service Fee
+        totalIncome, // Sales + Service Fee (sama dengan totalRevenue di response utama)
         profitMargin: totalIncome > 0 ? (netProfit / totalIncome) * 100 : 0
       }
     }
