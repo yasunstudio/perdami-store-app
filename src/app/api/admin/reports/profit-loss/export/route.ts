@@ -22,10 +22,10 @@ export async function GET(request: Request) {
     const fromDate = from ? new Date(from) : subDays(new Date(), 30)
     const toDate = to ? new Date(to) : new Date()
 
-    // Build where clause
+    // Build where clause - consistent with main profit-loss API
     const whereClause: any = {
-      orderStatus: 'COMPLETED',
-      pickupDate: {
+      orderStatus: 'COMPLETED', // Only include completed orders
+      createdAt: { // Use createdAt instead of pickupDate to include all completed orders
         gte: startOfDay(fromDate),
         lte: endOfDay(toDate)
       }
@@ -71,7 +71,7 @@ export async function GET(request: Request) {
       }
     })
 
-    // Transform data for export
+    // Transform data for export - consistent calculations with main API
     const transactions = orders.map(order => ({
       id: order.id,
       orderNumber: order.orderNumber, // Add orderNumber for display
@@ -82,24 +82,31 @@ export async function GET(request: Request) {
       serviceFee: order.serviceFee || 0,
       orderStatus: order.orderStatus,
       totalAmount: order.totalAmount,
-      items: order.orderItems.map(item => ({
-        productName: item.bundle?.name || 'Unknown Product',
-        storeName: item.bundle?.store?.name || 'Unknown Store',
-        storeId: item.bundle?.store?.id || 'N/A',
-        quantity: item.quantity,
-        unitPrice: item.unitPrice, // Use actual unitPrice from database
-        totalPrice: item.totalPrice,
-        costPrice: item.bundle?.costPrice || 0,
-        totalCost: item.quantity * (item.bundle?.costPrice || 0),
-        profit: item.totalPrice - (item.quantity * (item.bundle?.costPrice || 0)),
-        margin: item.totalPrice > 0 ? ((item.totalPrice - (item.quantity * (item.bundle?.costPrice || 0))) / item.totalPrice) * 100 : 0
-      }))
+      items: order.orderItems.map(item => {
+        const salesRevenue = item.totalPrice // Revenue from customer payment
+        const storeCost = item.quantity * (item.bundle?.costPrice || 0) // Cost paid to store
+        const profit = salesRevenue - storeCost // Platform profit
+        const margin = salesRevenue > 0 ? (profit / salesRevenue) * 100 : 0 // Profit margin
+        
+        return {
+          productName: item.bundle?.name || 'Unknown Product',
+          storeName: item.bundle?.store?.name || 'Unknown Store',
+          storeId: item.bundle?.store?.id || 'N/A',
+          quantity: item.quantity,
+          unitPrice: item.unitPrice, // Use actual unitPrice from database
+          totalPrice: salesRevenue,
+          costPrice: item.bundle?.costPrice || 0,
+          totalCost: storeCost,
+          profit,
+          margin
+        }
+      })
     }))
 
-    // Calculate summary statistics for export
-    let totalSalesRevenue = 0
-    let totalServiceFee = 0
-    let totalCosts = 0
+    // Calculate summary statistics for export - consistent with main API
+    let totalSalesRevenue = 0 // Revenue from product sales only
+    let totalServiceFee = 0   // Revenue from service fees
+    let totalCosts = 0        // Costs paid to stores
     let totalOrders = orders.length
 
     transactions.forEach(order => {
@@ -110,16 +117,20 @@ export async function GET(request: Request) {
       })
     })
 
+    const totalIncome = totalSalesRevenue + totalServiceFee // Total platform income
+    const netProfit = totalIncome - totalCosts              // Platform net profit
+    const profitMargin = totalIncome > 0 ? (netProfit / totalIncome) * 100 : 0
+
     return NextResponse.json({
       transactions,
       summary: {
         totalOrders,
-        totalSalesRevenue,
-        totalServiceFee,
-        totalRevenue: totalSalesRevenue + totalServiceFee,
-        totalCosts,
-        netProfit: (totalSalesRevenue + totalServiceFee) - totalCosts,
-        profitMargin: (totalSalesRevenue + totalServiceFee) > 0 ? (((totalSalesRevenue + totalServiceFee) - totalCosts) / (totalSalesRevenue + totalServiceFee)) * 100 : 0
+        totalSalesRevenue,    // Product sales only
+        totalServiceFee,      // Service fees only
+        totalRevenue: totalIncome,  // Sales + Service Fee (same as main API totalRevenue)
+        totalCosts,           // Store payments
+        netProfit,            // Platform profit
+        profitMargin          // Profit percentage
       }
     })
 

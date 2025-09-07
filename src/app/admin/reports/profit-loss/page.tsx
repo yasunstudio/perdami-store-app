@@ -129,12 +129,12 @@ export default function ProfitLossReportPage() {
         [''],
         ['RINGKASAN EKSEKUTIF'],
         ['Metrik', 'Nilai (IDR)', 'Persentase', 'Status'],
-        ['Total Pemasukan', formatNumberForExcel(safeNumber(reportData.totalRevenue)), formatPercentageForExcel(100), reportData.totalRevenue > 0 ? 'Positif' : 'Negatif'],
-        ['  - Sales Revenue', formatNumberForExcel(safeNumber((reportData as any).breakdown?.salesRevenue) || 0), formatPercentageForExcel((safeNumber((reportData as any).breakdown?.salesRevenue) || 0) / safeNumber(reportData.totalRevenue) * 100), 'Komponen Utama'],
-        ['  - Service Fee', formatNumberForExcel(safeNumber((reportData as any).breakdown?.serviceFeeRevenue) || 0), formatPercentageForExcel((safeNumber((reportData as any).breakdown?.serviceFeeRevenue) || 0) / safeNumber(reportData.totalRevenue) * 100), 'Pendapatan Jasa'],
-        ['Total Pengeluaran', formatNumberForExcel(safeNumber(reportData.totalCosts)), formatPercentageForExcel(safeNumber(reportData.totalCosts) / safeNumber(reportData.totalRevenue) * 100), 'Pembayaran ke Toko'],
-        ['Laba Bersih', formatNumberForExcel(safeNumber(reportData.netProfit)), formatPercentageForExcel(safeNumber(reportData.netProfit) / safeNumber(reportData.totalRevenue) * 100), reportData.netProfit > 0 ? 'PROFIT' : 'LOSS'],
-        ['Margin Keuntungan', formatPercentageForExcel(safeNumber(reportData.profitMargin)), '', reportData.profitMargin > 20 ? 'Sangat Baik' : reportData.profitMargin > 10 ? 'Baik' : 'Perlu Perbaikan'],
+        ['Total Pemasukan', formatNumberForExcel(safeNumber((detailData.summary as any)?.totalRevenue) || safeNumber(reportData.totalRevenue)), formatPercentageForExcel(100), (safeNumber((detailData.summary as any)?.totalRevenue) || safeNumber(reportData.totalRevenue)) > 0 ? 'Positif' : 'Negatif'],
+        ['  - Sales Revenue', formatNumberForExcel(safeNumber((detailData.summary as any)?.totalSalesRevenue) || safeNumber((reportData as any).breakdown?.salesRevenue) || 0), formatPercentageForExcel((safeNumber((detailData.summary as any)?.totalSalesRevenue) || safeNumber((reportData as any).breakdown?.salesRevenue) || 0) / (safeNumber((detailData.summary as any)?.totalRevenue) || safeNumber(reportData.totalRevenue)) * 100), 'Komponen Utama'],
+        ['  - Service Fee', formatNumberForExcel(safeNumber((detailData.summary as any)?.totalServiceFee) || safeNumber((reportData as any).breakdown?.serviceFeeRevenue) || 0), formatPercentageForExcel((safeNumber((detailData.summary as any)?.totalServiceFee) || safeNumber((reportData as any).breakdown?.serviceFeeRevenue) || 0) / (safeNumber((detailData.summary as any)?.totalRevenue) || safeNumber(reportData.totalRevenue)) * 100), 'Pendapatan Jasa'],
+        ['Total Pengeluaran', formatNumberForExcel(safeNumber((detailData.summary as any)?.totalCosts) || safeNumber(reportData.totalCosts)), formatPercentageForExcel((safeNumber((detailData.summary as any)?.totalCosts) || safeNumber(reportData.totalCosts)) / (safeNumber((detailData.summary as any)?.totalRevenue) || safeNumber(reportData.totalRevenue)) * 100), 'Pembayaran ke Toko'],
+        ['Laba Bersih', formatNumberForExcel(safeNumber((detailData.summary as any)?.netProfit) || safeNumber(reportData.netProfit)), formatPercentageForExcel((safeNumber((detailData.summary as any)?.netProfit) || safeNumber(reportData.netProfit)) / (safeNumber((detailData.summary as any)?.totalRevenue) || safeNumber(reportData.totalRevenue)) * 100), (safeNumber((detailData.summary as any)?.netProfit) || safeNumber(reportData.netProfit)) > 0 ? 'PROFIT' : 'LOSS'],
+        ['Margin Keuntungan', formatPercentageForExcel(safeNumber((detailData.summary as any)?.profitMargin) || safeNumber(reportData.profitMargin)), '', (safeNumber((detailData.summary as any)?.profitMargin) || safeNumber(reportData.profitMargin)) > 20 ? 'Sangat Baik' : (safeNumber((detailData.summary as any)?.profitMargin) || safeNumber(reportData.profitMargin)) > 10 ? 'Baik' : 'Perlu Perbaikan'],
         [''],
         ['KESIMPULAN BISNIS'],
         ['Status Profitabilitas', reportData.netProfit > 0 ? 'MENGUNTUNGKAN' : 'MERUGI'],
@@ -199,7 +199,9 @@ export default function ProfitLossReportPage() {
             return groups
           }, {})
           
-          const serviceFeePerStore = 25000 // Rp 25.000 per toko
+          // Use actual service fee from order, distributed equally across stores
+          const totalStores = Object.keys(storeGroups).length
+          const serviceFeePerStore = totalStores > 0 ? (order.serviceFee || 0) / totalStores : 0
           
           return Object.entries(storeGroups).map(([storeId, storeData]: [string, any]) => [
             order.orderNumber,
