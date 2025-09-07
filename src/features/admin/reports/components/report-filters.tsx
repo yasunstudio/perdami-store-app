@@ -140,9 +140,16 @@ export function ReportFilters({
                 </Label>
               </div>
               <div className="space-y-2">
-                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                  Pilih Toko
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                    Pilih Toko
+                  </Label>
+                  {filters.storeId && (
+                    <Badge variant="secondary" className="text-xs">
+                      Filtered: {stores.find(s => s.id === filters.storeId)?.name || filters.storeId}
+                    </Badge>
+                  )}
+                </div>
                 <Select
                   value={filters.storeId || 'all'}
                   onValueChange={(value) =>

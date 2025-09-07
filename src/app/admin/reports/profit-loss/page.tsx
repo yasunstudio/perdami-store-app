@@ -39,8 +39,6 @@ export default function ProfitLossReportPage() {
     setIsLoading(true)
     try {
       const params = buildReportFilters(filters)
-      console.log('Profit-loss filters:', filters)
-      console.log('API params:', params.toString())
       const response = await fetch(`/api/admin/reports/profit-loss?${params.toString()}`)
       
       if (!response.ok) {
