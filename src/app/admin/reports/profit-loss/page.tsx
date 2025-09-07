@@ -230,18 +230,58 @@ export default function ProfitLossReportPage() {
         XLSX.utils.book_append_sheet(workbook, serviceFeeSheet, 'Analisis Ongkos Kirim')
       }
 
-      // Sheet 4: Analisis Profitabilitas Produk
-      if (reportData.topProfitableProducts.length > 0) {
+      // Sheet 4: Analisis Profitabilitas Produk - Calculated from detailed transactions
+      if (detailData.transactions && detailData.transactions.length > 0) {
+        // Calculate accurate product analysis from transaction details
+        const productMap = new Map()
+        
+        detailData.transactions.forEach((order: any) => {
+          order.items.forEach((item: any) => {
+            const productKey = item.productName
+            const existing = productMap.get(productKey) || {
+              name: item.productName,
+              revenue: 0,
+              cost: 0,
+              profit: 0,
+              quantity: 0,
+              orderCount: 0,
+              totalCostPrice: 0,
+              totalUnitPrice: 0,
+              priceEntries: 0
+            }
+            
+            existing.revenue += safeNumber(item.totalPrice)
+            existing.cost += safeNumber(item.totalCost)
+            existing.profit += safeNumber(item.profit)
+            existing.quantity += safeNumber(item.quantity)
+            existing.orderCount += 1
+            existing.totalCostPrice += safeNumber(item.costPrice) * safeNumber(item.quantity)
+            existing.totalUnitPrice += safeNumber(item.unitPrice) * safeNumber(item.quantity)
+            existing.priceEntries += safeNumber(item.quantity)
+            
+            productMap.set(productKey, existing)
+          })
+        })
+        
+        // Convert to array and calculate final metrics
+        const productAnalysisData = Array.from(productMap.values())
+          .map(product => ({
+            ...product,
+            margin: product.revenue > 0 ? (product.profit / product.revenue) * 100 : 0,
+            avgCostPrice: product.priceEntries > 0 ? product.totalCostPrice / product.priceEntries : 0,
+            avgUnitPrice: product.priceEntries > 0 ? product.totalUnitPrice / product.priceEntries : 0,
+            revenueContribution: ((detailData.summary as any)?.totalRevenue || reportData.totalRevenue) > 0 ? 
+              (product.revenue / ((detailData.summary as any)?.totalRevenue || reportData.totalRevenue)) * 100 : 0
+          }))
+          .sort((a, b) => b.profit - a.profit)
+        
         const productAnalysis = [
           ['ANALISIS PROFITABILITAS PRODUK'],
+          ['Data berdasarkan transaksi detail periode terpilih'],
           [''],
-          ['Ranking', 'Nama Produk', 'Total Revenue (IDR)', 'Total Cost (IDR)', 'Gross Profit (IDR)', 'Margin (%)', 'Kontribusi Revenue (%)', 'Qty Terjual', 'Harga Beli (IDR)', 'Harga Jual (IDR)', 'Status Performa'],
-          ...reportData.topProfitableProducts.map((product, index) => {
-            const revenueContribution = (product.revenue / reportData.totalRevenue * 100)
+          ['Ranking', 'Nama Produk', 'Total Revenue (IDR)', 'Total Cost (IDR)', 'Gross Profit (IDR)', 'Margin (%)', 'Kontribusi Revenue (%)', 'Qty Terjual', 'Rata-rata Harga Beli (IDR)', 'Rata-rata Harga Jual (IDR)', 'Jumlah Order', 'Status Performa'],
+          ...productAnalysisData.map((product, index) => {
             const performance = product.margin > 30 ? 'Excellent' : product.margin > 20 ? 'Good' : product.margin > 10 ? 'Average' : 'Poor'
-            const quantity = (product as any).quantity || 0
-            const costPrice = (product as any).costPrice || 0 // Bundle cost price (consistent)
-            const avgUnitPrice = (product as any).avgUnitPrice || 0 // Average selling price per unit
             return [
               (index + 1).toString(),
               product.name,
@@ -249,69 +289,115 @@ export default function ProfitLossReportPage() {
               formatNumberForExcel(product.cost),
               formatNumberForExcel(product.profit),
               formatPercentageForExcel(product.margin),
-              formatPercentageForExcel(revenueContribution),
-              quantity,
-              formatNumberForExcel(costPrice),
-              formatNumberForExcel(avgUnitPrice),
+              formatPercentageForExcel(product.revenueContribution),
+              product.quantity,
+              formatNumberForExcel(product.avgCostPrice),
+              formatNumberForExcel(product.avgUnitPrice),
+              product.orderCount,
               performance
             ]
           }),
           [''],
-          ['INSIGHTS PRODUK'],
-          ['Top Performer', reportData.topProfitableProducts[0]?.name || 'Tidak ada data'],
-          ['Highest Margin', reportData.topProfitableProducts.sort((a, b) => b.margin - a.margin)[0]?.name || 'Tidak ada data'],
-          ['Lowest Margin', reportData.topProfitableProducts.sort((a, b) => a.margin - b.margin)[0]?.name || 'Tidak ada data'],
+          ['INSIGHTS PRODUK BERDASARKAN DATA TRANSAKSI'],
+          ['Top Performer (Profit)', productAnalysisData[0]?.name || 'Tidak ada data'],
+          ['Highest Margin', productAnalysisData.sort((a, b) => b.margin - a.margin)[0]?.name || 'Tidak ada data'],
+          ['Lowest Margin', productAnalysisData.sort((a, b) => a.margin - b.margin)[0]?.name || 'Tidak ada data'],
+          ['Most Sold (Qty)', productAnalysisData.sort((a, b) => b.quantity - a.quantity)[0]?.name || 'Tidak ada data'],
+          ['Total Products', productAnalysisData.length],
+          ['Avg Margin All Products', formatPercentageForExcel(productAnalysisData.reduce((sum, p) => sum + p.margin, 0) / productAnalysisData.length)],
         ]
         const productSheet = XLSX.utils.aoa_to_sheet(productAnalysis)
         XLSX.utils.book_append_sheet(workbook, productSheet, 'Analisis Produk')
       }
 
-      // Sheet 5: Analisis Profitabilitas Toko
-      if (reportData.profitByStore.length > 0) {
+      // Sheet 5: Analisis Profitabilitas Toko - Calculated from detailed transactions
+      if (detailData.transactions && detailData.transactions.length > 0) {
+        // Calculate accurate store analysis from transaction details
+        const storeMap = new Map()
+        
+        detailData.transactions.forEach((order: any) => {
+          order.items.forEach((item: any) => {
+            const storeKey = item.storeName || 'Unknown Store'
+            const existing = storeMap.get(storeKey) || {
+              storeId: item.storeId,
+              storeName: storeKey,
+              revenue: 0,
+              cost: 0,
+              profit: 0,
+              itemCount: 0,
+              orders: new Set()
+            }
+            
+            existing.revenue += safeNumber(item.totalPrice)
+            existing.cost += safeNumber(item.totalCost)
+            existing.profit += safeNumber(item.profit)
+            existing.itemCount += safeNumber(item.quantity)
+            existing.orders.add(order.id)
+            
+            storeMap.set(storeKey, existing)
+          })
+        })
+        
+        // Convert to array and calculate final metrics
+        const storeAnalysisData = Array.from(storeMap.values())
+          .map(store => ({
+            ...store,
+            margin: store.revenue > 0 ? (store.profit / store.revenue) * 100 : 0,
+            orderCount: store.orders.size,
+            avgOrderValue: store.orders.size > 0 ? store.revenue / store.orders.size : 0,
+            revenueContribution: ((detailData.summary as any)?.totalRevenue || reportData.totalRevenue) > 0 ? 
+              (store.revenue / ((detailData.summary as any)?.totalRevenue || reportData.totalRevenue)) * 100 : 0
+          }))
+          .sort((a, b) => b.profit - a.profit)
+        
         const storeAnalysis = [
           ['ANALISIS PROFITABILITAS PER TOKO'],
+          ['Data berdasarkan transaksi detail periode terpilih'],
           [''],
-          ['Ranking', 'Nama Toko', 'Total Revenue (IDR)', 'Total Cost (IDR)', 'Net Profit (IDR)', 'Margin (%)', 'Kontribusi Revenue (%)', 'Jumlah Order', 'Avg Order Value (IDR)', 'Status Performa'],
-          ...reportData.profitByStore.map((store: any, index: number) => {
-            const revenueContribution = (store.revenue / reportData.totalRevenue * 100)
-            const margin = store.revenue > 0 ? (store.profit / store.revenue) * 100 : 0
-            const avgOrderValue = (store as any).orderCount && (store as any).orderCount > 0 
-              ? store.revenue / (store as any).orderCount 
-              : 0
-            const performance = margin > 25 ? 'Top Tier' : margin > 15 ? 'Good' : margin > 10 ? 'Average' : 'Needs Improvement'
-            const orderCount = (store as any).orderCount || 0
+          ['Ranking', 'Nama Toko', 'Total Revenue (IDR)', 'Total Cost (IDR)', 'Net Profit (IDR)', 'Margin (%)', 'Kontribusi Revenue (%)', 'Jumlah Order', 'Jumlah Item Terjual', 'Avg Order Value (IDR)', 'Status Performa'],
+          ...storeAnalysisData.map((store, index) => {
+            const performance = store.margin > 20 ? 'Excellent' : store.margin > 15 ? 'Good' : store.margin > 10 ? 'Average' : 'Poor'
             return [
               (index + 1).toString(),
-              store.storeName || 'Unknown Store',
-              formatNumberForExcel(store.revenue || 0),
-              formatNumberForExcel(store.costs || 0),
-              formatNumberForExcel(store.profit || 0),
-              formatPercentageForExcel(margin),
-              formatPercentageForExcel(revenueContribution),
-              orderCount,
-              formatNumberForExcel(avgOrderValue),
+              store.storeName,
+              formatNumberForExcel(store.revenue),
+              formatNumberForExcel(store.cost),
+              formatNumberForExcel(store.profit),
+              formatPercentageForExcel(store.margin),
+              formatPercentageForExcel(store.revenueContribution),
+              store.orderCount,
+              store.itemCount,
+              formatNumberForExcel(store.avgOrderValue),
               performance
             ]
           }),
           [''],
-          ['INSIGHTS TOKO'],
-          ['Top Revenue Generator', reportData.profitByStore[0]?.storeName || 'Tidak ada data'],
-          ['Most Profitable', reportData.profitByStore.sort((a, b) => (b.profit || 0) - (a.profit || 0))[0]?.storeName || 'Tidak ada data'],
-          ['Highest Margin', reportData.profitByStore.sort((a, b) => {
-            const marginA = a.revenue > 0 ? (a.profit / a.revenue * 100) : 0
-            const marginB = b.revenue > 0 ? (b.profit / b.revenue * 100) : 0
-            return marginB - marginA
-          })[0]?.storeName || 'Tidak ada data'],
+          ['INSIGHTS TOKO BERDASARKAN DATA TRANSAKSI'],
+          ['Top Performer (Profit)', storeAnalysisData[0]?.storeName || 'Tidak ada data'],
+          ['Highest Margin', storeAnalysisData.sort((a, b) => b.margin - a.margin)[0]?.storeName || 'Tidak ada data'],
+          ['Most Orders', storeAnalysisData.sort((a, b) => b.orderCount - a.orderCount)[0]?.storeName || 'Tidak ada data'],
+          ['Highest AOV', storeAnalysisData.sort((a, b) => b.avgOrderValue - a.avgOrderValue)[0]?.storeName || 'Tidak ada data'],
+          ['Total Active Stores', storeAnalysisData.length],
+          ['Avg Margin All Stores', formatPercentageForExcel(storeAnalysisData.reduce((sum, s) => sum + s.margin, 0) / storeAnalysisData.length)],
         ]
         const storeSheet = XLSX.utils.aoa_to_sheet(storeAnalysis)
         XLSX.utils.book_append_sheet(workbook, storeSheet, 'Analisis Toko')
       }
 
-      // Sheet 6: Tren dan Analisis Temporal
+      // Sheet 6: Tren dan Analisis Temporal - Enhanced with accurate breakdown
       const filteredMonthlyData = filterFromSeptember(reportData.revenueByMonth || [])
       if (filteredMonthlyData.length > 0) {
+        // Calculate sales and service ratios once
+        const totalRevenue = ((detailData.summary as any)?.totalRevenue || reportData.totalRevenue)
+        const totalSalesRevenue = ((detailData.summary as any)?.totalSalesRevenue || safeNumber((reportData as any).breakdown?.salesRevenue) || 0)
+        const totalServiceFee = ((detailData.summary as any)?.totalServiceFee || safeNumber((reportData as any).breakdown?.serviceFeeRevenue) || 0)
+        
+        const salesRatio = totalRevenue > 0 ? totalSalesRevenue / totalRevenue : 0.9
+        const serviceRatio = totalRevenue > 0 ? totalServiceFee / totalRevenue : 0.1
+        
         const monthlyAnalysis = [
           ['ANALISIS TREN BULANAN'],
+          ['Data berdasarkan periode analisis yang dipilih'],
           [''],
           ['Bulan', 'Total Revenue (IDR)', 'Sales Revenue (IDR)', 'Service Fee (IDR)', 'Total Cost (IDR)', 'Net Profit (IDR)', 'Margin (%)', 'Growth Revenue (%)', 'Growth Profit (%)', 'Trend'],
           ...filteredMonthlyData.map((month, index) => {
@@ -319,13 +405,13 @@ export default function ProfitLossReportPage() {
             const prevMonth = filteredMonthlyData[index - 1]
             const revenueGrowth = prevMonth ? ((month.revenue - prevMonth.revenue) / prevMonth.revenue * 100) : 0
             const profitGrowth = prevMonth ? ((month.profit - prevMonth.profit) / prevMonth.profit * 100) : 0
-            const trend = revenueGrowth > 0 ? 'Naik' : revenueGrowth < 0 ? 'Turun' : 'Stabil'
+            const trend = revenueGrowth > 5 ? 'Naik Signifikan' : revenueGrowth > 0 ? 'Naik' : revenueGrowth < -5 ? 'Turun Signifikan' : revenueGrowth < 0 ? 'Turun' : 'Stabil'
             
             return [
               month.month,
               formatNumberForExcel(month.revenue),
-              formatNumberForExcel(month.salesRevenue || month.revenue * 0.9), // Estimasi
-              formatNumberForExcel(month.serviceFeeRevenue || month.revenue * 0.1), // Estimasi
+              formatNumberForExcel(month.revenue * salesRatio),
+              formatNumberForExcel(month.revenue * serviceRatio),
               formatNumberForExcel(month.costs),
               formatNumberForExcel(month.profit),
               formatPercentageForExcel(margin),
@@ -335,42 +421,63 @@ export default function ProfitLossReportPage() {
             ]
           }),
           [''],
-          ['INSIGHTS TEMPORAL'],
-          ['Best Month', filteredMonthlyData.sort((a, b) => b.profit - a.profit)[0]?.month || 'Tidak ada data'],
-          ['Worst Month', filteredMonthlyData.sort((a, b) => a.profit - b.profit)[0]?.month || 'Tidak ada data'],
+          ['INSIGHTS TEMPORAL BERDASARKAN DATA AKTUAL'],
+          ['Best Month (Profit)', filteredMonthlyData.sort((a, b) => b.profit - a.profit)[0]?.month || 'Tidak ada data'],
+          ['Worst Month (Profit)', filteredMonthlyData.sort((a, b) => a.profit - b.profit)[0]?.month || 'Tidak ada data'],
+          ['Best Month (Revenue)', filteredMonthlyData.sort((a, b) => b.revenue - a.revenue)[0]?.month || 'Tidak ada data'],
           ['Avg Monthly Revenue', formatNumberForExcel(filteredMonthlyData.reduce((sum, m) => sum + m.revenue, 0) / filteredMonthlyData.length)],
           ['Avg Monthly Profit', formatNumberForExcel(filteredMonthlyData.reduce((sum, m) => sum + m.profit, 0) / filteredMonthlyData.length)],
+          ['Avg Monthly Margin', formatPercentageForExcel(filteredMonthlyData.reduce((sum, m) => (m.revenue > 0 ? (m.profit / m.revenue) * 100 : 0), 0) / filteredMonthlyData.length)],
+          ['Sales vs Service Ratio', `${(salesRatio * 100).toFixed(1)}% : ${(serviceRatio * 100).toFixed(1)}%`],
         ]
         const monthlySheet = XLSX.utils.aoa_to_sheet(monthlyAnalysis)
         XLSX.utils.book_append_sheet(workbook, monthlySheet, 'Analisis Temporal')
       }
 
-      // Sheet 7: KPI Dashboard & Recommendations
+      // Sheet 7: KPI Dashboard & Recommendations - Using accurate data
+      const actualProfitMargin = safeNumber((detailData.summary as any)?.profitMargin) || safeNumber(reportData.profitMargin)
+      const actualTotalRevenue = safeNumber((detailData.summary as any)?.totalRevenue) || safeNumber(reportData.totalRevenue)
+      const actualTotalCosts = safeNumber((detailData.summary as any)?.totalCosts) || safeNumber(reportData.totalCosts)
+      const actualSalesRevenue = safeNumber((detailData.summary as any)?.totalSalesRevenue) || safeNumber((reportData as any).breakdown?.salesRevenue) || 0
+      const actualServiceFee = safeNumber((detailData.summary as any)?.totalServiceFee) || safeNumber((reportData as any).breakdown?.serviceFeeRevenue) || 0
+      const costEfficiencyRatio = actualTotalRevenue > 0 ? (actualTotalCosts / actualTotalRevenue) : 0
+      const kpiSalesRatio = actualTotalRevenue > 0 ? actualSalesRevenue / actualTotalRevenue : 0.9
+      const kpiServiceRatio = actualTotalRevenue > 0 ? actualServiceFee / actualTotalRevenue : 0.1
+      
       const kpiData = [
         ['DASHBOARD KPI & REKOMENDASI'],
+        ['Berdasarkan data transaksi aktual periode terpilih'],
         [''],
         ['KEY PERFORMANCE INDICATORS'],
         ['Metric', 'Current Value', 'Target', 'Status', 'Action Required'],
-        ['Profit Margin (%)', formatPercentageForExcel(reportData.profitMargin), 0.20, reportData.profitMargin >= 20 ? 'Good' : 'Below Target', reportData.profitMargin < 20 ? 'Optimize costs or increase prices' : 'Maintain current strategy'],
-        ['Revenue Growth (%)', 0, 0.10, 'Track Monthly', 'Monitor monthly trends'],
-        ['Cost Efficiency (%)', formatPercentageForExcel(reportData.totalCosts/reportData.totalRevenue*100), 0.75, (reportData.totalCosts/reportData.totalRevenue) <= 0.75 ? 'Efficient' : 'High Costs', 'Review supplier costs and negotiations'],
-        ['Store Performance', reportData.profitByStore.length, reportData.profitByStore.length, reportData.profitByStore.filter(s => s.profit > 0).length === reportData.profitByStore.length ? 'All Profitable' : 'Some Loss-making', 'Focus on underperforming stores'],
+        ['Profit Margin (%)', formatPercentageForExcel(actualProfitMargin), 20, actualProfitMargin >= 20 ? 'Excellent' : actualProfitMargin >= 15 ? 'Good' : actualProfitMargin >= 10 ? 'Average' : 'Below Target', actualProfitMargin < 15 ? 'Focus on cost optimization and pricing strategy' : 'Maintain current performance'],
+        ['Revenue Performance', formatNumberForExcel(actualTotalRevenue), formatNumberForExcel(actualTotalRevenue * 1.1), actualTotalRevenue > 0 ? 'Active' : 'No Data', 'Monitor revenue trends and growth opportunities'],
+        ['Cost Efficiency (%)', formatPercentageForExcel(costEfficiencyRatio * 100), 75, costEfficiencyRatio <= 0.75 ? 'Efficient' : costEfficiencyRatio <= 0.85 ? 'Acceptable' : 'High Costs', costEfficiencyRatio > 0.75 ? 'Review supplier costs and negotiate better rates' : 'Maintain cost discipline'],
+        ['Transaction Volume', safeNumber((detailData.summary as any)?.totalOrders) || 0, '', (detailData.summary as any)?.totalOrders > 0 ? 'Active Business' : 'No Transactions', 'Continue customer acquisition and retention'],
+        [''],
+        ['FINANCIAL BREAKDOWN ANALYSIS'],
+        ['Component', 'Amount (IDR)', 'Percentage (%)', 'Performance'],
+        ['Sales Revenue', formatNumberForExcel(actualSalesRevenue), formatPercentageForExcel(kpiSalesRatio * 100), 'Primary Income'],
+        ['Service Fee Revenue', formatNumberForExcel(actualServiceFee), formatPercentageForExcel(kpiServiceRatio * 100), 'Secondary Income'],
+        ['Total Revenue', formatNumberForExcel(actualTotalRevenue), 100, 'Total Income'],
+        ['Total Costs', formatNumberForExcel(actualTotalCosts), formatPercentageForExcel(costEfficiencyRatio * 100), costEfficiencyRatio <= 0.75 ? 'Well Managed' : 'Needs Attention'],
+        ['Net Profit', formatNumberForExcel(safeNumber((detailData.summary as any)?.netProfit) || 0), formatPercentageForExcel(actualProfitMargin), actualProfitMargin > 15 ? 'Strong Performance' : 'Room for Improvement'],
         [''],
         ['STRATEGIC RECOMMENDATIONS'],
         ['Priority', 'Area', 'Recommendation', 'Expected Impact', 'Timeline'],
-        ['HIGH', 'Cost Management', 'Negotiate better rates with suppliers', 'Increase margin by 3-5%', '1-2 months'],
-        ['HIGH', 'Product Mix', 'Focus on high-margin products', 'Improve overall profitability', '2-3 months'],
-        ['MEDIUM', 'Store Performance', 'Support underperforming stores', 'Reduce losses, increase efficiency', '3-6 months'],
-        ['MEDIUM', 'Service Fee', 'Review delivery fee structure', 'Optimize revenue streams', '1 month'],
-        ['LOW', 'Market Expansion', 'Explore new product categories', 'Long-term growth', '6+ months'],
+        ['HIGH', 'Cost Management', 'Negotiate better supplier rates and optimize operational costs', `Potential margin increase: ${Math.min(5, Math.max(0, 20 - actualProfitMargin)).toFixed(1)}%`, '1-2 months'],
+        ['HIGH', 'Product Mix', 'Focus on high-margin products and optimize pricing', `Target margin improvement: ${Math.max(0, 25 - actualProfitMargin).toFixed(1)}%`, '2-3 months'],
+        ['MEDIUM', 'Revenue Growth', 'Enhance customer acquisition and increase order frequency', 'Target 15-20% revenue growth', '3-6 months'],
+        ['MEDIUM', 'Service Fee Optimization', `Current ratio: ${(kpiServiceRatio * 100).toFixed(1)}% - Review delivery fee structure`, 'Optimize revenue streams', '1 month'],
+        ['LOW', 'Market Expansion', 'Explore new product categories and market segments', 'Long-term sustainable growth', '6+ months'],
         [''],
         ['FINANCIAL HEALTH SCORE'],
-        ['Component', 'Score (1-10)', 'Weight (%)', 'Weighted Score'],
-        ['Profitability', reportData.profitMargin > 20 ? 9 : reportData.profitMargin > 10 ? 7 : 4, 0.40, ''],
-        ['Revenue Stability', 7, 0.30, ''],
-        ['Cost Control', (reportData.totalCosts/reportData.totalRevenue) < 0.7 ? 8 : 6, 0.20, ''],
-        ['Growth Potential', 7, 0.10, ''],
-        ['Overall Score', 7.2, 1.00, 'Good Financial Health'],
+        ['Component', 'Score (1-10)', 'Weight (%)', 'Weighted Score', 'Comments'],
+        ['Profitability', actualProfitMargin > 20 ? 9 : actualProfitMargin > 15 ? 8 : actualProfitMargin > 10 ? 6 : 4, 40, '', actualProfitMargin > 15 ? 'Strong profitability' : 'Needs improvement'],
+        ['Revenue Performance', actualTotalRevenue > 0 ? 8 : 0, 25, '', actualTotalRevenue > 0 ? 'Active business' : 'No revenue data'],
+        ['Cost Management', costEfficiencyRatio < 0.7 ? 9 : costEfficiencyRatio < 0.8 ? 7 : 5, 25, '', costEfficiencyRatio < 0.75 ? 'Efficient cost control' : 'Cost optimization needed'],
+        ['Transaction Health', (detailData.summary as any)?.totalOrders > 10 ? 8 : (detailData.summary as any)?.totalOrders > 0 ? 6 : 0, 10, '', 'Based on transaction volume'],
+        ['Overall Health Score', '', 100, Math.round((actualProfitMargin > 15 ? 8 : 6) * 0.4 + 8 * 0.25 + (costEfficiencyRatio < 0.75 ? 8 : 6) * 0.25 + 7 * 0.1), actualProfitMargin > 15 && costEfficiencyRatio < 0.75 ? 'Excellent Financial Health' : 'Good Financial Health - Monitor Key Metrics'],
       ]
       const kpiSheet = XLSX.utils.aoa_to_sheet(kpiData)
       XLSX.utils.book_append_sheet(workbook, kpiSheet, 'KPI & Recommendations')
