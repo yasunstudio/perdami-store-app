@@ -182,15 +182,45 @@ export default function ProfitLossReportPage() {
     }
   }
 
-  const monthlyRevenueChart = reportData?.revenueByMonth.map(item => ({
+  // Filter data mulai dari September (bulan ke-9)
+  const filterFromSeptember = (data: any[]) => {
+    return data.filter(item => {
+      // Ekstrak bulan dari format "September 2025" atau "Sep 2025"
+      const monthMatch = item.month.match(/(September|Sep|Oktober|Oct|November|Nov|Desember|Dec|Januari|Jan|Februari|Feb|Maret|Mar|April|Apr|Mei|May|Juni|Jun|Juli|Jul|Agustus|Aug)/i)
+      if (!monthMatch) return true
+      
+      const monthName = monthMatch[1].toLowerCase()
+      const monthOrder: Record<string, number> = {
+        'september': 9, 'sep': 9,
+        'oktober': 10, 'oct': 10,
+        'november': 11, 'nov': 11,
+        'desember': 12, 'dec': 12,
+        'januari': 1, 'jan': 1,
+        'februari': 2, 'feb': 2,
+        'maret': 3, 'mar': 3,
+        'april': 4, 'apr': 4,
+        'mei': 5, 'may': 5,
+        'juni': 6, 'jun': 6,
+        'juli': 7, 'jul': 7,
+        'agustus': 8, 'aug': 8
+      }
+      
+      const currentMonth = monthOrder[monthName]
+      return currentMonth >= 9 || currentMonth <= 12 // September onwards (and next year Jan-Dec if needed)
+    })
+  }
+
+  const filteredMonthlyData = filterFromSeptember(reportData?.revenueByMonth || [])
+
+  const monthlyRevenueChart = filteredMonthlyData.map(item => ({
     name: item.month,
     value: item.revenue
-  })) || []
+  }))
 
-  const monthlyProfitChart = reportData?.revenueByMonth.map(item => ({
+  const monthlyProfitChart = filteredMonthlyData.map(item => ({
     name: item.month,
     value: item.profit
-  })) || []
+  }))
 
   const topProductsChart = reportData?.topProfitableProducts.slice(0, 5).map(item => ({
     name: item.name,
@@ -535,7 +565,7 @@ export default function ProfitLossReportPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {reportData.revenueByMonth.slice(-6).reverse().map((month) => {
+                        {filteredMonthlyData.slice(-6).reverse().map((month) => {
                           const margin = month.revenue > 0 ? (month.profit / month.revenue) * 100 : 0
                           return (
                             <TableRow key={month.month} className="h-12">
