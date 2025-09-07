@@ -327,73 +327,81 @@ export default function ProfitLossReportPage() {
             </Card>
 
             {/* Charts Section */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <Card className="w-full">
-                <CardHeader>
-                  <CardTitle className="text-lg">Tren Revenue Bulanan</CardTitle>
-                  <CardDescription>
-                    Total pemasukan per bulan (sales + service fee)
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <SimpleChart
-                    title=""
-                    data={monthlyRevenueChart}
-                    type="line"
-                    formatValue="currency"
-                    height={300}
-                  />
-                </CardContent>
-              </Card>
-              
-              <Card className="w-full">
-                <CardHeader>
-                  <CardTitle className="text-lg">Tren Profit Bulanan</CardTitle>
-                  <CardDescription>
-                    Laba bersih per bulan (pemasukan - pembayaran toko)
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <SimpleChart
-                    title=""
-                    data={monthlyProfitChart}
-                    type="line"
-                    formatValue="currency"
-                    height={300}
-                  />
-                </CardContent>
-              </Card>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="h-fit">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-lg">Tren Revenue Bulanan</CardTitle>
+                    <CardDescription>
+                      Total pemasukan per bulan (sales + service fee)
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="h-[350px] w-full">
+                      <SimpleChart
+                        title=""
+                        data={monthlyRevenueChart}
+                        type="line"
+                        formatValue="currency"
+                        height={300}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="h-fit">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-lg">Tren Profit Bulanan</CardTitle>
+                    <CardDescription>
+                      Laba bersih per bulan (pemasukan - pembayaran toko)
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="h-[350px] w-full">
+                      <SimpleChart
+                        title=""
+                        data={monthlyProfitChart}
+                        type="line"
+                        formatValue="currency"
+                        height={300}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
 
             {/* Top Profitable Products */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <Card className="w-full">
-                <CardHeader>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="h-fit">
+                <CardHeader className="pb-4">
                   <CardTitle className="text-lg">Top 5 Produk Terlaris</CardTitle>
                   <CardDescription>
                     Produk dengan kontribusi profit tertinggi
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <SimpleChart
-                    title=""
-                    data={topProductsChart}
-                    type="bar"
-                    formatValue="currency"
-                    height={300}
-                  />
+                <CardContent className="pt-0">
+                  <div className="h-[350px] w-full">
+                    <SimpleChart
+                      title=""
+                      data={topProductsChart}
+                      type="bar"
+                      formatValue="currency"
+                      height={300}
+                    />
+                  </div>
                 </CardContent>
               </Card>
 
-              <Card className="w-full">
-                <CardHeader>
+              <Card className="h-fit">
+                <CardHeader className="pb-4">
                   <CardTitle className="text-lg">Produk Paling Menguntungkan</CardTitle>
                   <CardDescription>
                     Detail profitabilitas per produk
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
+                <CardContent className="pt-0">
+                  <div className="overflow-x-auto max-h-[350px] overflow-y-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -404,7 +412,7 @@ export default function ProfitLossReportPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {reportData.topProfitableProducts.slice(0, 5).map((product, index) => (
+                        {reportData.topProfitableProducts.slice(0, 8).map((product, index) => (
                           <TableRow key={product.id}>
                             <TableCell>
                               <Badge variant="outline">{index + 1}</Badge>
@@ -412,7 +420,7 @@ export default function ProfitLossReportPage() {
                             <TableCell className="font-medium text-sm">
                               {product.name}
                             </TableCell>
-                            <TableCell className="text-right font-semibold">
+                            <TableCell className="text-right font-semibold text-sm">
                               {formatCurrency(product.profit)}
                             </TableCell>
                             <TableCell className="text-right">
@@ -431,32 +439,32 @@ export default function ProfitLossReportPage() {
 
             {/* Store Profitability */}
             <Card className="w-full">
-              <CardHeader>
+              <CardHeader className="pb-4">
                 <CardTitle className="text-lg">Profitabilitas per Toko</CardTitle>
                 <CardDescription>
                   Kontribusi keuntungan dari masing-masing toko berdasarkan sales - cost
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+              <CardContent className="pt-0">
+                <div className="space-y-3 max-h-[400px] overflow-y-auto">
                   {reportData.profitByStore.map((store, index) => {
                     const margin = store.revenue > 0 ? (store.profit / store.revenue) * 100 : 0
                     return (
-                      <div key={store.storeId} className="flex items-center justify-between p-4 border rounded-lg dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-                        <div className="flex items-center space-x-4">
-                          <Badge variant="secondary" className="text-xs min-w-[32px] h-6 flex items-center justify-center">
+                      <div key={store.storeId} className="flex items-center justify-between p-4 border rounded-lg dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 min-h-[80px]">
+                        <div className="flex items-center space-x-4 flex-1">
+                          <Badge variant="secondary" className="text-xs min-w-[32px] h-6 flex items-center justify-center flex-shrink-0">
                             #{index + 1}
                           </Badge>
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">
                               {store.storeName}
                             </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                               Revenue: {formatCurrency(store.revenue)} • Cost: {formatCurrency(store.costs)}
                             </p>
                           </div>
                         </div>
-                        <div className="text-right min-w-[100px]">
+                        <div className="text-right min-w-[120px] flex-shrink-0">
                           <p className={`font-semibold text-sm ${store.profit > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                             {formatCurrency(store.profit)}
                           </p>
@@ -473,13 +481,13 @@ export default function ProfitLossReportPage() {
 
             {/* Monthly Detailed Table */}
             <Card className="w-full">
-              <CardHeader>
+              <CardHeader className="pb-4">
                 <CardTitle className="text-lg">Detail Bulanan</CardTitle>
                 <CardDescription>
                   Breakdown pemasukan (sales + service fee), pembayaran toko, dan laba bersih per bulan
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
@@ -495,7 +503,7 @@ export default function ProfitLossReportPage() {
                       {reportData.revenueByMonth.slice(-6).reverse().map((month) => {
                         const margin = month.revenue > 0 ? (month.profit / month.revenue) * 100 : 0
                         return (
-                          <TableRow key={month.month}>
+                          <TableRow key={month.month} className="h-12">
                             <TableCell className="font-medium text-sm">
                               {month.month}
                             </TableCell>
