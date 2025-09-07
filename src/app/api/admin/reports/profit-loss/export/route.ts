@@ -74,6 +74,7 @@ export async function GET(request: Request) {
     // Transform data for export
     const transactions = orders.map(order => ({
       id: order.id,
+      orderNumber: order.orderNumber, // Add orderNumber for display
       createdAt: order.createdAt,
       pickupDate: order.pickupDate,
       customerName: order.user?.name || 'Guest',

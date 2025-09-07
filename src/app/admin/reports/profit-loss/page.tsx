@@ -154,7 +154,7 @@ export default function ProfitLossReportPage() {
         
         const transactionRows = detailData.transactions.map((order: any) => {
           return order.items.map((item: any) => [
-            safeString(order.id),
+            safeString(order.orderNumber),
             new Date(order.createdAt).toLocaleDateString('id-ID'),
             order.pickupDate ? new Date(order.pickupDate).toLocaleDateString('id-ID') : 'Belum Pickup',
             safeString(order.customerName),
@@ -202,7 +202,7 @@ export default function ProfitLossReportPage() {
           const serviceFeePerStore = 25000 // Rp 25.000 per toko
           
           return Object.entries(storeGroups).map(([storeId, storeData]: [string, any]) => [
-            order.id,
+            order.orderNumber,
             new Date(order.createdAt).toLocaleDateString('id-ID'),
             order.customerName || 'Customer',
             storeData.storeName,
