@@ -292,6 +292,18 @@ export async function GET(request: Request) {
       }
     }
 
+    // Debug logging untuk memverifikasi perhitungan
+    console.log('=== PROFIT-LOSS API CALCULATION DEBUG ===')
+    console.log('Sales Revenue (totalRevenue):', totalRevenue)
+    console.log('Service Fee Revenue:', serviceFeeRevenue)
+    console.log('Total Income (sales + service):', totalIncome)
+    console.log('Store Costs:', storeCosts)
+    console.log('Net Profit:', netProfit)
+    console.log('Profit Margin:', profitMargin)
+    console.log('Total Orders Processed:', orders.length)
+    console.log('Sample Product Data:', topProfitableProducts.slice(0, 2))
+    console.log('==========================================')
+
     return NextResponse.json(reportData)
   } catch (error) {
     console.error('Profit loss report error:', error)

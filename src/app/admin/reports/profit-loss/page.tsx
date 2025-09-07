@@ -46,6 +46,17 @@ export default function ProfitLossReportPage() {
       }
       
       const data = await response.json()
+      
+      // Debug logging untuk memeriksa akurasi data
+      console.log('=== PROFIT-LOSS API RESPONSE DEBUG ===')
+      console.log('Total Revenue:', data.totalRevenue)
+      console.log('Total Costs:', data.totalCosts)
+      console.log('Net Profit:', data.netProfit)
+      console.log('Profit Margin:', data.profitMargin)
+      console.log('Breakdown:', data.breakdown)
+      console.log('Top 3 Products:', data.topProfitableProducts?.slice(0, 3))
+      console.log('========================================')
+      
       setReportData(data)
     } catch (error) {
       console.error('Error fetching profit loss report:', error)
