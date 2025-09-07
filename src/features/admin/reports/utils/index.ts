@@ -28,9 +28,9 @@ export const formatShortDate = (date: Date): string => {
 }
 
 export const getDefaultDateRange = (): DateRange => {
-  // Set default range untuk periode pickup: 5 September 2025 - 7 September 2025
-  const from = new Date('2025-09-05')
-  const to = new Date('2025-09-07')
+  // Set default range untuk last 30 days 
+  const to = new Date()
+  const from = subDays(to, 30)
   return { from, to }
 }
 
