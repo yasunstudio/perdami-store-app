@@ -231,11 +231,11 @@ export default function ProfitLossReportPage() {
             {/* Key Metrics */}
             <MetricsGrid columns={4}>
               <MetricCard
-                title="Total Revenue"
+                title="Total Pemasukan"
                 value={reportData.totalRevenue}
                 format="currency"
                 icon={DollarSign}
-                description="Pendapatan kotor dari penjualan"
+                description="Penjualan + biaya ongkos kirim"
                 trend={{
                   value: 5.2,
                   label: 'vs bulan lalu',
@@ -243,11 +243,11 @@ export default function ProfitLossReportPage() {
                 }}
               />
               <MetricCard
-                title="Total Biaya"
+                title="Pembayaran ke Toko"
                 value={reportData.totalCosts}
                 format="currency"
                 icon={TrendingDown}
-                description="Cost of Goods Sold (COGS)"
+                description="Biaya yang dibayar ke toko"
                 trend={{
                   value: 2.1,
                   label: 'vs bulan lalu',
@@ -259,7 +259,7 @@ export default function ProfitLossReportPage() {
                 value={reportData.netProfit}
                 format="currency"
                 icon={reportData.netProfit > 0 ? TrendingUp : TrendingDown}
-                description="Service fee (pendapatan platform)"
+                description="Pemasukan - pembayaran ke toko"
                 trend={{
                   value: Math.abs(reportData.profitMargin),
                   label: 'margin keuntungan',
@@ -275,41 +275,42 @@ export default function ProfitLossReportPage() {
               />
             </MetricsGrid>
 
-            {/* Breakdown Card */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Breakdown Keuangan</CardTitle>
                 <CardDescription>
-                  Rincian komponen pendapatan dan biaya
+                  Rincian pemasukan dan pengeluaran platform
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Total Revenue</span>
-                    <span className="font-semibold">{formatCurrency(reportData.totalRevenue)}</span>
+                    <span className="text-sm font-medium">Hasil Penjualan</span>
+                    <span className="font-semibold text-green-600 dark:text-green-400">
+                      +{formatCurrency((reportData as any).breakdown?.salesRevenue || 0)}
+                    </span>
                   </div>
-                  <Progress value={100} className="h-2" />
+                  <Progress value={((reportData as any).breakdown?.salesRevenue || 0) / (reportData as any).breakdown?.totalIncome * 100} className="h-2" />
                   
                   <div className="flex justify-between items-center">
-                    <span className="text-sm">Cost of Goods Sold (COGS)</span>
-                    <span className="text-red-600 dark:text-red-400">
-                      -{formatCurrency((reportData as any).breakdown?.costOfGoodsSold || 0)}
+                    <span className="text-sm">Biaya Ongkos Kirim</span>
+                    <span className="text-green-600 dark:text-green-400">
+                      +{formatCurrency((reportData as any).breakdown?.serviceFeeRevenue || 0)}
                     </span>
                   </div>
                   <Progress 
-                    value={((reportData as any).breakdown?.costOfGoodsSold || 0) / reportData.totalRevenue * 100} 
+                    value={((reportData as any).breakdown?.serviceFeeRevenue || 0) / (reportData as any).breakdown?.totalIncome * 100} 
                     className="h-2" 
                   />
                   
                   <div className="flex justify-between items-center">
-                    <span className="text-sm">Service Fee (Pendapatan Platform)</span>
-                    <span className="text-green-600 dark:text-green-400">
-                      +{formatCurrency((reportData as any).breakdown?.serviceFeeTotal || 0)}
+                    <span className="text-sm">Pembayaran ke Toko</span>
+                    <span className="text-red-600 dark:text-red-400">
+                      -{formatCurrency((reportData as any).breakdown?.storeCosts || 0)}
                     </span>
                   </div>
                   <Progress 
-                    value={((reportData as any).breakdown?.serviceFeeTotal || 0) / reportData.totalRevenue * 100} 
+                    value={((reportData as any).breakdown?.storeCosts || 0) / (reportData as any).breakdown?.totalIncome * 100} 
                     className="h-2" 
                   />
                   

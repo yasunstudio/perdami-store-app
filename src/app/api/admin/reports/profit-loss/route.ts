@@ -60,22 +60,26 @@ export async function GET(request: Request) {
       }
     })
 
-    // Calculate revenue and costs
-    let totalRevenue = 0
-    let totalCosts = 0
+    // Calculate revenue and costs based on correct business model
+    let totalRevenue = 0 // Hasil penjualan ke customer
+    let serviceFeeRevenue = 0 // Biaya ongkos kirim (juga pemasukan)
+    let storeCosts = 0 // Pembayaran ke toko (satu-satunya pengeluaran)
     const productProfitability = new Map()
     const storeProfitability = new Map()
 
     orders.forEach(order => {
+      // Service fee adalah pemasukan tambahan
+      serviceFeeRevenue += order.serviceFee || 0
+      
       order.orderItems.forEach(item => {
         if (!item.bundle) return
 
-        const revenue = item.totalPrice
-        const cost = item.quantity * (item.bundle.costPrice || 0)
-        const profit = revenue - cost
+        const revenue = item.totalPrice // Penjualan ke customer
+        const storeCost = item.quantity * (item.bundle.costPrice || 0) // Pembayaran ke toko
+        const profit = revenue - storeCost
 
         totalRevenue += revenue
-        totalCosts += cost
+        storeCosts += storeCost
 
         // Product profitability
         const productKey = item.bundle.id
@@ -88,7 +92,7 @@ export async function GET(request: Request) {
           margin: 0
         }
         existingProduct.revenue += revenue
-        existingProduct.cost += cost
+        existingProduct.cost += storeCost
         existingProduct.profit += profit
         existingProduct.margin = existingProduct.revenue > 0 ? 
           (existingProduct.profit / existingProduct.revenue) * 100 : 0
@@ -105,20 +109,20 @@ export async function GET(request: Request) {
             profit: 0
           }
           existingStore.revenue += revenue
-          existingStore.costs += cost
+          existingStore.costs += storeCost
           existingStore.profit += profit
           storeProfitability.set(storeKey, existingStore)
         }
       })
     })
 
-    const grossProfit = totalRevenue - totalCosts
-    
-    // Business model: Revenue from customers - Cost to stores = Gross Profit
-    // Service fee is our main income source (no operational costs tracking)
-    const serviceFeeTotal = orders.reduce((sum, order) => sum + (order.serviceFee || 0), 0)
-    const netProfit = serviceFeeTotal // Service fee is our net profit
-    const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0
+    // Business calculation:
+    // Total Income = Sales Revenue + Service Fee Revenue
+    // Total Costs = Store Costs only
+    // Net Profit = Total Income - Total Costs
+    const totalIncome = totalRevenue + serviceFeeRevenue
+    const netProfit = totalIncome - storeCosts
+    const profitMargin = totalIncome > 0 ? (netProfit / totalIncome) * 100 : 0
 
     // Revenue by month for the last 12 months
     const monthlyData = new Map()
@@ -174,10 +178,10 @@ export async function GET(request: Request) {
       .sort((a, b) => b.profit - a.profit)
 
     const reportData = {
-      totalRevenue,
-      totalCosts, // Only COGS, no operational costs
-      grossProfit,
-      netProfit, // Service fee total
+      totalRevenue: totalIncome, // Sales + Service Fee
+      totalCosts: storeCosts, // Only store payments
+      grossProfit: totalRevenue, // Sales revenue only
+      netProfit, // Total income - store costs
       profitMargin,
       revenueByMonth,
       topProfitableProducts,
@@ -187,9 +191,11 @@ export async function GET(request: Request) {
         to: format(toDate, 'yyyy-MM-dd')
       },
       breakdown: {
-        costOfGoodsSold: totalCosts,
-        serviceFeeTotal, // Our main income source
-        grossProfitMargin: totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0
+        salesRevenue: totalRevenue, // Penjualan ke customer
+        serviceFeeRevenue, // Biaya ongkos kirim
+        storeCosts, // Pembayaran ke toko
+        totalIncome, // Sales + Service Fee
+        profitMargin: totalIncome > 0 ? (netProfit / totalIncome) * 100 : 0
       }
     }
 
