@@ -108,24 +108,45 @@ export async function GET(request: Request) {
           margin: 0,
           quantity: 0,
           costPrice: item.bundle.costPrice || 0, // Bundle cost price (should be consistent)
-          totalUnitPriceSum: 0, // Sum of all unit prices for averaging
-          transactionCount: 0, // Number of transactions for this product
-          avgUnitPrice: 0 // Average unit price across all transactions
+          transactions: [] // Store all transaction details for verification
         }
+        
+        // Add this transaction to the list
+        existingProduct.transactions.push({
+          orderId: order.id,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice,
+          costPrice: item.bundle.costPrice
+        })
         
         existingProduct.revenue += revenue
         existingProduct.cost += storeCost
         existingProduct.profit += profit
         existingProduct.quantity += item.quantity
-        existingProduct.totalUnitPriceSum += (item.unitPrice || 0) * item.quantity
-        existingProduct.transactionCount += 1
         
-        // Calculate average unit price based on total revenue and quantity
+        // Calculate average unit price as total revenue divided by total quantity
         existingProduct.avgUnitPrice = existingProduct.quantity > 0 ? 
           existingProduct.revenue / existingProduct.quantity : 0
           
         existingProduct.margin = existingProduct.revenue > 0 ? 
           (existingProduct.profit / existingProduct.revenue) * 100 : 0
+          
+        // Debug logging for problematic products
+        if (item.bundle.name && item.bundle.name.includes('Bebek Frozen')) {
+          console.log(`Product aggregation for ${item.bundle.name}:`, {
+            totalRevenue: existingProduct.revenue,
+            totalQuantity: existingProduct.quantity,
+            calculatedAvgPrice: existingProduct.avgUnitPrice,
+            transactionCount: existingProduct.transactions.length,
+            lastTransaction: {
+              unitPrice: item.unitPrice,
+              quantity: item.quantity,
+              totalPrice: item.totalPrice
+            }
+          })
+        }
+        
         productProfitability.set(productKey, existingProduct)
 
         // Store profitability
