@@ -257,7 +257,7 @@ export default function ProfitLossReportPage() {
         }
       >
         {reportData && (
-          <div className="space-y-8">
+          <div className="space-y-6">
             {/* Key Metrics */}
             <MetricsGrid columns={4}>
               <MetricCard
@@ -357,7 +357,7 @@ export default function ProfitLossReportPage() {
             </Card>
 
             {/* Charts Section */}
-            <div className="space-y-8">
+            <div className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader className="pb-4">
@@ -500,7 +500,7 @@ export default function ProfitLossReportPage() {
             </div>
 
             {/* Store Profitability */}
-            <Card>
+            <Card className="w-full">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg">Profitabilitas per Toko</CardTitle>
                 <CardDescription>
@@ -544,7 +544,7 @@ export default function ProfitLossReportPage() {
             </Card>
 
             {/* Monthly Detailed Table */}
-            <Card>
+            <Card className="w-full">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg">Detail Bulanan</CardTitle>
                 <CardDescription>
