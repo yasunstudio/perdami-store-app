@@ -153,15 +153,21 @@ export async function GET(request: Request) {
         if (monthlyData.has(monthKey)) {
           const monthData = monthlyData.get(monthKey)
           
+          // Add service fee to monthly revenue
+          const monthlyServiceFee = order.serviceFee || 0
+          
           order.orderItems.forEach(item => {
             if (!item.bundle) return
-            const revenue = item.totalPrice
-            const cost = item.quantity * (item.bundle.costPrice || 0)
+            const salesRevenue = item.totalPrice // Penjualan ke customer
+            const storeCost = item.quantity * (item.bundle.costPrice || 0) // Pembayaran ke toko
             
-            monthData.revenue += revenue
-            monthData.costs += cost
-            monthData.profit = monthData.revenue - monthData.costs
+            monthData.revenue += salesRevenue
+            monthData.costs += storeCost
           })
+          
+          // Add service fee to monthly revenue and recalculate profit
+          monthData.revenue += monthlyServiceFee
+          monthData.profit = monthData.revenue - monthData.costs
         }
       }
     })

@@ -327,108 +327,140 @@ export default function ProfitLossReportPage() {
             </Card>
 
             {/* Charts Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <SimpleChart
-                title="Tren Revenue Bulanan"
-                description="Pendapatan per bulan (12 bulan terakhir)"
-                data={monthlyRevenueChart}
-                type="line"
-                formatValue="currency"
-                height={300}
-              />
-              <SimpleChart
-                title="Tren Profit Bulanan"
-                description="Keuntungan bersih per bulan"
-                data={monthlyProfitChart}
-                type="line"
-                formatValue="currency"
-                height={300}
-              />
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <Card className="w-full">
+                <CardHeader>
+                  <CardTitle className="text-lg">Tren Revenue Bulanan</CardTitle>
+                  <CardDescription>
+                    Total pemasukan per bulan (sales + service fee)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <SimpleChart
+                    title=""
+                    data={monthlyRevenueChart}
+                    type="line"
+                    formatValue="currency"
+                    height={300}
+                  />
+                </CardContent>
+              </Card>
+              
+              <Card className="w-full">
+                <CardHeader>
+                  <CardTitle className="text-lg">Tren Profit Bulanan</CardTitle>
+                  <CardDescription>
+                    Laba bersih per bulan (pemasukan - pembayaran toko)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <SimpleChart
+                    title=""
+                    data={monthlyProfitChart}
+                    type="line"
+                    formatValue="currency"
+                    height={300}
+                  />
+                </CardContent>
+              </Card>
             </div>
 
             {/* Top Profitable Products */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Produk Paling Menguntungkan</CardTitle>
-                <CardDescription>
-                  Produk dengan kontribusi keuntungan tertinggi
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <Card className="w-full">
+                <CardHeader>
+                  <CardTitle className="text-lg">Top 5 Produk Terlaris</CardTitle>
+                  <CardDescription>
+                    Produk dengan kontribusi profit tertinggi
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
                   <SimpleChart
-                    title="Top 5 Produk"
+                    title=""
                     data={topProductsChart}
                     type="bar"
                     formatValue="currency"
-                    height={250}
+                    height={300}
                   />
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-12">#</TableHead>
-                        <TableHead>Produk</TableHead>
-                        <TableHead className="text-right">Profit</TableHead>
-                        <TableHead className="text-right">Margin</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {reportData.topProfitableProducts.slice(0, 5).map((product, index) => (
-                        <TableRow key={product.id}>
-                          <TableCell>
-                            <Badge variant="outline">{index + 1}</Badge>
-                          </TableCell>
-                          <TableCell className="font-medium text-sm">
-                            {product.name}
-                          </TableCell>
-                          <TableCell className="text-right font-semibold">
-                            {formatCurrency(product.profit)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Badge variant={product.margin > 20 ? 'default' : product.margin > 10 ? 'secondary' : 'destructive'}>
-                              {formatPercentage(product.margin)}
-                            </Badge>
-                          </TableCell>
+                </CardContent>
+              </Card>
+
+              <Card className="w-full">
+                <CardHeader>
+                  <CardTitle className="text-lg">Produk Paling Menguntungkan</CardTitle>
+                  <CardDescription>
+                    Detail profitabilitas per produk
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-12">#</TableHead>
+                          <TableHead>Produk</TableHead>
+                          <TableHead className="text-right">Profit</TableHead>
+                          <TableHead className="text-right">Margin</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
+                      </TableHeader>
+                      <TableBody>
+                        {reportData.topProfitableProducts.slice(0, 5).map((product, index) => (
+                          <TableRow key={product.id}>
+                            <TableCell>
+                              <Badge variant="outline">{index + 1}</Badge>
+                            </TableCell>
+                            <TableCell className="font-medium text-sm">
+                              {product.name}
+                            </TableCell>
+                            <TableCell className="text-right font-semibold">
+                              {formatCurrency(product.profit)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Badge variant={product.margin > 20 ? 'default' : product.margin > 10 ? 'secondary' : 'destructive'}>
+                                {formatPercentage(product.margin)}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
             {/* Store Profitability */}
-            <Card>
+            <Card className="w-full">
               <CardHeader>
                 <CardTitle className="text-lg">Profitabilitas per Toko</CardTitle>
                 <CardDescription>
-                  Kontribusi keuntungan dari masing-masing toko
+                  Kontribusi keuntungan dari masing-masing toko berdasarkan sales - cost
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {reportData.profitByStore.map((store, index) => {
                     const margin = store.revenue > 0 ? (store.profit / store.revenue) * 100 : 0
                     return (
-                      <div key={store.storeId} className="flex items-center justify-between p-4 border rounded-lg dark:border-gray-700">
-                        <div className="flex items-center space-x-3">
-                          <Badge variant="secondary" className="text-xs">
+                      <div key={store.storeId} className="flex items-center justify-between p-4 border rounded-lg dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                        <div className="flex items-center space-x-4">
+                          <Badge variant="secondary" className="text-xs min-w-[32px] h-6 flex items-center justify-center">
                             #{index + 1}
                           </Badge>
                           <div>
-                            <p className="font-medium text-gray-900 dark:text-gray-100">
+                            <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">
                               {store.storeName}
                             </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              Revenue: {formatCurrency(store.revenue)}
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              Revenue: {formatCurrency(store.revenue)} • Cost: {formatCurrency(store.costs)}
                             </p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className={`font-semibold ${store.profit > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                        <div className="text-right min-w-[100px]">
+                          <p className={`font-semibold text-sm ${store.profit > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                             {formatCurrency(store.profit)}
                           </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
                             Margin: {formatPercentage(margin)}
                           </p>
                         </div>
@@ -440,51 +472,56 @@ export default function ProfitLossReportPage() {
             </Card>
 
             {/* Monthly Detailed Table */}
-            <Card>
+            <Card className="w-full">
               <CardHeader>
                 <CardTitle className="text-lg">Detail Bulanan</CardTitle>
                 <CardDescription>
-                  Breakdown revenue, cost, dan profit per bulan
+                  Breakdown pemasukan (sales + service fee), pembayaran toko, dan laba bersih per bulan
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Bulan</TableHead>
-                      <TableHead className="text-right">Revenue</TableHead>
-                      <TableHead className="text-right">Costs</TableHead>
-                      <TableHead className="text-right">Profit</TableHead>
-                      <TableHead className="text-right">Margin</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {reportData.revenueByMonth.slice(-6).reverse().map((month) => {
-                      const margin = month.revenue > 0 ? (month.profit / month.revenue) * 100 : 0
-                      return (
-                        <TableRow key={month.month}>
-                          <TableCell className="font-medium">
-                            {month.month}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(month.revenue)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(month.costs)}
-                          </TableCell>
-                          <TableCell className={`text-right font-semibold ${month.profit > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                            {formatCurrency(month.profit)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Badge variant={margin > 20 ? 'default' : margin > 10 ? 'secondary' : 'destructive'}>
-                              {formatPercentage(margin)}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })}
-                  </TableBody>
-                </Table>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[100px]">Bulan</TableHead>
+                        <TableHead className="text-right min-w-[120px]">Pemasukan</TableHead>
+                        <TableHead className="text-right min-w-[120px]">Pembayaran Toko</TableHead>
+                        <TableHead className="text-right min-w-[120px]">Laba Bersih</TableHead>
+                        <TableHead className="text-right min-w-[80px]">Margin</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {reportData.revenueByMonth.slice(-6).reverse().map((month) => {
+                        const margin = month.revenue > 0 ? (month.profit / month.revenue) * 100 : 0
+                        return (
+                          <TableRow key={month.month}>
+                            <TableCell className="font-medium text-sm">
+                              {month.month}
+                            </TableCell>
+                            <TableCell className="text-right text-sm">
+                              {formatCurrency(month.revenue)}
+                            </TableCell>
+                            <TableCell className="text-right text-sm">
+                              {formatCurrency(month.costs)}
+                            </TableCell>
+                            <TableCell className={`text-right font-semibold text-sm ${month.profit > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                              {formatCurrency(month.profit)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Badge 
+                                variant={margin > 20 ? 'default' : margin > 10 ? 'secondary' : 'destructive'}
+                                className="text-xs"
+                              >
+                                {formatPercentage(margin)}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           </div>
