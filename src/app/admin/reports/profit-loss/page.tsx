@@ -227,8 +227,8 @@ export default function ProfitLossReportPage() {
             const revenueContribution = (product.revenue / reportData.totalRevenue * 100)
             const performance = product.margin > 30 ? 'Excellent' : product.margin > 20 ? 'Good' : product.margin > 10 ? 'Average' : 'Poor'
             const quantity = (product as any).quantity || 0 // Use real quantity from database
-            const avgCostPrice = quantity > 0 ? product.cost / quantity : 0
-            const avgSellingPrice = quantity > 0 ? product.revenue / quantity : 0
+            const costPrice = (product as any).costPrice || 0 // Use actual cost price from bundle
+            const unitPrice = (product as any).unitPrice || 0 // Use actual unit price from order
             return [
               (index + 1).toString(),
               product.name,
@@ -238,8 +238,8 @@ export default function ProfitLossReportPage() {
               formatPercentageForExcel(product.margin),
               formatPercentageForExcel(revenueContribution),
               quantity,
-              formatNumberForExcel(avgCostPrice),
-              formatNumberForExcel(avgSellingPrice),
+              formatNumberForExcel(costPrice),
+              formatNumberForExcel(unitPrice),
               performance
             ]
           }),

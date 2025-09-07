@@ -90,12 +90,17 @@ export async function GET(request: Request) {
           cost: 0,
           profit: 0,
           margin: 0,
-          quantity: 0 // Add quantity tracking
+          quantity: 0, // Add quantity tracking
+          costPrice: item.bundle.costPrice || 0, // Store actual cost price from bundle
+          unitPrice: item.unitPrice || 0 // Store actual unit price from order item
         }
         existingProduct.revenue += revenue
         existingProduct.cost += storeCost
         existingProduct.profit += profit
         existingProduct.quantity += item.quantity // Track total quantity sold
+        // Keep the original prices (don't average them as they should be consistent)
+        existingProduct.costPrice = item.bundle.costPrice || 0
+        existingProduct.unitPrice = item.unitPrice || 0
         existingProduct.margin = existingProduct.revenue > 0 ? 
           (existingProduct.profit / existingProduct.revenue) * 100 : 0
         productProfitability.set(productKey, existingProduct)
