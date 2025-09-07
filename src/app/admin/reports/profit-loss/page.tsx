@@ -149,7 +149,7 @@ export default function ProfitLossReportPage() {
         const transactionHeaders = [
           ['DETAIL TRANSAKSI PENJUALAN'],
           [''],
-          ['Order ID', 'Tanggal Order', 'Tanggal Pickup', 'Nama Customer', 'Nama Produk', 'Nama Toko', 'Jumlah Qty', 'Harga Jual Satuan (IDR)', 'Subtotal Produk (IDR)', 'Harga Beli Satuan (IDR)', 'Subtotal Cost (IDR)', 'Keuntungan Item (IDR)', 'Margin Profit (%)', 'Status Order']
+          ['No Order', 'Tanggal Order', 'Tanggal Pickup', 'Nama Customer', 'Nama Produk', 'Nama Toko', 'Jumlah Qty', 'Harga Jual Satuan (IDR)', 'Subtotal Produk (IDR)', 'Harga Beli Satuan (IDR)', 'Subtotal Cost (IDR)', 'Keuntungan Item (IDR)', 'Margin Profit (%)', 'Status Order']
         ]
         
         const transactionRows = detailData.transactions.map((order: any) => {
@@ -181,7 +181,7 @@ export default function ProfitLossReportPage() {
         const serviceFeeHeaders = [
           ['ANALISIS ONGKOS KIRIM PER TOKO'],
           [''],
-          ['Order ID', 'Tanggal Order', 'Customer', 'Toko', 'Jumlah Item di Toko', 'Ongkos Kirim (IDR)', 'Status Order']
+          ['No Order', 'Tanggal Order', 'Customer', 'Toko', 'Jumlah Item di Toko', 'Ongkos Kirim (IDR)', 'Status Order']
         ]
         
         const serviceFeeRows = detailData.transactions.map((order: any) => {
