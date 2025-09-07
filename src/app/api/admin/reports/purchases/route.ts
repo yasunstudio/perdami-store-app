@@ -24,8 +24,7 @@ export async function GET(request: Request) {
 
     // Build where clause for orders (customer purchases)
     const whereClause: any = {
-      orderStatus: 'COMPLETED',
-      pickupStatus: 'PICKED_UP', // Only include picked up orders
+      orderStatus: 'COMPLETED', // Only include completed orders
       pickupDate: {
         gte: startOfDay(fromDate),
         lte: endOfDay(toDate)
