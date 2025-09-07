@@ -246,11 +246,28 @@ export async function GET(request: Request) {
     const revenueByMonth = Array.from(monthlyData.values())
 
     // Top profitable products - show all products, not just top 10
+    // Calculate final margin for each product after all transactions are processed
     const topProfitableProducts = Array.from(productProfitability.values())
+      .map(product => {
+        // Calculate accurate margin: (profit / revenue) * 100
+        const margin = product.revenue > 0 ? (product.profit / product.revenue) * 100 : 0
+        return {
+          ...product,
+          margin
+        }
+      })
       .sort((a, b) => b.profit - a.profit)
 
-    // Profit by store
+    // Profit by store - calculate accurate margins
     const profitByStore = Array.from(storeProfitability.values())
+      .map(store => {
+        // Calculate accurate margin for store
+        const margin = store.revenue > 0 ? (store.profit / store.revenue) * 100 : 0
+        return {
+          ...store,
+          margin
+        }
+      })
       .sort((a, b) => b.profit - a.profit)
 
     const reportData = {
