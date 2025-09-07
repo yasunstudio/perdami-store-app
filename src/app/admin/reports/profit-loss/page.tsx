@@ -80,18 +80,24 @@ export default function ProfitLossReportPage() {
       
       // Helper functions for Excel export formatting
       const formatNumberForExcel = (amount: number): number => {
+        if (isNaN(amount) || !isFinite(amount)) return 0
         return Math.round(amount) // Return raw number for Excel calculations
       }
       
       const formatPercentageForExcel = (value: number): number => {
+        if (isNaN(value) || !isFinite(value)) return 0
         return Number((value / 100).toFixed(4)) // Convert to decimal for Excel percentage format
       }
       
-      const replaceNA = (value: any, defaultValue: any = 0): any => {
-        if (value === 'N/A' || value === null || value === undefined || value === '') {
-          return defaultValue
-        }
-        return value
+      const safeString = (value: any): string => {
+        if (value === null || value === undefined) return ''
+        return String(value)
+      }
+      
+      const safeNumber = (value: any): number => {
+        const num = Number(value)
+        if (isNaN(num) || !isFinite(num)) return 0
+        return num
       }
       
       // Fetch detailed transaction data for export
@@ -113,22 +119,22 @@ export default function ProfitLossReportPage() {
       // Sheet 1: Executive Summary
       const executiveSummary = [
         ['LAPORAN RUGI LABA KOMPREHENSIF'],
-        ['PT. Dharma Wanita Perdami'],
+        ['Dharma Wanita Perdami'],
         [''],
         ['INFORMASI LAPORAN'],
         ['Periode Analisis', `${filters.dateRange.from.toLocaleDateString('id-ID')} - ${filters.dateRange.to.toLocaleDateString('id-ID')}`],
         ['Tanggal Export', new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })],
         ['Filter Toko', filters.storeId ? stores.find(s => s.id === filters.storeId)?.name || 'Toko Tertentu' : 'Semua Toko'],
-        ['Total Transaksi', replaceNA((detailData.summary as any)?.totalOrders, reportData.topProfitableProducts.length || 0)],
+        ['Total Transaksi', safeNumber((detailData.summary as any)?.totalOrders) || reportData.topProfitableProducts.length || 0],
         [''],
         ['RINGKASAN EKSEKUTIF'],
         ['Metrik', 'Nilai (IDR)', 'Persentase', 'Status'],
-        ['Total Pemasukan', formatCurrency(reportData.totalRevenue), formatPercentage(100), reportData.totalRevenue > 0 ? 'Positif' : 'Negatif'],
-        ['  - Sales Revenue', formatCurrency((detailData.summary as any)?.totalSalesRevenue || reportData.totalRevenue * 0.9), formatPercentage(((detailData.summary as any)?.totalSalesRevenue || reportData.totalRevenue * 0.9) / reportData.totalRevenue * 100), 'Komponen Utama'],
-        ['  - Service Fee', formatCurrency((detailData.summary as any)?.totalServiceFee || reportData.totalRevenue * 0.1), formatPercentage(((detailData.summary as any)?.totalServiceFee || reportData.totalRevenue * 0.1) / reportData.totalRevenue * 100), 'Pendapatan Jasa'],
-        ['Total Pengeluaran', formatCurrency(reportData.totalCosts), formatPercentage(reportData.totalCosts / reportData.totalRevenue * 100), 'Pembayaran ke Toko'],
-        ['Laba Bersih', formatCurrency(reportData.netProfit), formatPercentage(reportData.netProfit / reportData.totalRevenue * 100), reportData.netProfit > 0 ? 'PROFIT' : 'LOSS'],
-        ['Margin Keuntungan', formatPercentage(reportData.profitMargin), '', reportData.profitMargin > 20 ? 'Sangat Baik' : reportData.profitMargin > 10 ? 'Baik' : 'Perlu Perbaikan'],
+        ['Total Pemasukan', formatNumberForExcel(safeNumber(reportData.totalRevenue)), formatPercentageForExcel(100), reportData.totalRevenue > 0 ? 'Positif' : 'Negatif'],
+        ['  - Sales Revenue', formatNumberForExcel(safeNumber((detailData.summary as any)?.totalSalesRevenue) || safeNumber(reportData.totalRevenue) * 0.9), formatPercentageForExcel((safeNumber((detailData.summary as any)?.totalSalesRevenue) || safeNumber(reportData.totalRevenue) * 0.9) / safeNumber(reportData.totalRevenue) * 100), 'Komponen Utama'],
+        ['  - Service Fee', formatNumberForExcel(safeNumber((detailData.summary as any)?.totalServiceFee) || safeNumber(reportData.totalRevenue) * 0.1), formatPercentageForExcel((safeNumber((detailData.summary as any)?.totalServiceFee) || safeNumber(reportData.totalRevenue) * 0.1) / safeNumber(reportData.totalRevenue) * 100), 'Pendapatan Jasa'],
+        ['Total Pengeluaran', formatNumberForExcel(safeNumber(reportData.totalCosts)), formatPercentageForExcel(safeNumber(reportData.totalCosts) / safeNumber(reportData.totalRevenue) * 100), 'Pembayaran ke Toko'],
+        ['Laba Bersih', formatNumberForExcel(safeNumber(reportData.netProfit)), formatPercentageForExcel(safeNumber(reportData.netProfit) / safeNumber(reportData.totalRevenue) * 100), reportData.netProfit > 0 ? 'PROFIT' : 'LOSS'],
+        ['Margin Keuntungan', formatPercentageForExcel(safeNumber(reportData.profitMargin)), '', reportData.profitMargin > 20 ? 'Sangat Baik' : reportData.profitMargin > 10 ? 'Baik' : 'Perlu Perbaikan'],
         [''],
         ['KESIMPULAN BISNIS'],
         ['Status Profitabilitas', reportData.netProfit > 0 ? 'MENGUNTUNGKAN' : 'MERUGI'],
@@ -239,9 +245,9 @@ export default function ProfitLossReportPage() {
           }),
           [''],
           ['INSIGHTS PRODUK'],
-          ['Top Performer', replaceNA(reportData.topProfitableProducts[0]?.name, 'Tidak ada data')],
-          ['Highest Margin', replaceNA(reportData.topProfitableProducts.sort((a, b) => b.margin - a.margin)[0]?.name, 'Tidak ada data')],
-          ['Lowest Margin', replaceNA(reportData.topProfitableProducts.sort((a, b) => a.margin - b.margin)[0]?.name, 'Tidak ada data')],
+          ['Top Performer', reportData.topProfitableProducts[0]?.name || 'Tidak ada data'],
+          ['Highest Margin', reportData.topProfitableProducts.sort((a, b) => b.margin - a.margin)[0]?.name || 'Tidak ada data'],
+          ['Lowest Margin', reportData.topProfitableProducts.sort((a, b) => a.margin - b.margin)[0]?.name || 'Tidak ada data'],
         ]
         const productSheet = XLSX.utils.aoa_to_sheet(productAnalysis)
         XLSX.utils.book_append_sheet(workbook, productSheet, 'Analisis Produk')
@@ -317,8 +323,8 @@ export default function ProfitLossReportPage() {
           }),
           [''],
           ['INSIGHTS TEMPORAL'],
-          ['Best Month', replaceNA(filteredMonthlyData.sort((a, b) => b.profit - a.profit)[0]?.month, 'Tidak ada data')],
-          ['Worst Month', replaceNA(filteredMonthlyData.sort((a, b) => a.profit - b.profit)[0]?.month, 'Tidak ada data')],
+          ['Best Month', filteredMonthlyData.sort((a, b) => b.profit - a.profit)[0]?.month || 'Tidak ada data'],
+          ['Worst Month', filteredMonthlyData.sort((a, b) => a.profit - b.profit)[0]?.month || 'Tidak ada data'],
           ['Avg Monthly Revenue', formatNumberForExcel(filteredMonthlyData.reduce((sum, m) => sum + m.revenue, 0) / filteredMonthlyData.length)],
           ['Avg Monthly Profit', formatNumberForExcel(filteredMonthlyData.reduce((sum, m) => sum + m.profit, 0) / filteredMonthlyData.length)],
         ]
