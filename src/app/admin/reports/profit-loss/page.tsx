@@ -360,7 +360,10 @@ export default function ProfitLossReportPage() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader className="pb-4">
-                    <CardTitle className="text-lg">Tren Revenue Bulanan</CardTitle>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <span>Tren Revenue Bulanan</span>
+                      <Badge variant="secondary" className="text-xs">From Sept</Badge>
+                    </CardTitle>
                     <CardDescription>
                       Total pemasukan per bulan (sales + service fee)
                     </CardDescription>
@@ -388,7 +391,10 @@ export default function ProfitLossReportPage() {
                 
                 <Card>
                   <CardHeader className="pb-4">
-                    <CardTitle className="text-lg">Tren Profit Bulanan</CardTitle>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <span>Tren Profit Bulanan</span>
+                      <Badge variant="secondary" className="text-xs">From Sept</Badge>
+                    </CardTitle>
                     <CardDescription>
                       Laba bersih per bulan (pemasukan - pembayaran toko)
                     </CardDescription>
@@ -501,7 +507,10 @@ export default function ProfitLossReportPage() {
             {/* Store Profitability */}
             <Card className="w-full">
               <CardHeader className="pb-4">
-                <CardTitle className="text-lg">Profitabilitas per Toko</CardTitle>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <span>Profitabilitas per Toko</span>
+                  <Badge variant="outline" className="text-xs">Full Width</Badge>
+                </CardTitle>
                 <CardDescription>
                   Kontribusi keuntungan dari masing-masing toko berdasarkan sales - cost
                 </CardDescription>
@@ -545,7 +554,10 @@ export default function ProfitLossReportPage() {
             {/* Monthly Detailed Table */}
             <Card className="w-full">
               <CardHeader className="pb-4">
-                <CardTitle className="text-lg">Detail Bulanan</CardTitle>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <span>Detail Bulanan</span>
+                  <Badge variant="outline" className="text-xs">Updated Sept</Badge>
+                </CardTitle>
                 <CardDescription>
                   Breakdown pemasukan (sales + service fee), pembayaran toko, dan laba bersih per bulan
                 </CardDescription>
