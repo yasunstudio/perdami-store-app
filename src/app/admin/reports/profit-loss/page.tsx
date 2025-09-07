@@ -329,41 +329,41 @@ export default function ProfitLossReportPage() {
             {/* Charts Section */}
             <div className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="h-fit">
-                  <CardHeader className="pb-4">
+                <Card className="flex flex-col">
+                  <CardHeader className="pb-4 flex-shrink-0">
                     <CardTitle className="text-lg">Tren Revenue Bulanan</CardTitle>
                     <CardDescription>
                       Total pemasukan per bulan (sales + service fee)
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="h-[350px] w-full">
+                  <CardContent className="pt-0 flex-1 min-h-0">
+                    <div className="w-full" style={{ height: '350px' }}>
                       <SimpleChart
                         title=""
                         data={monthlyRevenueChart}
                         type="line"
                         formatValue="currency"
-                        height={300}
+                        height={350}
                       />
                     </div>
                   </CardContent>
                 </Card>
                 
-                <Card className="h-fit">
-                  <CardHeader className="pb-4">
+                <Card className="flex flex-col">
+                  <CardHeader className="pb-4 flex-shrink-0">
                     <CardTitle className="text-lg">Tren Profit Bulanan</CardTitle>
                     <CardDescription>
                       Laba bersih per bulan (pemasukan - pembayaran toko)
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="h-[350px] w-full">
+                  <CardContent className="pt-0 flex-1 min-h-0">
+                    <div className="w-full" style={{ height: '350px' }}>
                       <SimpleChart
                         title=""
                         data={monthlyProfitChart}
                         type="line"
                         formatValue="currency"
-                        height={300}
+                        height={350}
                       />
                     </div>
                   </CardContent>
@@ -373,37 +373,37 @@ export default function ProfitLossReportPage() {
 
             {/* Top Profitable Products */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="h-fit">
-                <CardHeader className="pb-4">
+              <Card className="flex flex-col">
+                <CardHeader className="pb-4 flex-shrink-0">
                   <CardTitle className="text-lg">Top 5 Produk Terlaris</CardTitle>
                   <CardDescription>
                     Produk dengan kontribusi profit tertinggi
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="h-[350px] w-full">
+                <CardContent className="pt-0 flex-1 min-h-0">
+                  <div className="w-full" style={{ height: '350px' }}>
                     <SimpleChart
                       title=""
                       data={topProductsChart}
                       type="bar"
                       formatValue="currency"
-                      height={300}
+                      height={350}
                     />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="h-fit">
-                <CardHeader className="pb-4">
+              <Card className="flex flex-col">
+                <CardHeader className="pb-4 flex-shrink-0">
                   <CardTitle className="text-lg">Produk Paling Menguntungkan</CardTitle>
                   <CardDescription>
                     Detail profitabilitas per produk
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="overflow-x-auto max-h-[350px] overflow-y-auto">
+                <CardContent className="pt-0 flex-1 min-h-0">
+                  <div className="overflow-x-auto overflow-y-auto" style={{ height: '350px' }}>
                     <Table>
-                      <TableHeader>
+                      <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
                           <TableHead className="w-12">#</TableHead>
                           <TableHead>Produk</TableHead>
@@ -412,7 +412,7 @@ export default function ProfitLossReportPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {reportData.topProfitableProducts.slice(0, 8).map((product, index) => (
+                        {reportData.topProfitableProducts.slice(0, 10).map((product, index) => (
                           <TableRow key={product.id}>
                             <TableCell>
                               <Badge variant="outline">{index + 1}</Badge>
@@ -446,13 +446,13 @@ export default function ProfitLossReportPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                <div className="space-y-3" style={{ maxHeight: '300px', overflowY: 'auto' }}>
                   {reportData.profitByStore.map((store, index) => {
                     const margin = store.revenue > 0 ? (store.profit / store.revenue) * 100 : 0
                     return (
-                      <div key={store.storeId} className="flex items-center justify-between p-4 border rounded-lg dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 min-h-[80px]">
-                        <div className="flex items-center space-x-4 flex-1">
-                          <Badge variant="secondary" className="text-xs min-w-[32px] h-6 flex items-center justify-center flex-shrink-0">
+                      <div key={store.storeId} className="flex items-center justify-between p-4 border rounded-lg dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50" style={{ minHeight: '72px' }}>
+                        <div className="flex items-center space-x-4 flex-1 min-w-0">
+                          <Badge variant="secondary" className="text-xs w-8 h-6 flex items-center justify-center flex-shrink-0">
                             #{index + 1}
                           </Badge>
                           <div className="min-w-0 flex-1">
@@ -464,7 +464,7 @@ export default function ProfitLossReportPage() {
                             </p>
                           </div>
                         </div>
-                        <div className="text-right min-w-[120px] flex-shrink-0">
+                        <div className="text-right" style={{ minWidth: '120px' }}>
                           <p className={`font-semibold text-sm ${store.profit > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                             {formatCurrency(store.profit)}
                           </p>
