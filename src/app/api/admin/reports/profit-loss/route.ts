@@ -114,13 +114,10 @@ export async function GET(request: Request) {
 
     const grossProfit = totalRevenue - totalCosts
     
-    // Operational costs calculation based on order volume and business logic
-    // Service fee from orders + estimated operational overhead
+    // Business model: Revenue from customers - Cost to stores = Gross Profit
+    // Service fee is our main income source (no operational costs tracking)
     const serviceFeeTotal = orders.reduce((sum, order) => sum + (order.serviceFee || 0), 0)
-    const estimatedOverhead = totalRevenue * 0.03 // 3% for platform, payment processing, etc
-    const operationalCosts = serviceFeeTotal + estimatedOverhead
-    
-    const netProfit = grossProfit - operationalCosts
+    const netProfit = serviceFeeTotal // Service fee is our net profit
     const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0
 
     // Revenue by month for the last 12 months
@@ -178,9 +175,9 @@ export async function GET(request: Request) {
 
     const reportData = {
       totalRevenue,
-      totalCosts: totalCosts + operationalCosts,
+      totalCosts, // Only COGS, no operational costs
       grossProfit,
-      netProfit,
+      netProfit, // Service fee total
       profitMargin,
       revenueByMonth,
       topProfitableProducts,
@@ -191,7 +188,7 @@ export async function GET(request: Request) {
       },
       breakdown: {
         costOfGoodsSold: totalCosts,
-        operationalCosts,
+        serviceFeeTotal, // Our main income source
         grossProfitMargin: totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0
       }
     }

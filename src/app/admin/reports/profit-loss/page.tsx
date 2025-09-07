@@ -247,7 +247,7 @@ export default function ProfitLossReportPage() {
                 value={reportData.totalCosts}
                 format="currency"
                 icon={TrendingDown}
-                description="COGS + biaya operasional"
+                description="Cost of Goods Sold (COGS)"
                 trend={{
                   value: 2.1,
                   label: 'vs bulan lalu',
@@ -259,7 +259,7 @@ export default function ProfitLossReportPage() {
                 value={reportData.netProfit}
                 format="currency"
                 icon={reportData.netProfit > 0 ? TrendingUp : TrendingDown}
-                description="Keuntungan setelah semua biaya"
+                description="Service fee (pendapatan platform)"
                 trend={{
                   value: Math.abs(reportData.profitMargin),
                   label: 'margin keuntungan',
@@ -303,13 +303,13 @@ export default function ProfitLossReportPage() {
                   />
                   
                   <div className="flex justify-between items-center">
-                    <span className="text-sm">Biaya Operasional</span>
-                    <span className="text-red-600 dark:text-red-400">
-                      -{formatCurrency((reportData as any).breakdown?.operationalCosts || 0)}
+                    <span className="text-sm">Service Fee (Pendapatan Platform)</span>
+                    <span className="text-green-600 dark:text-green-400">
+                      +{formatCurrency((reportData as any).breakdown?.serviceFeeTotal || 0)}
                     </span>
                   </div>
                   <Progress 
-                    value={((reportData as any).breakdown?.operationalCosts || 0) / reportData.totalRevenue * 100} 
+                    value={((reportData as any).breakdown?.serviceFeeTotal || 0) / reportData.totalRevenue * 100} 
                     className="h-2" 
                   />
                   
