@@ -148,12 +148,12 @@ export default function ProfitLossReportPage() {
         
         const transactionRows = detailData.transactions.map((order: any) => {
           return order.items.map((item: any) => [
-            order.id,
+            order.id || '',
             new Date(order.createdAt).toLocaleDateString('id-ID'),
             order.pickupDate ? new Date(order.pickupDate).toLocaleDateString('id-ID') : 'Belum Pickup',
-            replaceNA(order.customerName, 'Customer'),
-            replaceNA(item.productName, 'Produk'),
-            replaceNA(item.storeName, 'Toko'),
+            order.customerName || 'Customer',
+            item.productName || 'Produk',
+            item.storeName || 'Toko',
             item.quantity || 1,
             formatNumberForExcel(item.unitPrice || 0),
             formatNumberForExcel(item.totalPrice || 0),
@@ -161,7 +161,7 @@ export default function ProfitLossReportPage() {
             formatNumberForExcel(item.totalCost || 0),
             formatNumberForExcel(item.profit || 0),
             formatPercentageForExcel(item.margin || 0),
-            replaceNA(order.orderStatus, 'COMPLETED')
+            order.orderStatus || 'COMPLETED'
           ])
         }).flat()
 
@@ -175,7 +175,7 @@ export default function ProfitLossReportPage() {
         const serviceFeeHeaders = [
           ['ANALISIS ONGKOS KIRIM PER TOKO'],
           [''],
-          ['Order ID', 'Tanggal Order', 'Customer', 'Toko', 'Jumlah Item di Toko', 'Ongkos Kirim Toko (IDR)', 'Ongkos Kirim per Item (IDR)', 'Status Order']
+          ['Order ID', 'Tanggal Order', 'Customer', 'Toko', 'Jumlah Item di Toko', 'Ongkos Kirim (IDR)', 'Status Order']
         ]
         
         const serviceFeeRows = detailData.transactions.map((order: any) => {
@@ -198,12 +198,11 @@ export default function ProfitLossReportPage() {
           return Object.entries(storeGroups).map(([storeId, storeData]: [string, any]) => [
             order.id,
             new Date(order.createdAt).toLocaleDateString('id-ID'),
-            replaceNA(order.customerName, 'Customer'),
+            order.customerName || 'Customer',
             storeData.storeName,
             storeData.items.length,
             formatNumberForExcel(serviceFeePerStore),
-            formatNumberForExcel(serviceFeePerStore / storeData.items.length),
-            replaceNA(order.orderStatus, 'COMPLETED')
+            order.orderStatus || 'COMPLETED'
           ])
         }).flat()
 
@@ -256,18 +255,19 @@ export default function ProfitLossReportPage() {
           ['Ranking', 'Nama Toko', 'Total Revenue (IDR)', 'Total Cost (IDR)', 'Net Profit (IDR)', 'Margin (%)', 'Kontribusi Revenue (%)', 'Jumlah Order', 'Avg Order Value (IDR)', 'Status Performa'],
           ...reportData.profitByStore.map((store: any, index: number) => {
             const revenueContribution = (store.revenue / reportData.totalRevenue * 100)
+            const margin = store.revenue > 0 ? (store.profit / store.revenue) * 100 : 0
             const avgOrderValue = (store as any).orderCount && (store as any).orderCount > 0 
               ? store.revenue / (store as any).orderCount 
               : 0
-            const performance = store.margin > 25 ? 'Top Tier' : store.margin > 15 ? 'Good' : store.margin > 10 ? 'Average' : 'Needs Improvement'
+            const performance = margin > 25 ? 'Top Tier' : margin > 15 ? 'Good' : margin > 10 ? 'Average' : 'Needs Improvement'
             const orderCount = (store as any).orderCount || 0
             return [
               (index + 1).toString(),
-              store.name,
-              formatNumberForExcel(store.revenue),
-              formatNumberForExcel(store.cost),
-              formatNumberForExcel(store.profit),
-              formatPercentageForExcel(store.margin),
+              store.storeName || 'Unknown Store',
+              formatNumberForExcel(store.revenue || 0),
+              formatNumberForExcel(store.costs || 0),
+              formatNumberForExcel(store.profit || 0),
+              formatPercentageForExcel(margin),
               formatPercentageForExcel(revenueContribution),
               orderCount,
               formatNumberForExcel(avgOrderValue),
@@ -276,9 +276,13 @@ export default function ProfitLossReportPage() {
           }),
           [''],
           ['INSIGHTS TOKO'],
-          ['Top Revenue Generator', replaceNA(reportData.profitByStore[0]?.storeName, 'Tidak ada data')],
-          ['Most Profitable', replaceNA(reportData.profitByStore.sort((a, b) => b.profit - a.profit)[0]?.storeName, 'Tidak ada data')],
-          ['Highest Margin', replaceNA(reportData.profitByStore.sort((a, b) => (b.profit/b.revenue) - (a.profit/a.revenue))[0]?.storeName, 'Tidak ada data')],
+          ['Top Revenue Generator', reportData.profitByStore[0]?.storeName || 'Tidak ada data'],
+          ['Most Profitable', reportData.profitByStore.sort((a, b) => (b.profit || 0) - (a.profit || 0))[0]?.storeName || 'Tidak ada data'],
+          ['Highest Margin', reportData.profitByStore.sort((a, b) => {
+            const marginA = a.revenue > 0 ? (a.profit / a.revenue * 100) : 0
+            const marginB = b.revenue > 0 ? (b.profit / b.revenue * 100) : 0
+            return marginB - marginA
+          })[0]?.storeName || 'Tidak ada data'],
         ]
         const storeSheet = XLSX.utils.aoa_to_sheet(storeAnalysis)
         XLSX.utils.book_append_sheet(workbook, storeSheet, 'Analisis Toko')
