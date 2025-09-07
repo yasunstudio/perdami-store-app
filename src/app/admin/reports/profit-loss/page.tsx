@@ -227,7 +227,7 @@ export default function ProfitLossReportPage() {
         }
       >
         {reportData && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Key Metrics */}
             <MetricsGrid columns={4}>
               <MetricCard
@@ -327,44 +327,60 @@ export default function ProfitLossReportPage() {
             </Card>
 
             {/* Charts Section */}
-            <div className="space-y-6">
+            <div className="space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="flex flex-col">
-                  <CardHeader className="pb-4 flex-shrink-0">
+                <Card>
+                  <CardHeader className="pb-4">
                     <CardTitle className="text-lg">Tren Revenue Bulanan</CardTitle>
                     <CardDescription>
                       Total pemasukan per bulan (sales + service fee)
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="pt-0 flex-1 min-h-0">
-                    <div className="w-full" style={{ height: '350px' }}>
-                      <SimpleChart
-                        title=""
-                        data={monthlyRevenueChart}
-                        type="line"
-                        formatValue="currency"
-                        height={350}
-                      />
+                  <CardContent className="pt-0">
+                    <div className="w-full overflow-hidden" style={{ height: '300px' }}>
+                      <div className="space-y-3 h-full overflow-y-auto">
+                        {monthlyRevenueChart.map((item, index) => (
+                          <div
+                            key={index}
+                            className="flex justify-between items-center p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
+                          >
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              {item.name}
+                            </span>
+                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                              {formatCurrency(item.value)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
                 
-                <Card className="flex flex-col">
-                  <CardHeader className="pb-4 flex-shrink-0">
+                <Card>
+                  <CardHeader className="pb-4">
                     <CardTitle className="text-lg">Tren Profit Bulanan</CardTitle>
                     <CardDescription>
                       Laba bersih per bulan (pemasukan - pembayaran toko)
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="pt-0 flex-1 min-h-0">
-                    <div className="w-full" style={{ height: '350px' }}>
-                      <SimpleChart
-                        title=""
-                        data={monthlyProfitChart}
-                        type="line"
-                        formatValue="currency"
-                        height={350}
-                      />
+                  <CardContent className="pt-0">
+                    <div className="w-full overflow-hidden" style={{ height: '300px' }}>
+                      <div className="space-y-3 h-full overflow-y-auto">
+                        {monthlyProfitChart.map((item, index) => (
+                          <div
+                            key={index}
+                            className="flex justify-between items-center p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
+                          >
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              {item.name}
+                            </span>
+                            <span className={`text-sm font-semibold ${item.value > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                              {formatCurrency(item.value)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -373,72 +389,88 @@ export default function ProfitLossReportPage() {
 
             {/* Top Profitable Products */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="flex flex-col">
-                <CardHeader className="pb-4 flex-shrink-0">
+              <Card>
+                <CardHeader className="pb-4">
                   <CardTitle className="text-lg">Top 5 Produk Terlaris</CardTitle>
                   <CardDescription>
                     Produk dengan kontribusi profit tertinggi
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="pt-0 flex-1 min-h-0">
-                  <div className="w-full" style={{ height: '350px' }}>
-                    <SimpleChart
-                      title=""
-                      data={topProductsChart}
-                      type="bar"
-                      formatValue="currency"
-                      height={350}
-                    />
+                <CardContent className="pt-0">
+                  <div className="w-full overflow-hidden" style={{ height: '300px' }}>
+                    <div className="space-y-3 h-full overflow-y-auto">
+                      {topProductsChart.slice(0, 5).map((item, index) => {
+                        const maxValue = Math.max(...topProductsChart.map(d => d.value))
+                        return (
+                          <div key={index} className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-700 dark:text-gray-300 truncate pr-2">{item.name}</span>
+                              <span className="font-medium text-gray-900 dark:text-gray-100">
+                                {formatCurrency(item.value)}
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                              <div
+                                className="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${(item.value / maxValue) * 100}%` }}
+                              />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="flex flex-col">
-                <CardHeader className="pb-4 flex-shrink-0">
+              <Card>
+                <CardHeader className="pb-4">
                   <CardTitle className="text-lg">Produk Paling Menguntungkan</CardTitle>
                   <CardDescription>
                     Detail profitabilitas per produk
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="pt-0 flex-1 min-h-0">
-                  <div className="overflow-x-auto overflow-y-auto" style={{ height: '350px' }}>
-                    <Table>
-                      <TableHeader className="sticky top-0 bg-background z-10">
-                        <TableRow>
-                          <TableHead className="w-12">#</TableHead>
-                          <TableHead>Produk</TableHead>
-                          <TableHead className="text-right">Profit</TableHead>
-                          <TableHead className="text-right">Margin</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {reportData.topProfitableProducts.slice(0, 10).map((product, index) => (
-                          <TableRow key={product.id}>
-                            <TableCell>
-                              <Badge variant="outline">{index + 1}</Badge>
-                            </TableCell>
-                            <TableCell className="font-medium text-sm">
-                              {product.name}
-                            </TableCell>
-                            <TableCell className="text-right font-semibold text-sm">
-                              {formatCurrency(product.profit)}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Badge variant={product.margin > 20 ? 'default' : product.margin > 10 ? 'secondary' : 'destructive'}>
-                                {formatPercentage(product.margin)}
-                              </Badge>
-                            </TableCell>
+                <CardContent className="pt-0">
+                  <div className="overflow-hidden" style={{ height: '300px' }}>
+                    <div className="overflow-y-auto h-full">
+                      <Table>
+                        <TableHeader className="sticky top-0 bg-background z-10">
+                          <TableRow>
+                            <TableHead className="w-12">#</TableHead>
+                            <TableHead>Produk</TableHead>
+                            <TableHead className="text-right">Profit</TableHead>
+                            <TableHead className="text-right">Margin</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {reportData.topProfitableProducts.slice(0, 10).map((product, index) => (
+                            <TableRow key={product.id}>
+                              <TableCell>
+                                <Badge variant="outline">{index + 1}</Badge>
+                              </TableCell>
+                              <TableCell className="font-medium text-sm">
+                                {product.name}
+                              </TableCell>
+                              <TableCell className="text-right font-semibold text-sm">
+                                {formatCurrency(product.profit)}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Badge variant={product.margin > 20 ? 'default' : product.margin > 10 ? 'secondary' : 'destructive'}>
+                                  {formatPercentage(product.margin)}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
             {/* Store Profitability */}
-            <Card className="w-full">
+            <Card>
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg">Profitabilitas per Toko</CardTitle>
                 <CardDescription>
@@ -446,41 +478,43 @@ export default function ProfitLossReportPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="space-y-3" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                  {reportData.profitByStore.map((store, index) => {
-                    const margin = store.revenue > 0 ? (store.profit / store.revenue) * 100 : 0
-                    return (
-                      <div key={store.storeId} className="flex items-center justify-between p-4 border rounded-lg dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50" style={{ minHeight: '72px' }}>
-                        <div className="flex items-center space-x-4 flex-1 min-w-0">
-                          <Badge variant="secondary" className="text-xs w-8 h-6 flex items-center justify-center flex-shrink-0">
-                            #{index + 1}
-                          </Badge>
-                          <div className="min-w-0 flex-1">
-                            <p className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">
-                              {store.storeName}
+                <div className="overflow-hidden" style={{ height: '300px' }}>
+                  <div className="space-y-3 h-full overflow-y-auto">
+                    {reportData.profitByStore.map((store, index) => {
+                      const margin = store.revenue > 0 ? (store.profit / store.revenue) * 100 : 0
+                      return (
+                        <div key={store.storeId} className="flex items-center justify-between p-4 border rounded-lg dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                          <div className="flex items-center space-x-4 flex-1 min-w-0">
+                            <Badge variant="secondary" className="text-xs w-8 h-6 flex items-center justify-center flex-shrink-0">
+                              #{index + 1}
+                            </Badge>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">
+                                {store.storeName}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                Revenue: {formatCurrency(store.revenue)} • Cost: {formatCurrency(store.costs)}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right" style={{ minWidth: '120px' }}>
+                            <p className={`font-semibold text-sm ${store.profit > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                              {formatCurrency(store.profit)}
                             </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                              Revenue: {formatCurrency(store.revenue)} • Cost: {formatCurrency(store.costs)}
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              Margin: {formatPercentage(margin)}
                             </p>
                           </div>
                         </div>
-                        <div className="text-right" style={{ minWidth: '120px' }}>
-                          <p className={`font-semibold text-sm ${store.profit > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                            {formatCurrency(store.profit)}
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            Margin: {formatPercentage(margin)}
-                          </p>
-                        </div>
-                      </div>
-                    )
-                  })}
+                      )
+                    })}
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Monthly Detailed Table */}
-            <Card className="w-full">
+            <Card>
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg">Detail Bulanan</CardTitle>
                 <CardDescription>
@@ -488,47 +522,49 @@ export default function ProfitLossReportPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="min-w-[100px]">Bulan</TableHead>
-                        <TableHead className="text-right min-w-[120px]">Pemasukan</TableHead>
-                        <TableHead className="text-right min-w-[120px]">Pembayaran Toko</TableHead>
-                        <TableHead className="text-right min-w-[120px]">Laba Bersih</TableHead>
-                        <TableHead className="text-right min-w-[80px]">Margin</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {reportData.revenueByMonth.slice(-6).reverse().map((month) => {
-                        const margin = month.revenue > 0 ? (month.profit / month.revenue) * 100 : 0
-                        return (
-                          <TableRow key={month.month} className="h-12">
-                            <TableCell className="font-medium text-sm">
-                              {month.month}
-                            </TableCell>
-                            <TableCell className="text-right text-sm">
-                              {formatCurrency(month.revenue)}
-                            </TableCell>
-                            <TableCell className="text-right text-sm">
-                              {formatCurrency(month.costs)}
-                            </TableCell>
-                            <TableCell className={`text-right font-semibold text-sm ${month.profit > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                              {formatCurrency(month.profit)}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Badge 
-                                variant={margin > 20 ? 'default' : margin > 10 ? 'secondary' : 'destructive'}
-                                className="text-xs"
-                              >
-                                {formatPercentage(margin)}
-                              </Badge>
-                            </TableCell>
-                          </TableRow>
-                        )
-                      })}
-                    </TableBody>
-                  </Table>
+                <div className="overflow-hidden" style={{ height: '300px' }}>
+                  <div className="overflow-auto h-full">
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-background z-10">
+                        <TableRow>
+                          <TableHead className="min-w-[100px]">Bulan</TableHead>
+                          <TableHead className="text-right min-w-[120px]">Pemasukan</TableHead>
+                          <TableHead className="text-right min-w-[120px]">Pembayaran Toko</TableHead>
+                          <TableHead className="text-right min-w-[120px]">Laba Bersih</TableHead>
+                          <TableHead className="text-right min-w-[80px]">Margin</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {reportData.revenueByMonth.slice(-6).reverse().map((month) => {
+                          const margin = month.revenue > 0 ? (month.profit / month.revenue) * 100 : 0
+                          return (
+                            <TableRow key={month.month} className="h-12">
+                              <TableCell className="font-medium text-sm">
+                                {month.month}
+                              </TableCell>
+                              <TableCell className="text-right text-sm">
+                                {formatCurrency(month.revenue)}
+                              </TableCell>
+                              <TableCell className="text-right text-sm">
+                                {formatCurrency(month.costs)}
+                              </TableCell>
+                              <TableCell className={`text-right font-semibold text-sm ${month.profit > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                {formatCurrency(month.profit)}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Badge 
+                                  variant={margin > 20 ? 'default' : margin > 10 ? 'secondary' : 'destructive'}
+                                  className="text-xs"
+                                >
+                                  {formatPercentage(margin)}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
               </CardContent>
             </Card>
