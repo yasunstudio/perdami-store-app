@@ -123,12 +123,12 @@ export default function ProfitLossReportPage() {
         [''],
         ['RINGKASAN EKSEKUTIF'],
         ['Metrik', 'Nilai (IDR)', 'Persentase', 'Status'],
-        ['Total Pemasukan', formatNumberForExcel(reportData.totalRevenue), formatPercentageForExcel(100), reportData.totalRevenue > 0 ? 'Positif' : 'Negatif'],
-        ['  - Sales Revenue', formatNumberForExcel((detailData.summary as any)?.totalSalesRevenue || reportData.totalRevenue * 0.9), formatPercentageForExcel(((detailData.summary as any)?.totalSalesRevenue || reportData.totalRevenue * 0.9) / reportData.totalRevenue * 100), 'Komponen Utama'],
-        ['  - Service Fee', formatNumberForExcel((detailData.summary as any)?.totalServiceFee || reportData.totalRevenue * 0.1), formatPercentageForExcel(((detailData.summary as any)?.totalServiceFee || reportData.totalRevenue * 0.1) / reportData.totalRevenue * 100), 'Pendapatan Jasa'],
-        ['Total Pengeluaran', formatNumberForExcel(reportData.totalCosts), formatPercentageForExcel(reportData.totalCosts / reportData.totalRevenue * 100), 'Pembayaran ke Toko'],
-        ['Laba Bersih', formatNumberForExcel(reportData.netProfit), formatPercentageForExcel(reportData.netProfit / reportData.totalRevenue * 100), reportData.netProfit > 0 ? 'PROFIT' : 'LOSS'],
-        ['Margin Keuntungan', formatPercentageForExcel(reportData.profitMargin), '', reportData.profitMargin > 20 ? 'Sangat Baik' : reportData.profitMargin > 10 ? 'Baik' : 'Perlu Perbaikan'],
+        ['Total Pemasukan', formatCurrency(reportData.totalRevenue), formatPercentage(100), reportData.totalRevenue > 0 ? 'Positif' : 'Negatif'],
+        ['  - Sales Revenue', formatCurrency((detailData.summary as any)?.totalSalesRevenue || reportData.totalRevenue * 0.9), formatPercentage(((detailData.summary as any)?.totalSalesRevenue || reportData.totalRevenue * 0.9) / reportData.totalRevenue * 100), 'Komponen Utama'],
+        ['  - Service Fee', formatCurrency((detailData.summary as any)?.totalServiceFee || reportData.totalRevenue * 0.1), formatPercentage(((detailData.summary as any)?.totalServiceFee || reportData.totalRevenue * 0.1) / reportData.totalRevenue * 100), 'Pendapatan Jasa'],
+        ['Total Pengeluaran', formatCurrency(reportData.totalCosts), formatPercentage(reportData.totalCosts / reportData.totalRevenue * 100), 'Pembayaran ke Toko'],
+        ['Laba Bersih', formatCurrency(reportData.netProfit), formatPercentage(reportData.netProfit / reportData.totalRevenue * 100), reportData.netProfit > 0 ? 'PROFIT' : 'LOSS'],
+        ['Margin Keuntungan', formatPercentage(reportData.profitMargin), '', reportData.profitMargin > 20 ? 'Sangat Baik' : reportData.profitMargin > 10 ? 'Baik' : 'Perlu Perbaikan'],
         [''],
         ['KESIMPULAN BISNIS'],
         ['Status Profitabilitas', reportData.netProfit > 0 ? 'MENGUNTUNGKAN' : 'MERUGI'],
@@ -177,11 +177,13 @@ export default function ProfitLossReportPage() {
         const productAnalysis = [
           ['ANALISIS PROFITABILITAS PRODUK'],
           [''],
-          ['Ranking', 'Nama Produk', 'Total Revenue (IDR)', 'Total Cost (IDR)', 'Gross Profit (IDR)', 'Margin (%)', 'Kontribusi Revenue (%)', 'Qty Terjual', 'Avg Price (IDR)', 'Status Performa'],
+          ['Ranking', 'Nama Produk', 'Total Revenue (IDR)', 'Total Cost (IDR)', 'Gross Profit (IDR)', 'Margin (%)', 'Kontribusi Revenue (%)', 'Qty Terjual', 'Harga Beli (IDR)', 'Harga Jual (IDR)', 'Status Performa'],
           ...reportData.topProfitableProducts.map((product, index) => {
             const revenueContribution = (product.revenue / reportData.totalRevenue * 100)
             const performance = product.margin > 30 ? 'Excellent' : product.margin > 20 ? 'Good' : product.margin > 10 ? 'Average' : 'Poor'
             const quantity = (product as any).quantity || 0 // Use real quantity from database
+            const avgCostPrice = quantity > 0 ? product.cost / quantity : 0
+            const avgSellingPrice = quantity > 0 ? product.revenue / quantity : 0
             return [
               (index + 1).toString(),
               product.name,
@@ -191,7 +193,8 @@ export default function ProfitLossReportPage() {
               formatPercentageForExcel(product.margin),
               formatPercentageForExcel(revenueContribution),
               quantity,
-              formatNumberForExcel(quantity > 0 ? product.revenue / quantity : 0),
+              formatNumberForExcel(avgCostPrice),
+              formatNumberForExcel(avgSellingPrice),
               performance
             ]
           }),
