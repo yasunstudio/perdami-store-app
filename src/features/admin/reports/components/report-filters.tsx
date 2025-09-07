@@ -152,7 +152,7 @@ export function ReportFilters({
                     })
                   }
                 >
-                  <SelectTrigger className="h-10 border-2 hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
+                  <SelectTrigger className="w-full h-10 border-2 hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
                     <SelectValue placeholder="Pilih toko..." />
                   </SelectTrigger>
                   <SelectContent>
