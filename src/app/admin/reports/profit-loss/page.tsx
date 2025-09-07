@@ -154,20 +154,20 @@ export default function ProfitLossReportPage() {
         
         const transactionRows = detailData.transactions.map((order: any) => {
           return order.items.map((item: any) => [
-            order.id || '',
+            safeString(order.id),
             new Date(order.createdAt).toLocaleDateString('id-ID'),
             order.pickupDate ? new Date(order.pickupDate).toLocaleDateString('id-ID') : 'Belum Pickup',
-            order.customerName || 'Customer',
-            item.productName || 'Produk',
-            item.storeName || 'Toko',
-            item.quantity || 1,
-            formatNumberForExcel(item.unitPrice || 0),
-            formatNumberForExcel(item.totalPrice || 0),
-            formatNumberForExcel(item.costPrice || 0),
-            formatNumberForExcel(item.totalCost || 0),
-            formatNumberForExcel(item.profit || 0),
-            formatPercentageForExcel(item.margin || 0),
-            order.orderStatus || 'COMPLETED'
+            safeString(order.customerName),
+            safeString(item.productName),
+            safeString(item.storeName),
+            safeNumber(item.quantity),
+            formatNumberForExcel(safeNumber(item.unitPrice)),
+            formatNumberForExcel(safeNumber(item.totalPrice)),
+            formatNumberForExcel(safeNumber(item.costPrice)),
+            formatNumberForExcel(safeNumber(item.totalCost)),
+            formatNumberForExcel(safeNumber(item.profit)),
+            formatPercentageForExcel(safeNumber(item.margin)),
+            safeString(order.orderStatus)
           ])
         }).flat()
 

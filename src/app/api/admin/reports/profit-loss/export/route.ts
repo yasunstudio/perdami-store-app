@@ -86,7 +86,7 @@ export async function GET(request: Request) {
         storeName: item.bundle?.store?.name || 'Unknown Store',
         storeId: item.bundle?.store?.id || 'N/A',
         quantity: item.quantity,
-        unitPrice: item.totalPrice / item.quantity,
+        unitPrice: item.unitPrice, // Use actual unitPrice from database
         totalPrice: item.totalPrice,
         costPrice: item.bundle?.costPrice || 0,
         totalCost: item.quantity * (item.bundle?.costPrice || 0),
