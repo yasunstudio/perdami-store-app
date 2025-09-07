@@ -4,10 +4,10 @@ export interface OrderWithRelations extends Order {
   user: Pick<User, 'id' | 'name' | 'email' | 'phone'>
   customer?: Pick<User, 'id' | 'name' | 'email' | 'phone'>
   orderItems: (OrderItem & {
-    bundle: Pick<ProductBundle, 'id' | 'name' | 'price' | 'image'>
+    bundle: Pick<ProductBundle, 'id' | 'name' | 'sellingPrice' | 'image'>
   })[]
   items?: (OrderItem & {
-    bundle: Pick<ProductBundle, 'id' | 'name' | 'price' | 'image'>
+    bundle: Pick<ProductBundle, 'id' | 'name' | 'sellingPrice' | 'image'>
   })[]
   payment?: Payment | null
   bank?: Pick<Bank, 'id' | 'name' | 'accountNumber' | 'accountName'> | null

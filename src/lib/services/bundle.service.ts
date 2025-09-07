@@ -153,7 +153,7 @@ export class BundleService {
           name: data.name,
           description: data.description,
           image: data.image,
-          price: data.price,
+          sellingPrice: data.price,
           contents: data.contents ? data.contents as any : undefined,
           storeId: data.storeId,
           isActive: data.isActive ?? true,

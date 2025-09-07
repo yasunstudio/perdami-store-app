@@ -1,19 +1,7 @@
-// Minimal Notification Service for Bundle-Only Architecture
 import { prisma } from './prisma'
+import { NotificationType } from '@prisma/client'
 
-export type NotificationType = 
-  | 'ORDER_PLACED'
-  | 'ORDER_CONFIRMED'
-  | 'ORDER_SHIPPED'
-  | 'ORDER_DELIVERED'
-  | 'ORDER_CANCELLED'
-  | 'PAYMENT_CONFIRMED'
-  | 'PAYMENT_FAILED'
-  | 'PICKUP_REMINDER_H1'
-  | 'PICKUP_REMINDER_TODAY'
-  | 'PICKUP_READY'
-  | 'PICKUP_COMPLETED'
-  | 'ADMIN_MESSAGE'
+export { NotificationType }
 
 export class NotificationService {
   /**
